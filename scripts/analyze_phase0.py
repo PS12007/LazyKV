@@ -305,6 +305,11 @@ def design_arithmetic(
             row["gpu_attention_s"] = g
             row["gpu_attention_all_layers_s"] = n_layers * g
             row["fetch_over_gpu_attention"] = fetch_one / g
+            # Compute and H2D overlap fully (measured), so a fetch no longer than the layer's
+            # compute is "free" in wall time. Using attention alone as the window is a lower
+            # bound: MLP and projections lengthen it, but were not measured in Phase 0.
+            row["tokens_fetchable_within_gpu_attention"] = max(0.0, g - t0) * B / bytes_per_token_layer_bf16
+            row["fetchable_fraction_within_gpu_attention"] = row["tokens_fetchable_within_gpu_attention"] / n
         if n in cpu_by_tokens:
             c = cpu_by_tokens[n]["best_seconds"]["median"]
             row["cpu_partial_attn_s"] = c

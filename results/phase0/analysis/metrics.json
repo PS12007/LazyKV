@@ -1,8 +1,8 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-14T15:16:23+00:00",
-    "git_commit": "af322a72aba91f36fe79c589c49abc860880e742",
+    "generated_at_utc": "2026-09-14T15:20:05+00:00",
+    "git_commit": "eebdc345a521433a661ca9ee7cd81f007f91fdc4",
     "git_dirty": true,
     "argv": [
       "scripts/analyze_phase0.py"
@@ -1847,6 +1847,8 @@
         "gpu_attention_s": 0.00011289600282907486,
         "gpu_attention_all_layers_s": 0.0018063360452651978,
         "fetch_over_gpu_attention": 2.859191334209937,
+        "tokens_fetchable_within_gpu_attention": 1378.3084600409388,
+        "fetchable_fraction_within_gpu_attention": 0.33650108887718233,
         "cpu_partial_attn_s": 0.000493130392156922,
         "cpu_partial_attn_all_layers_s": 0.007890086274510752,
         "cpu_over_fetch_one": 1.527706705454824,
@@ -1863,6 +1865,8 @@
         "gpu_attention_s": 0.00010441599786281585,
         "gpu_attention_all_layers_s": 0.0016706559658050536,
         "fetch_over_gpu_attention": 12.180408137385312,
+        "tokens_fetchable_within_gpu_attention": 1268.510665447019,
+        "fetchable_fraction_within_gpu_attention": 0.07742374667035028,
         "cpu_partial_attn_s": 0.001979028571440722,
         "cpu_partial_attn_all_layers_s": 0.03166445714305155,
         "cpu_over_fetch_one": 1.5560486826714468,
@@ -1879,6 +1883,8 @@
         "gpu_attention_s": 0.0004413119852542877,
         "gpu_attention_all_layers_s": 0.0070609917640686035,
         "fetch_over_gpu_attention": 11.483898982402907,
+        "tokens_fetchable_within_gpu_attention": 5630.587877701663,
+        "fetchable_fraction_within_gpu_attention": 0.08591595272371923,
         "cpu_partial_attn_s": 0.0096344250000584,
         "cpu_partial_attn_all_layers_s": 0.1541508000009344,
         "cpu_over_fetch_one": 1.9010376336894728,
@@ -1894,7 +1900,9 @@
         "fetch_all_layers_one_transfer_s": 0.324041494588061,
         "gpu_attention_s": 0.0015207680463790894,
         "gpu_attention_all_layers_s": 0.02433228874206543,
-        "fetch_over_gpu_attention": 13.31734544263652
+        "fetch_over_gpu_attention": 13.31734544263652,
+        "tokens_fetchable_within_gpu_attention": 19607.21823866585,
+        "fetchable_fraction_within_gpu_attention": 0.07479560180155125
       }
     ],
     "caveats": [
