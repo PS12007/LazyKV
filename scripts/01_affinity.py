@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.corpus import load_tokens  # noqa: E402
 from harness.gpu_memory import cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
+from harness.host import core_class_masks  # noqa: E402
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
@@ -28,38 +29,6 @@ from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
 
 MODEL_REPO = "unsloth/Llama-3.2-1B-Instruct"
 MODEL_REVISION = "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
-
-
-class _GroupAffinity(ctypes.Structure):
-    _fields_ = [("Mask", ctypes.c_size_t), ("Group", ctypes.c_ushort), ("Reserved", ctypes.c_ushort * 3)]
-
-
-class _ProcessorRelationship(ctypes.Structure):
-    _fields_ = [
-        ("Flags", ctypes.c_ubyte),
-        ("EfficiencyClass", ctypes.c_ubyte),
-        ("Reserved", ctypes.c_ubyte * 20),
-        ("GroupCount", ctypes.c_ushort),
-        ("GroupMask", _GroupAffinity * 1),
-    ]
-
-
-def core_class_masks() -> dict[int, int]:
-    """EfficiencyClass -> logical-processor affinity mask (group 0). Higher class = P-cores."""
-    k32 = ctypes.WinDLL("kernel32")
-    length = ctypes.c_ulong(0)
-    k32.GetLogicalProcessorInformationEx(0, None, ctypes.byref(length))  # 0 = RelationProcessorCore
-    buf = ctypes.create_string_buffer(length.value)
-    if not k32.GetLogicalProcessorInformationEx(0, buf, ctypes.byref(length)):
-        raise OSError("GetLogicalProcessorInformationEx failed")
-    masks: dict[int, int] = {}
-    off = 0
-    while off < length.value:
-        size = ctypes.c_ulong.from_buffer(buf, off + 4).value
-        rel = _ProcessorRelationship.from_buffer(buf, off + 8)
-        masks[rel.EfficiencyClass] = masks.get(rel.EfficiencyClass, 0) | rel.GroupMask[0].Mask
-        off += size
-    return masks
 
 
 def main() -> None:
