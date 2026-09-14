@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.corpus import load_tokens  # noqa: E402
 from harness.gpu_memory import cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
-from harness.host import core_class_masks  # noqa: E402
+from harness.host import core_class_masks, set_power_throttling  # noqa: E402
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
@@ -48,6 +48,9 @@ def main() -> None:
         all_mask |= m
     conditions = {"default": all_mask, "p_cores_only": masks[max(masks)], "e_cores_only": masks[min(masks)]}
 
+    # Without this, Windows power throttling moves the process between core classes on its
+    # own schedule, and the "default" and "P-cores only" conditions stop meaning what they say.
+    set_power_throttling(opt_out=True)
     lm = load(MODEL_REPO, MODEL_REVISION)
     memory_cap = cap_allocator_to_dedicated()
     shared_baseline = process_gpu_memory().shared_bytes
@@ -83,6 +86,7 @@ def main() -> None:
             "core_class_masks": {str(k): hex(v) for k, v in masks.items()},
             "attention_strategy": lm.attention_strategy,
             "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": shared_after},
+            "host": {"power_throttling": "opted_out"},
             "conditions": {
                 name: {
                     "mask": hex(mask),

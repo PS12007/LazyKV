@@ -29,6 +29,7 @@ import torch  # noqa: E402
 from harness import sysinfo  # noqa: E402
 from harness.corpus import load_tokens  # noqa: E402
 from harness.gpu_memory import allocator_counters, cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
+from harness.host import set_power_throttling  # noqa: E402
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from harness.telemetry import TelemetryLogger  # noqa: E402
@@ -176,6 +177,10 @@ def main() -> None:
     out_dir = RESULTS_DIR / "phase1" / ("baseline_quick" if args.quick else "baseline") / f"run_{args.run_id}"
     torch.manual_seed(args.seed)
 
+    # Batch-1 decode is host-bound, and Windows moved this detached process onto E-cores
+    # under its default power throttling, doubling per-token latency for seconds at a time
+    # (scripts/01_latency_regimes.py). A baseline that mixes those regimes is not a baseline.
+    set_power_throttling(opt_out=True)
     lm = load(MODEL_REPO, MODEL_REVISION)
     memory_cap = cap_allocator_to_dedicated()
     shared_baseline = process_gpu_memory().shared_bytes
@@ -225,6 +230,7 @@ def main() -> None:
             "attention": {"strategy": lm.attention_strategy, "bucket": current_strategy()[1], "checks": [c.__dict__ for c in lm.kernel_checks]},
             "cache": {"policy": "full_gpu_preallocated", "max_len": max_len},
             "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "spill_threshold_bytes": SPILL_THRESHOLD_BYTES},
+            "host": {"power_throttling": "opted_out"},
             "results": results,
             "telemetry": {**tel.summary(), "marks": tel.marks, "csv": "telemetry.csv"},
             "system": {"software_gpu": sysinfo.gpu_and_software()},
