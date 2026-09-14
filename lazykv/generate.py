@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 import torch
@@ -117,20 +118,33 @@ def greedy_decode(model: PreTrainedModel, cache: Cache, first_logits: torch.Tens
 
 
 @torch.inference_mode()
-def teacher_forced_logprobs(model: PreTrainedModel, cache: Cache, context_ids: torch.Tensor, continuation_ids: torch.Tensor, chunk_size: int) -> torch.Tensor:
-    """Next-token log-probs at every continuation position, through the decode path.
+def teacher_forced_steps(model: PreTrainedModel, cache: Cache, context_ids: torch.Tensor, continuation_ids: torch.Tensor, chunk_size: int) -> Iterator[torch.Tensor]:
+    """Yield next-token log-probs (float32, on GPU) at each continuation position.
 
     Row i is the distribution over continuation token i given context + continuation[:i].
     Scoring through single-token decode steps (not a batched forward) matters: residency
     policies act on the decode path, so that is where quality must be measured.
-    Returned as float32 on CPU, shape [len(continuation), vocab].
+    A generator, so callers can compare position by position without holding
+    positions x vocab tensors in host RAM (a full-vocab float32 row is ~0.5 MB for Llama 3).
     """
     pre = prefill(model, cache, context_ids, chunk_size)
-    rows = [torch.log_softmax(pre.last_logits, dim=-1).cpu()]
+    yield torch.log_softmax(pre.last_logits, dim=-1)
     ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
-    cont = continuation_ids.view(-1).tolist()
-    for tok in cont[:-1]:
+    for tok in continuation_ids.view(-1).tolist()[:-1]:
         ids.fill_(tok)
         out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1)
-        rows.append(torch.log_softmax(out.logits[0, -1].float(), dim=-1).cpu())
-    return torch.stack(rows)
+        yield torch.log_softmax(out.logits[0, -1].float(), dim=-1)
+
+
+def teacher_forced_logprobs(model: PreTrainedModel, cache: Cache, context_ids: torch.Tensor, continuation_ids: torch.Tensor, chunk_size: int) -> torch.Tensor:
+    """All rows of `teacher_forced_steps` as one float32 CPU tensor [positions, vocab].
+
+    Preallocated and filled in place: stacking a list of rows would briefly hold two copies.
+    """
+    rows = None
+    for i, row in enumerate(teacher_forced_steps(model, cache, context_ids, continuation_ids, chunk_size)):
+        if rows is None:
+            rows = torch.empty((continuation_ids.numel(), row.numel()), dtype=torch.float32)
+        rows[i].copy_(row)
+    assert rows is not None
+    return rows

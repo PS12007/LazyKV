@@ -227,14 +227,133 @@ def fig_telemetry(run_dir: Path, t: Theme) -> None:
     save(fig, "telemetry_run1", t)
 
 
+def _k(v: float) -> str:
+    return f"{v / 1024:g}K"
+
+
+def fig_p1_latency(a: dict[str, Any], t: Theme) -> None:
+    rows = a["contexts"]
+    xs = [r["ctx_len"] for r in rows]
+    fig, axes = plt.subplots(1, 2, figsize=(9, 4.4), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    ax = axes[0]
+    style_axes(ax, t)
+    med = [r["decode_wall_median_s"]["median"] * 1e3 for r in rows]
+    p10 = [r["decode_wall_p10_s"]["median"] * 1e3 for r in rows]
+    p90 = [r["decode_wall_p90_s"]["median"] * 1e3 for r in rows]
+    ax.fill_between(xs, p10, p90, color=t.series[0], alpha=0.16, linewidth=0)
+    ax.plot(xs, med, color=t.series[0], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+    ax.annotate("median", (xs[-1], med[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    ax.annotate("p10–p90", (xs[-1], p90[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    ax.set_xscale("log", base=2)
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.set_ylim(bottom=0)
+    ax.set_xlim(xs[0] / 1.3, xs[-1] * 2.2)
+    ax.set_title("Decode, ms per token", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("Context (tokens)")
+
+    ax = axes[1]
+    style_axes(ax, t)
+    cold = [r["ttft_cold_s"]["median"] for r in rows]
+    warm = [r["ttft_warm_s"]["median"] for r in rows]
+    for ys, label, color in ((cold, "cuDNN plans cold", t.series[1]), (warm, "plans warm", t.series[0])):
+        ax.plot(xs, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=label)
+        ax.annotate(label, (xs[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    ax.set_xscale("log", base=2)
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.set_ylim(bottom=0)
+    ax.set_xlim(xs[0] / 1.3, xs[-1] * 3.2)
+    ax.set_title("Time to first token, s", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("Context (tokens)")
+    leg = ax.legend(loc="upper left", frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    n = a["contexts"][0]["decode_wall_median_s"]["n_runs"]
+    title(fig, t, "Full-GPU-KV baseline, Llama-3.2-1B bf16", f"Median across {n} independent runs; chunked prefill {a['config']['chunk_size']} tokens; attention `{a['attention']['strategy']}`")
+    fig.subplots_adjust(left=0.07, right=0.95, top=0.8, bottom=0.14, wspace=0.28)
+    save(fig, "p1_baseline_latency", t)
+
+
+def fig_p1_layer_split(a: dict[str, Any], t: Theme) -> None:
+    rows = a["contexts"]
+    parts = [
+        ("attention_kernel_s", "Attention kernel"),
+        ("attention_other_s", "Attention: projections, RoPE, cache write"),
+        ("mlp_s", "MLP"),
+        ("other_s", "Norms + residuals"),
+    ]
+    fig, ax = new_fig(t, 9.0, 4.2)
+    labels = [_k(r["ctx_len"]) for r in rows]
+    ys = list(range(len(rows)))
+    left = [0.0] * len(rows)
+    gap = 0.004  # ms of surface gap between stacked segments
+    for (key, label), color in zip(parts, t.series):
+        widths = [r["per_layer_mean_s"][key]["median"] * 1e3 for r in rows]
+        ax.barh(ys, [max(0.0, w - gap) for w in widths], left=left, height=0.6, color=color, label=label)
+        left = [l + w for l, w in zip(left, widths)]
+    for y, total in zip(ys, left):
+        ax.annotate(f"{total:.2f} ms", (total, y), xytext=(5, 0), textcoords="offset points", va="center", fontsize=8.5, color=t.ink2)
+    ax.set_yticks(ys, labels)
+    ax.set_xlabel("Milliseconds per decoder layer, per decode step (GPU timeline)")
+    ax.set_xlim(0, max(left) * 1.18)
+    ax.grid(axis="y", visible=False)
+    ax.invert_yaxis()
+    leg = ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.42), ncol=2, frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "Where a decode layer's time goes", "At batch size 1 most of the layer span is host-side kernel launching, not GPU compute")
+    fig.subplots_adjust(left=0.08, right=0.97, top=0.82, bottom=0.3)
+    save(fig, "p1_layer_split", t)
+
+
+def fig_p1_window(a: dict[str, Any], t: Theme) -> None:
+    w = a.get("window", {})
+    if not w.get("available"):
+        return
+    rows = w["rows"]
+    xs = [r["ctx_len"] for r in rows]
+    fig, ax = new_fig(t)
+    series = [
+        ([r["fetch_all_one_layer_s"] * 1e3 for r in rows], xs, "Fetch the whole layer's KV (PCIe)"),
+        ([r["layer_window_s"] * 1e3 for r in rows], xs, "Measured layer window (Phase 1)"),
+    ]
+    p0 = [(r["ctx_len"], r["phase0_bound_attention_s"] * 1e3) for r in rows if "phase0_bound_attention_s" in r]
+    for (ys, xx, label), color in zip(series, t.series):
+        ax.plot(xx, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=label)
+        ax.annotate(label, (xx[-1], ys[-1]), xytext=(7, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    if p0:
+        px, py = zip(*p0)
+        ax.plot(px, py, color=t.series[2], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="Phase 0 bound: attention op alone")
+        ax.annotate("Phase 0 bound (attention only)", (px[-1], py[-1]), xytext=(7, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log")
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
+    ax.set_xlim(xs[0] / 1.3, xs[-1] * 6)
+    ax.set_xlabel("Context (tokens), Llama-3.2-1B")
+    ax.set_ylabel("Milliseconds per layer")
+    leg = ax.legend(loc="upper left", frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "The prefetch window, measured", "A copy on its own stream overlaps the layer's span; anything that fits under the window is free in wall time")
+    fig.subplots_adjust(left=0.08, right=0.97, top=0.84, bottom=0.12)
+    save(fig, "p1_window", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
+    p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
+    p1 = json.loads(p1_path.read_text(encoding="utf-8")) if p1_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
     for t in (LIGHT, DARK):
         fig_pcie(a, t)
         fig_ladder(a, t)
         fig_design(a, t)
         fig_telemetry(RESULTS_DIR / "phase0" / "feasibility" / "run_1", t)
+        if p1 is not None:
+            fig_p1_latency(p1, t)
+            fig_p1_layer_split(p1, t)
+            fig_p1_window(p1, t)
     print("figures written to", FIG_DIR)
 
 

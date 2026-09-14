@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 
 import torch
@@ -39,6 +40,38 @@ def _bootstrap_ci(values: list[float], iters: int = 2000, seed: int = 0) -> tupl
     n = len(values)
     means = sorted(sum(values[rng.randrange(n)] for _ in range(n)) / n for _ in range(iters))
     return means[int(0.025 * iters)], means[int(0.975 * iters) - 1]
+
+
+def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) -> Divergence:
+    """Same result as `compare`, but consumes policy rows one at a time on their device.
+
+    Each reference row is moved next to the policy row and compared in float64 there, so
+    host memory holds only the reference tensor. The full-tensor version needed several
+    positions x vocab float64 temporaries in RAM, which on a 16 GB laptop was enough to get
+    the Phase 1 quality run killed for low memory.
+    """
+    kl: list[float] = []
+    agree: list[float] = []
+    exact = True
+    n = 0
+    for i, row in enumerate(policy_rows):
+        ref = ref_logp[i].to(row.device, non_blocking=True)
+        exact = exact and bool(torch.equal(ref, row))
+        r, p = ref.double(), row.double()
+        kl.append(float((r.exp() * (r - p)).sum().clamp_min(0.0)))
+        agree.append(float(ref.argmax() == row.argmax()))
+        n += 1
+    if n != ref_logp.shape[0]:
+        raise ValueError(f"policy produced {n} rows, reference has {ref_logp.shape[0]}")
+    return Divergence(
+        positions=n,
+        top1_agreement=sum(agree) / n,
+        mean_kl=sum(kl) / n,
+        max_kl=max(kl),
+        kl_ci95=_bootstrap_ci(kl),
+        top1_ci95=_bootstrap_ci(agree),
+        exact_match=exact,
+    )
 
 
 def compare(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> Divergence:

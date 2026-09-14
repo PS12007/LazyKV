@@ -172,3 +172,20 @@ def test_preallocated_storage_is_finite_even_on_recycled_memory() -> None:
     x = torch.randn(1, 2, 3, 16, device="cuda", dtype=torch.bfloat16)
     layer.update(x, x)
     assert torch.isfinite(layer.keys).all() and torch.isfinite(layer.values).all()
+
+
+@cuda
+def test_streaming_compare_matches_full_compare(tiny_models) -> None:  # noqa: ANN001
+    from lazykv.cache import FullGPUCache
+    from lazykv.generate import teacher_forced_logprobs, teacher_forced_steps
+    from lazykv.quality import compare, compare_stream
+
+    cfg, _, ours = tiny_models
+    ids = torch.randint(0, cfg.vocab_size, (1, 90), device="cuda")
+    ref = teacher_forced_logprobs(ours, FullGPUCache(2, 256), ids[:, :64], ids[:, 64:], chunk_size=16)
+    pol_full = teacher_forced_logprobs(ours, FullGPUCache(2, 256), ids[:, :64], ids[:, 64:], chunk_size=7)
+    streamed = compare_stream(ref, teacher_forced_steps(ours, FullGPUCache(2, 256), ids[:, :64], ids[:, 64:], chunk_size=7))
+    full = compare(ref, pol_full)
+    assert streamed.positions == full.positions == 26
+    assert streamed.top1_agreement == full.top1_agreement and streamed.exact_match == full.exact_match
+    assert abs(streamed.mean_kl - full.mean_kl) < 1e-9
