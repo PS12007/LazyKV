@@ -229,9 +229,13 @@ Supporting experiments:
 
 {{> p1_supporting_provenance }}
 
-## Open decisions for the owner
+## Owner decisions (resolved 2026-09-14)
 
-1. **Accept the two measurement changes:** scoring quality on the memory-efficient kernel, and opting benchmark processes out of Windows power throttling.
-2. **License** for the public repository (still open from Phase 0).
-3. **Weights source:** Phase 1 used the ungated `unsloth` mirror at a pinned revision. Confirm, or provide an HF token for `meta-llama`.
-4. **Latency framing (finding 3).** On the 1B model, residency policies can only add latency versus the full cache. Options: (a) keep the 1B study and report latency as overhead added; (b) also bring in a model where KV attention dominates decode, such as the 3B stress model, which needs `bitsandbytes` NF4 (a new dependency) and was planned for Phase 5; (c) revisit the decode loop's host overhead first (e.g. CUDA graphs). Changing the model or scope is a research-direction change (rule 8), so this is not assumed.
+The owner delegated these calls, asking only to be consulted before any download larger than about 1 GB.
+
+1. **Measurement changes: accepted.** Quality is scored on the memory-efficient kernel, and benchmark processes opt out of Windows power throttling.
+2. **License: MIT** ([`LICENSE`](../../LICENSE)).
+3. **Weights: the ungated `unsloth` mirror** at the pinned revision stays.
+4. **Latency framing: option (a).** The 1B study continues, and latency is reported as the overhead a policy adds over the full cache. The 3B stress model stays scheduled for Phase 5; its weights and `bitsandbytes` need the owner's go-ahead before download. Decode-loop overhead work (option c) is out of scope, because it would shrink the prefetch window the later rungs rely on.
+
+The options considered for (4) were: (a) as above; (b) add a model where KV attention dominates decode now; (c) cut the decode loop's host overhead first, e.g. with CUDA graphs.

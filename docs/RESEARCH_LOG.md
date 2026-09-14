@@ -46,11 +46,10 @@ at 65,536.
 3. **Silent shared-memory spill, cuDNN plan rebuilds, NaN padding, host-RAM OOM kill.** Each was
    caught, fixed with a guard or test, and is described in `docs/phases/PHASE_1.md`.
 
-### Decisions needed from the project owner
+### Owner decisions (resolved 2026-09-14)
 
-- Accept scoring quality on the memory-efficient kernel, and opting benchmark processes out of power throttling.
-- License for the public repository (still open).
-- Confirm the pinned `unsloth` weights mirror.
+- Both measurement changes accepted. License: MIT. Weights: the pinned `unsloth` mirror.
+- Latency is reported as the overhead a policy adds, on the 1B model. The 3B model stays in Phase 5, pending a download go-ahead.
 
 ---
 
