@@ -187,7 +187,10 @@ Every phase ends with the CLAUDE.md gate: tests, one real experiment, `docs/phas
 
 | Risk | Why it matters | Mitigation |
 |---|---|---|
-| Per-layer MLP time is unknown | It sets the real prefetch window in §3.2 | First measurement of Phase 1 |
+| ~~Per-layer MLP time is unknown~~ | It sets the real prefetch window in §3.2 | **Measured in Phase 1:** a layer spans 1.33 ms–1.54 ms (`docs/phases/PHASE_1.md` §1) |
+| Prefetch window is host overhead | At batch 1 most of the layer span is kernel launching; removing it (CUDA graphs) shrinks the window | Re-measure the window whenever the decode loop changes |
+| Fast attention kernel is not bit-repeatable | cuDNN decode returns different bits for identical inputs; it compounds into top-1 flips | Quality scored on the memory-efficient kernel with fixed chunking (Phase 1) |
+| OS host scheduling | Windows power throttling moved the benchmark onto E-cores | Timing processes opt out; recorded in every `metrics.json` (Phase 1) |
 | Gated Llama 3.2 weights | Phase 1 needs weights, not just configs | Owner provides an HF token, or approves the `unsloth` mirror with a checksum note |
 | Transformers' SDPA integration may use default dispatch | Would silently re-create the kernel-selection trap | Custom attention function in `patch_llama.py`, verified against math at startup |
 | 3B stress model needs NF4 | `bitsandbytes` is a new dependency; Blackwell/Windows support unverified | Ask before Phase 5; the 1B study stands alone without it |

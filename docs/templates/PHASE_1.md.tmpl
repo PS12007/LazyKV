@@ -1,0 +1,237 @@
+# Phase 1 gate report: trustworthy baseline
+
+**Status: complete. Stopped at the gate, and Phase 2 has not started.**
+
+Phase 1 built the full-GPU KV reference (policy ladder rung 1) and the instruments every
+later policy is judged with. Two of those instruments failed their own validation on the
+first try. Both failures are reported below with the data that exposed them, because each
+would otherwise have become a false finding in Phase 2.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: runtime correctness against transformers' eager attention on a tiny Llama (chunked prefill, decode, every attention strategy with garbage padding), cache round-trip, bit-exact repeatability of the quality kernel, streaming vs full comparison, doc freshness.
+- [x] **Real experiment run.** `scripts/01_baseline.py`, runs {{ phase1.analysis.run_ids | str }}, launched detached, each from a clean tree (provenance below). Supporting experiments: quality reference, kernel repeatability, latency regimes, core affinity.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## Deliverables (IMPLEMENTATION_PLAN §7)
+
+| # | Scope item | Delivered |
+|---|---|---|
+| 1 | Llama-3.2-1B-Instruct, bf16 | `lazykv/generate.py`; weights from the ungated `{{ phase1.analysis.model.repo }}` mirror, pinned to revision `{{ phase1.analysis.model.revision }}` |
+| 2 | Chunked prefill, last-position logits | `prefill()`; peak allocated memory at 65,536 tokens is {{ phase1.analysis.contexts.4.peak_allocated_bytes.median | iec }} |
+| 3 | Explicit, verified attention kernel | `lazykv/attention.py`: every strategy checked against float32 attention at startup; `{{ phase1.analysis.attention.strategy }}` pinned; bucketed decode keeps cuDNN plans cached |
+| 4 | TTFT, per-token distribution, per-layer split | CUDA events on forward hooks (`lazykv/profiling.py`); results below |
+| 5 | Teacher-forced KL and top-1, validated against itself | `lazykv/quality.py`; the self-comparison **failed** on the first run, see finding 4 |
+| 6 | 4K–32K (64K if it runs), 3 runs, interleaved, telemetry | 4K–65,536 tokens, {{ phase1.analysis.contexts.0.decode_wall_median_s.n_runs }} independent runs, randomized interleaving, nvidia-smi telemetry |
+
+## Headline findings
+
+1. **The full cache runs to 65,536 tokens on this GPU, and decode does not slow down with context.**
+   Decode is {{ phase1.analysis.contexts.0.decode_tokens_per_s.median | .1f }} tokens/s at 4,096 tokens and
+   {{ phase1.analysis.contexts.4.decode_tokens_per_s.median | .1f }} tokens/s at 65,536. Per-token time at
+   65,536 is {{ phase1.analysis.decode_growth.last_over_first | .2f }}× that at 4,096. TTFT at 65,536
+   tokens is {{ phase1.analysis.contexts.4.ttft_warm_s.median | .1f }} s.
+2. **The prefetch window is {{ phase1.analysis.window_summary.window_over_phase0_bound_min | .0f }}–{{ phase1.analysis.window_summary.window_over_phase0_bound_max | .0f }}× wider than Phase 0's lower bound.**
+   A decoder layer spans {{ phase1.analysis.window_summary.layer_window_min_s | ms }}–{{ phase1.analysis.window_summary.layer_window_max_s | ms }}
+   on the GPU timeline at every context length. At the measured pinned H2D bandwidth, the KV of
+   {{ phase1.analysis.window_summary.tokens_fetchable_min | int }}–{{ phase1.analysis.window_summary.tokens_fetchable_max | int }}
+   tokens of one layer fits inside that span: **{{ phase1.analysis.window_summary.longest_ctx_fetchable_fraction | pct0 }} of a
+   65,536-token context**, against {{ phase1.analysis.window_summary.longest_ctx_phase0_fraction | pct }} estimated in Phase 0.
+   **Caveat:** at batch size 1 the span is mostly host-side kernel launching. Anything that
+   removes host overhead (CUDA graphs, fused kernels) shrinks the window along with it.
+3. **Decode is host-bound, so a residency policy cannot beat the full cache on latency here.**
+   The attention kernel's share of a layer grows from {{ phase1.analysis.contexts.0.attention_kernel_share_of_layer | pct0 }}
+   at 4,096 tokens to {{ phase1.analysis.contexts.4.attention_kernel_share_of_layer | pct0 }} at 65,536, yet
+   per-token time stays flat (finding 1). The GPU finishes its work inside the time Python
+   takes to launch it. On Llama-3.2-1B at batch size 1, shrinking the attended KV saves memory,
+   not time. Every later latency comparison measures how much overhead a policy **adds**. This does
+   not change the research question (the GPU budget was already an imposed constraint, per
+   Phase 0), but it rules out a speed-up claim for this model. See the owner decisions below.
+4. **Negative result: the reference was not repeatable on the fast kernel.** Running the
+   same configuration twice gave top-1 agreement of
+   {{ phase1.analysis.quality_first_run_summary.self_repeat_top1.min | pct }}–{{ phase1.analysis.quality_first_run_summary.self_repeat_top1.max | pct }}
+   and mean KL of {{ phase1.analysis.quality_first_run_summary.self_repeat_kl.min | .1e }}–{{ phase1.analysis.quality_first_run_summary.self_repeat_kl.max | .1e }} nats.
+   Cause: cuDNN's single-query SDPA returns different bits for identical inputs on
+   {{ phase1.analysis.kernel_repeatability.by_strategy.cudnn_bucketed.not_repeatable }} of
+   {{ phase1.analysis.kernel_repeatability.by_strategy.cudnn_bucketed.calls | int }} real decode calls.
+   The memory-efficient kernel is bit-repeatable, so quality is now scored on it, and the
+   reference is bit-identical to itself at every measured context (§2).
+5. **Negative result: Windows moved the benchmark onto E-cores.** Under the OS's default power
+   throttling, the detached benchmark process ran slower tokens almost entirely on E-cores:
+   {{ phase1.analysis.latency_regimes.throttling_median_ratio | .2f }}× the median and
+   {{ phase1.analysis.latency_regimes.throttling_p90_ratio | .2f }}× the p90 of the opted-out
+   condition. nvidia-smi polling had no effect ({{ phase1.analysis.latency_regimes.nvidia_smi_median_ratio | .2f }}×).
+   The first baseline mixed both regimes. All timing benchmarks now opt out, and the baseline
+   was rerun.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p1_latency_regimes-dark.png">
+  <img alt="Per-token decode latency over time: tokens on E-cores take about twice as long, and only occur when power throttling is left to the OS" src="../figures/p1_latency_regimes-light.png">
+</picture>
+
+## 1. Baseline
+
+Medians across independent runs, with the range across runs in parentheses. Decode is
+measured after {{ phase1.analysis.config.warmup_steps }} warmup steps over
+{{ phase1.analysis.config.decode_tokens }} tokens, synchronizing once per token as a real
+generator must. Prefill chunk {{ phase1.analysis.config.chunk_size }} tokens.
+
+{{> p1_latency }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p1_baseline_latency-dark.png">
+  <img alt="Decode latency and time to first token versus context length" src="../figures/p1_baseline_latency-light.png">
+</picture>
+
+### Per-layer decode split
+
+CUDA events on forward hooks. Hooks add host overhead, so the profiled steps are separate from
+the timed ones and the overhead ratio is reported.
+
+{{> p1_layer_split }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p1_layer_split-dark.png">
+  <img alt="Stacked bars of per-layer decode time: attention kernel, projections and cache write, MLP, norms" src="../figures/p1_layer_split-light.png">
+</picture>
+
+### The prefetch window (answers IMPLEMENTATION_PLAN §3.2)
+
+Pinned H2D {{ phase1.analysis.window.pinned_h2d_bps | gbps }} and per-transfer overhead from Phase 0;
+{{ phase1.analysis.window.kv_bytes_per_token_per_layer | iec }} of KV per token per layer.
+
+{{> p1_window }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p1_window-dark.png">
+  <img alt="Measured per-layer window versus the Phase 0 attention-only bound and the cost of fetching a whole layer" src="../figures/p1_window-light.png">
+</picture>
+
+### Attention strategies, verified at startup
+
+{{> p1_strategies }}
+
+## 2. Quality harness and its noise floor
+
+Teacher-forced through the decode path, {{ phase1.analysis.quality_reference.config.continuation }}
+continuation positions per context. The reference is the full cache on
+`{{ phase1.analysis.quality_reference.attention.quality_strategy }}`. Confidence intervals are
+bootstraps over positions, which are not independent, so they understate uncertainty.
+
+{{> p1_quality }}
+
+**How to read this.** Only the first row per context is required to be exact, and it is. Every
+other row compares two computations that are each exact up to bf16 rounding, yet they agree
+on top-1 at only {{ phase1.analysis.quality_summary.cross_path_top1.min | pct }}–{{ phase1.analysis.quality_summary.cross_path_top1.max | pct }}
+of positions, with mean KL {{ phase1.analysis.quality_summary.cross_path_kl.min | .1e }}–{{ phase1.analysis.quality_summary.cross_path_kl.max | .1e }}.
+That band is the size of pure numerical noise on this model. **A Phase 2+ policy scored on the
+quality kernel against this reference has a zero noise floor. A policy effect smaller than this
+band would still be invisible if the policy changed kernels or chunking**, so policies must be
+scored with both held fixed.
+
+### What the first run showed
+
+The first quality run used the fast kernel as the reference. Its self-comparison:
+
+{{> p1_quality_first_run }}
+
+### Kernel repeatability, in situ
+
+`scripts/01_kernel_repeatability.py` re-executes every decode attention call of the real model
+on its live inputs, with a prefill-sized call in between, and compares the outputs bit for bit.
+
+{{> p1_kernel_repeatability }}
+
+The differing outputs are all equally accurate. Relative error against float64 attention on
+the same inputs is {{ phase1.analysis.kernel_repeatability.variants.rel_err_vs_float64_min | .1e }}–{{ phase1.analysis.kernel_repeatability.variants.rel_err_vs_float64_max | .1e }}
+across {{ phase1.analysis.kernel_repeatability.variants.n_variant_outputs }} variant outputs, and
+variants differ from each other by at most {{ phase1.analysis.kernel_repeatability.variants.gap_between_variants_rel_max | .1e }}
+of the output's magnitude. This is rounding, not a wrong answer, but 16 layers compound it into
+visible top-1 flips. Before this script existed, scratch diagnostics (not retained, so no numbers
+are quoted) had ruled out the other explanations. Prefill logits were bit-identical between runs.
+Divergence started at a layer whose inputs were bit-identical. It persisted under
+`CUDA_LAUNCH_BLOCKING=1`, with synchronization before or after the call, with fresh input
+allocations, and with `torch.backends.cudnn.deterministic` and `torch.use_deterministic_algorithms`.
+
+## 3. Host scheduling: the latency regimes
+
+`scripts/01_latency_regimes.py`: {{ phase1.analysis.latency_regimes.config.repeats }} repeats of a
+2×2 design at {{ phase1.analysis.latency_regimes.config.ctx | int }} tokens, interleaved and randomized.
+A token counts as slow above {{ phase1.analysis.latency_regimes.slow_threshold_s | ms }}
+({{ phase1.analysis.latency_regimes.slow_threshold_rule }}).
+
+{{> p1_latency_regimes }}
+
+Under OS-managed throttling, the slowdown switched on after the first round and stayed on. Slow tokens ran on
+P-cores {{ phase1.analysis.latency_regimes.factor_throttling.os_default.p_core_fraction_slow_tokens | pct }}
+of the time. CPU frequency did not explain it: "% Processor Performance" had a median of
+{{ phase1.analysis.latency_regimes.cpu_performance_pct.during_slow_tokens.median | .0f }}% during
+slow tokens and {{ phase1.analysis.latency_regimes.cpu_performance_pct.during_fast_tokens.median | .0f }}%
+during fast ones. With throttling opted out, a residual
+{{ phase1.analysis.latency_regimes.factor_throttling.opted_out.slow_fraction | pct }} of tokens are
+still slow, all on P-cores. That residual is unexplained and remains in the reported baseline.
+
+### Effect on the baseline
+
+Same code, same contexts. The only change is the throttling opt-out. The first baseline was not
+uniformly slower. Which conditions landed on E-cores depended on when Windows reclassified the
+process, so the size of the error varied by context and was not always in the same direction. That arbitrariness, not any single
+ratio, is why the first baseline cannot be used.
+
+{{> p1_throttling_before_after }}
+
+### Core affinity, before and after
+
+{{> p1_affinity_before_after }}
+
+## Other incidents fixed during Phase 1 (from commit history; no numbers retained)
+
+- **Silent spill to shared system memory.** Under WDDM, running out of dedicated VRAM does not
+  raise OOM; the first 64K condition ran for minutes partly backed by system RAM. It was stopped
+  and discarded. The allocator is now capped at the dedicated VRAM that is free at startup, and
+  every condition records the process's shared-memory growth, allocator retries, and OOMs.
+- **cuDNN plan rebuilds per decode token.** A growing KV length is a new shape every step, and
+  each cuDNN plan build cost far more than the attention it served. The bucketed strategy pads
+  the KV view to 1,024-token buckets and masks the padding, so a plan is built once per bucket.
+- **NaN logits from recycled memory.** Bucketed decode reads padding rows, and `-inf` masking
+  cannot neutralize NaN. KV storage is now zero-initialized, and a test poisons the allocator to guard it.
+- **Quality run killed for low host RAM.** Comparisons now stream one position at a time on
+  the GPU, and peak working set is recorded per context.
+
+## Deviations from the plan
+
+| Plan said | What happened | Reason |
+|---|---|---|
+| Validate the quality harness against itself; expect exact | Failed on the fast kernel; quality is now scored on `efficient` | cuDNN decode not repeatable (finding 4) |
+| Per-token latency distribution | Reported only after the throttling opt-out; first baseline kept as a negative result | E-core migration (finding 5) |
+| Attention kernel picked by speed at startup | Speed path pinned to `cudnn_bucketed`, quality path pinned to `efficient` | Speed and repeatability favor different kernels |
+| Weights from `meta-llama` or mirror, owner's choice | Ungated `unsloth` mirror, pinned revision | No HF token available |
+
+## Implications for Phase 2
+
+- **Score every policy on the quality kernel with fixed chunking,** or its quality delta is
+  indistinguishable from noise of the size shown in §2.
+- **Opt out of power throttling** in every timing process, and record it in `metrics.json`.
+- **Budget the manager's Python overhead against a {{ phase1.analysis.contexts.0.decode_wall_median_s.median | ms }} token.**
+  Most of that is already host-side launching, and block bookkeeping runs on the same host thread.
+  Since decode is host-bound, manager overhead is the dominant latency cost a policy can add.
+- **The window arithmetic favors layer-ahead prefetch more than Phase 0 assumed,** but it rests
+  on host overhead. If Phase 4 reaches for CUDA graphs to cut decode latency, re-measure the window.
+
+## Run provenance
+
+Baseline runs:
+
+{{> p1_run_provenance }}
+
+Supporting experiments:
+
+{{> p1_supporting_provenance }}
+
+## Open decisions for the owner
+
+1. **Accept the two measurement changes:** scoring quality on the memory-efficient kernel, and opting benchmark processes out of Windows power throttling.
+2. **License** for the public repository (still open from Phase 0).
+3. **Weights source:** Phase 1 used the ungated `unsloth` mirror at a pinned revision. Confirm, or provide an HF token for `meta-llama`.
+4. **Latency framing (finding 3).** On the 1B model, residency policies can only add latency versus the full cache. Options: (a) keep the 1B study and report latency as overhead added; (b) also bring in a model where KV attention dominates decode, such as the 3B stress model, which needs `bitsandbytes` NF4 (a new dependency) and was planned for Phase 5; (c) revisit the decode loop's host overhead first (e.g. CUDA graphs). Changing the model or scope is a research-direction change (rule 8), so this is not assumed.

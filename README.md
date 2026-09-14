@@ -8,7 +8,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-0%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-1%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -26,9 +26,30 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 0 (feasibility) complete.** No runtime code exists yet, by design. Phase
-> 0 measured whether the architecture is viable on this machine before anything was built.
-> See the [gate report](docs/phases/PHASE_0.md).
+> **Status: Phase 1 (trustworthy baseline) complete.** The full-GPU KV reference runs to
+> 65,536 tokens, with a verified attention kernel, a per-layer timing split and a quality
+> harness whose noise floor was measured, found wrong, and fixed. No offloading policy exists yet.
+> Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md).
+
+## Phase 1 in brief
+
+| | |
+|---|---|
+| Decode, full cache, 4,096 → 65,536 tokens | **49.7 → 52.0 tokens/s** (median of 3 runs) |
+| Time to first token at 65,536 tokens | **18.3 s** |
+| Per-layer window a layer-ahead prefetch can overlap | **1.33 ms–1.54 ms**, 3–13× Phase 0's lower bound |
+| One layer's KV fetchable inside that window at 65,536 tokens | **27%** of the context |
+| Attention kernel share of a decode layer, 4,096 → 65,536 tokens | 13% → 38% |
+| cuDNN decode calls not bit-repeatable on identical inputs | **11 of 1,024** → quality is scored on a repeatable kernel |
+| Latency cost of Windows moving the process to E-cores | **2.08×** median → benchmarks opt out of power throttling |
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p1_latency_regimes-dark.png">
+  <img alt="Per-token decode latency over time: tokens on E-cores take about twice as long, and only occur when power throttling is left to the OS" src="docs/figures/p1_latency_regimes-light.png">
+</picture>
+
+Both negative results were caught by validating the instruments before any policy used them.
+Either one would have shown up in Phase 2 as a policy effect that was not there.
 
 ## Phase 0 in one picture
 
@@ -120,7 +141,9 @@ all with confidence intervals.
 | [`docs/RELATED_WORK.md`](docs/RELATED_WORK.md) | Verified survey of 36 systems and papers, and LazyKV's honest delta |
 | [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | Dated findings, including measurement mistakes caught |
 | `scripts/` | Benchmarks, analysis, figures, doc rendering |
-| `harness/` | Stats, telemetry, metrics I/O, template renderer |
+| `lazykv/` | Runtime: preallocated full-GPU cache, verified attention kernels, chunked prefill, profiling, quality metrics |
+| `harness/` | Stats, telemetry, GPU memory guard, host scheduling, metrics I/O, template renderer |
+| [`docs/phases/`](docs/phases) | Gate report per phase |
 | `results/` | Raw `metrics.json` and telemetry for every reported run |
 
 ## How numbers get into the docs
@@ -152,6 +175,22 @@ uv pip install --python .venv\Scripts\python.exe -r requirements.lock `
 
 Use `--quick` for a smoke test. Its output is kept out of the repo and never reported.
 
+## Reproduce Phase 1
+
+Weights download from the Hugging Face mirror on first use (about 2.5 GB). Each command is a
+few minutes; launch detached and poll the log.
+
+```powershell
+.venv\Scripts\python.exe scripts\01_baseline.py --run-id 1 > logs\baseline_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\01_quality.py > logs\quality.log 2>&1
+.venv\Scripts\python.exe scripts\01_kernel_repeatability.py > logs\kernel_repeatability.log 2>&1
+.venv\Scripts\python.exe scripts\01_latency_regimes.py > logs\latency_regimes.log 2>&1
+.venv\Scripts\python.exe scripts\01_affinity.py > logs\affinity.log 2>&1
+.venv\Scripts\python.exe scripts\analyze_phase1.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
 ## Measurement discipline
 
 This is a laptop: it throttles, downclocks within seconds of idling, and retrains its PCIe
@@ -161,7 +200,8 @@ link on demand. Every benchmark therefore:
 - **Interleaves and randomizes** conditions so thermal drift cannot line up with a condition.
 - **Spins up the GPU** before timed GPU regions, and logs temperature, power, clock, and PCIe link state throughout.
 - Times GPU work with **CUDA events** and deliberate synchronization.
-- Checks that every fast kernel is also **correct**, compared against a reference implementation.
+- Checks that every fast kernel is also **correct**, compared against a reference implementation, and checks the quality path is **bit-repeatable**.
+- Opts timing processes out of **Windows power throttling**, which otherwise moves a detached benchmark onto E-cores.
 
 ## Limitations and scope (v1)
 

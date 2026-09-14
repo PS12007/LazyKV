@@ -7,6 +7,53 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-14: Phase 1, trustworthy baseline
+
+### What the baseline says about the design
+
+The per-layer window a layer-ahead prefetch can overlap is
+1.33 ms–1.54 ms
+on the GPU timeline, roughly constant in context length, and
+3–13×
+the attention-only lower bound Phase 0 used. At 65,536 tokens, one layer's KV for
+27% of the context fits
+inside it, against 8.6% in the Phase 0
+estimate. The selective-prefetch design has more room than assumed. But the window is mostly host-side
+kernel launching at batch size 1, so it is a property of today's Python decode loop, not of
+the GPU. The attention kernel is 13%
+of a layer at 4,096 tokens and 38%
+at 65,536.
+
+### Measurement incidents (kept because they would have become findings)
+
+1. **The reference disagreed with itself.** Teacher-forced self-comparison on the cuDNN path gave
+   top-1 agreement 97.3%–99.2%.
+   In situ, cuDNN's single-query SDPA gave more than one bit pattern on
+   11 of
+   1,024 decode calls
+   (`cudnn_bucketed`), and on none for the memory-efficient and math kernels. The variants
+   are equally close to float64. PyTorch's determinism flags do not change it. Quality is now scored on the
+   memory-efficient kernel, where the self-comparison is exact. Without this, every Phase 2
+   policy would have carried a several-percent top-1 "cost" that no policy caused.
+2. **Windows put the benchmark on E-cores.** Per-token latency switched between two regimes
+   for seconds at a time, at every context length, with the GPU at full clock. A 2×2
+   experiment separated it: OS-managed power throttling was
+   2.08× slower at the median, and its slow
+   tokens ran on P-cores 1.0%
+   of the time. nvidia-smi polling made no difference. Benchmarks now opt out, and the baseline was rerun.
+   Without the fix, any policy that changed how long the process looked idle to Windows would have
+   changed its core class too.
+3. **Silent shared-memory spill, cuDNN plan rebuilds, NaN padding, host-RAM OOM kill.** Each was
+   caught, fixed with a guard or test, and is described in `docs/phases/PHASE_1.md`.
+
+### Decisions needed from the project owner
+
+- Accept scoring quality on the memory-efficient kernel, and opting benchmark processes out of power throttling.
+- License for the public repository (still open).
+- Confirm the pinned `unsloth` weights mirror.
+
+---
+
 ## 2026-09-14: Phase 0, feasibility
 
 ### Which design the measurements support

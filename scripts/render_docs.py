@@ -30,6 +30,7 @@ OUTPUTS = {
     "IMPLEMENTATION_PLAN.md.tmpl": "docs/IMPLEMENTATION_PLAN.md",
     "RESEARCH_LOG.md.tmpl": "docs/RESEARCH_LOG.md",
     "PHASE_0.md.tmpl": "docs/phases/PHASE_0.md",
+    "PHASE_1.md.tmpl": "docs/phases/PHASE_1.md",
 }
 
 GENERATED_BANNER = (
@@ -533,28 +534,29 @@ def block_p1_affinity(ctx: Mapping[str, Any]) -> str:
     return table(["Affinity", "Mask", "Decode median", "p10", "p90"], rows, ["---", "---", "---:", "---:", "---:"])
 
 
-def block_p1_quality(ctx: Mapping[str, Any]) -> str:
-    q = lookup(ctx, "phase1.analysis.quality_reference")
-    if not isinstance(q, Mapping):
-        return f"_{NOT_MEASURED}_"
-    label = {
-        "self_repeat": "Reference vs itself (fresh cache)",
-        "chunk_size_2048_vs_256": "Prefill chunk 2048 vs 256",
-        "hf_stock_sdpa_dynamic_cache": "LazyKV path vs stock transformers sdpa + DynamicCache",
-    }
+QUALITY_LABELS = {
+    "self_repeat": "Reference vs itself, fresh cache",
+    "chunk_size_2048_vs_256": "Prefill chunk 2048 vs 256",
+    "hf_stock_sdpa_dynamic_cache": "Stock transformers sdpa + DynamicCache vs reference",
+    "fast_kernel_self_repeat": "`cudnn_bucketed` vs itself (the speed path's floor)",
+    "fast_kernel_vs_quality": "`cudnn_bucketed` vs reference",
+    "kernel_math_vs_quality": "Math kernel vs reference (chunk 256)",
+}
+
+
+def _quality_table(q: Mapping[str, Any], labels: Mapping[str, str]) -> str:
     rows = []
     for r in q["rows"]:
         for name, d in r["comparisons"].items():
-            nice = label.get(name, name.replace("kernel_math_vs_", "Math kernel vs `") + "`" if name.startswith("kernel_math_vs_") else name)
             rows.append(
                 [
                     f"{r['ctx_len']:,}",
-                    nice,
+                    labels.get(name, f"`{name}`"),
                     str(d["positions"]),
                     f"{100 * d['top1_agreement']:.1f}% [{100 * d['top1_ci95'][0]:.1f}, {100 * d['top1_ci95'][1]:.1f}]",
                     f"{d['mean_kl']:.2e} [{d['kl_ci95'][0]:.1e}, {d['kl_ci95'][1]:.1e}]",
                     f"{d['max_kl']:.2e}",
-                    "yes" if d["exact_match"] else "no",
+                    "**yes**" if d["exact_match"] else "no",
                 ]
             )
     return table(
@@ -562,6 +564,164 @@ def block_p1_quality(ctx: Mapping[str, Any]) -> str:
         rows,
         ["---:", "---", "---:", "---:", "---:", "---:", "---"],
     )
+
+
+def block_p1_quality(ctx: Mapping[str, Any]) -> str:
+    q = lookup(ctx, "phase1.analysis.quality_reference")
+    if not isinstance(q, Mapping):
+        return f"_{NOT_MEASURED}_"
+    return _quality_table(q, QUALITY_LABELS)
+
+
+def block_p1_quality_first_run(ctx: Mapping[str, Any]) -> str:
+    """The first run, whose reference was the cuDNN path, restricted to its self-comparison."""
+    q = lookup(ctx, "phase1.analysis.quality_first_run")
+    if not isinstance(q, Mapping):
+        return f"_{NOT_MEASURED}_"
+    only_self = {**q, "rows": [{**r, "comparisons": {"self_repeat": r["comparisons"]["self_repeat"]}} for r in q["rows"]]}
+    return _quality_table(only_self, {"self_repeat": "`cudnn_bucketed` reference vs itself"})
+
+
+def block_p1_kernel_repeatability(ctx: Mapping[str, Any]) -> str:
+    k = lookup(ctx, "phase1.analysis.kernel_repeatability")
+    if not isinstance(k, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            f"{r['ctx_len']:,}",
+            f"`{r['strategy']}`",
+            f"{r['decode_calls_checked']:,}",
+            str(r["repeats_per_call"]),
+            f"**{r['calls_not_repeatable']}**" if r["calls_not_repeatable"] else "0",
+            f"{100 * r['fraction_not_repeatable']:.1f}%",
+            ", ".join(str(x) for x in r["layers_affected"]) or "–",
+        ]
+        for r in k["rows"]
+    ]
+    return table(
+        ["Context", "Strategy", "Decode attention calls", "Re-executions each", "Calls with >1 distinct output", "Share", "Layers affected"],
+        rows,
+        ["---:", "---", "---:", "---:", "---:", "---:", "---"],
+    )
+
+
+def block_p1_latency_regimes(ctx: Mapping[str, Any]) -> str:
+    lr = lookup(ctx, "phase1.analysis.latency_regimes")
+    if not isinstance(lr, Mapping):
+        return f"_{NOT_MEASURED}_"
+    names = {
+        "os_default__nvidia_smi_on": ("OS-managed", "on"),
+        "os_default__nvidia_smi_off": ("OS-managed", "off"),
+        "opted_out__nvidia_smi_on": ("Opted out", "on"),
+        "opted_out__nvidia_smi_off": ("Opted out", "off"),
+    }
+    rows = []
+    for key, (thr, smi) in names.items():
+        c = lr["conditions"].get(key)
+        if c is None:
+            continue
+        rows.append(
+            [
+                thr,
+                smi,
+                f"{c['tokens']:,}",
+                ms(c["decode_wall_s"]["median"]),
+                ms(c["p90_s"]),
+                f"{100 * c['slow_fraction']:.0f}%",
+                ", ".join(f"{100 * x:.0f}%" for x in c["per_block_slow_fraction"]),
+                f"{100 * c['p_core_fraction']:.0f}%",
+                f"{100 * c['p_core_fraction_slow_tokens']:.0f}%" if c["p_core_fraction_slow_tokens"] is not None else "–",
+            ]
+        )
+    return table(
+        ["Power throttling", "nvidia-smi polling", "Tokens", "Median", "p90", "Slow tokens", "Slow share per block, in run order", "Tokens on P-cores", "Slow tokens on P-cores"],
+        rows,
+        ["---", "---", "---:", "---:", "---:", "---:", "---", "---:", "---:"],
+    )
+
+
+def block_p1_throttling_before_after(ctx: Mapping[str, Any]) -> str:
+    t = lookup(ctx, "phase1.analysis.throttling_before_after")
+    if not isinstance(t, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            f"{r['ctx_len']:,}",
+            rng(r["decode_median_os_throttling_s"], ms),
+            rng(r["decode_median_opted_out_s"], ms),
+            f"{r['median_ratio_before_over_after']:.2f}×" if r["median_ratio_before_over_after"] is not None else NOT_MEASURED,
+            rng(r["decode_p90_os_throttling_s"], ms, show_range=False),
+            rng(r["decode_p90_opted_out_s"], ms, show_range=False),
+        ]
+        for r in t["rows"]
+    ]
+    return table(
+        ["Context", "Median, OS-managed (first baseline)", "Median, opted out (reported baseline)", "Before ÷ after", "p90 before", "p90 after"],
+        rows,
+        ["---:"] * 6,
+    )
+
+
+def block_p1_affinity_before_after(ctx: Mapping[str, Any]) -> str:
+    before = lookup(ctx, "phase1.analysis.affinity_os_throttling_summary")
+    after = lookup(ctx, "phase1.analysis.affinity_summary")
+    if not isinstance(after, Mapping):
+        return f"_{NOT_MEASURED}_"
+    names = {"default": "Default scheduling", "p_cores_only": "P-cores only", "e_cores_only": "E-cores only"}
+    rows = []
+    for k, label in names.items():
+        a = after["conditions"][k]
+        b = before["conditions"][k] if isinstance(before, Mapping) else None
+        rows.append(
+            [
+                label,
+                ms(a["median_s"]),
+                f"{ms(a['p10_s'])} / {ms(a['p90_s'])}",
+                ms(b["median_s"]) if b else NOT_MEASURED,
+                f"{ms(b['p10_s'])} / {ms(b['p90_s'])}" if b else NOT_MEASURED,
+            ]
+        )
+    return table(
+        ["Affinity", "Median, throttling opted out", "p10 / p90", "Median, OS-managed (first run)", "p10 / p90"],
+        rows,
+        ["---", "---:", "---:", "---:", "---:"],
+    )
+
+
+def _provenance_row(label: str, p: Mapping[str, Any]) -> list[str]:
+    dirty = p.get("git_dirty")
+    files = p.get("git_dirty_files") or []
+    return [label, p["generated_at_utc"], f"`{(p['git_commit'] or '')[:7]}`", ("yes: " + ", ".join(f"`{f}`" for f in files)) if dirty and files else ("yes" if dirty else "no")]
+
+
+def block_p1_run_provenance(ctx: Mapping[str, Any]) -> str:
+    prov = lookup(ctx, "phase1.analysis.run_provenance")
+    ids = lookup(ctx, "phase1.analysis.run_ids")
+    if not isinstance(prov, list):
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row(str(i), p) for i, p in zip(ids, prov)])
+
+
+def block_p1_supporting_provenance(ctx: Mapping[str, Any]) -> str:
+    names = {
+        "quality_reference": "Quality reference",
+        "kernel_repeatability": "Kernel repeatability",
+        "latency_regimes": "Latency regimes",
+        "affinity": "Core affinity",
+        "quality_reference_first_run": "Quality reference, first run (negative result)",
+        "affinity_os_throttling": "Core affinity, before the throttling fix (negative result)",
+    }
+    rows = []
+    for key, label in names.items():
+        p = lookup(ctx, f"phase1.{key}.provenance")
+        if isinstance(p, Mapping):
+            rows.append(_provenance_row(label, p))
+    before = lookup(ctx, "phase1.analysis.throttling_before_after.run_provenance_before")
+    if isinstance(before, list):
+        rows += [_provenance_row(f"Baseline run {i}, before the throttling fix (negative result)", p) for i, p in enumerate(before, 1)]
+    if not rows:
+        return f"_{NOT_MEASURED}_"
+    return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
