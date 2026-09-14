@@ -9,6 +9,16 @@ from dataclasses import asdict, dataclass
 
 import torch
 
+# Quality is scored on the memory-efficient SDPA kernel, not the fastest one.
+# Phase 1 measured cuDNN's single-query decode returning one of two bit patterns for
+# bit-identical inputs (both equally close to a float64 reference, and unaffected by
+# PyTorch's determinism flags). Through 16 layers that compounds into several percent
+# top-1 flips between two runs of the *same* configuration, a noise floor that would hide
+# the small effects later policies must be judged on. The memory-efficient kernel repeats
+# bit-exactly, so a policy's divergence from the reference is the policy's alone. Residency
+# policies select which KV attention sees; they do not depend on which exact kernel computes it.
+QUALITY_STRATEGY = "efficient"
+
 
 @dataclass(frozen=True)
 class Divergence:

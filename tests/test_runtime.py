@@ -114,6 +114,26 @@ def test_teacher_forced_self_comparison_is_exact(tiny_models) -> None:  # noqa: 
     assert d.positions == 20 and d.top1_agreement == 1.0 and d.mean_kl == 0.0 and d.exact_match
 
 
+@cuda
+def test_quality_strategy_repeats_bit_exactly_between_other_shapes(tiny_models) -> None:  # noqa: ANN001
+    """The quality harness depends on its kernel repeating exactly; guard that choice."""
+    from lazykv.attention import set_strategy_for_test
+    from lazykv.cache import FullGPUCache
+    from lazykv.generate import prefill, teacher_forced_logprobs
+    from lazykv.quality import QUALITY_STRATEGY
+
+    cfg, _, ours = tiny_models
+    ids = torch.randint(0, cfg.vocab_size, (1, 180), device="cuda")
+    restore = set_strategy_for_test(QUALITY_STRATEGY)
+    try:
+        a = teacher_forced_logprobs(ours, FullGPUCache(2, 256), ids[:, :130], ids[:, 130:], chunk_size=32)
+        prefill(ours, FullGPUCache(2, 256), ids[:, :77], chunk_size=77)  # different shapes in between
+        b = teacher_forced_logprobs(ours, FullGPUCache(2, 256), ids[:, :130], ids[:, 130:], chunk_size=32)
+    finally:
+        restore()
+    assert torch.equal(a, b)
+
+
 def test_compare_detects_divergence() -> None:
     from lazykv.quality import compare
 
