@@ -54,6 +54,12 @@ def load(repo: str, revision: str | None = None, strategy: str | None = None, dt
     return LoadedModel(model, tokenizer, repo, revision, chosen, checks)
 
 
+def cache_model_kwargs(cache: Cache) -> dict[str, object]:
+    """Extra model() kwargs a cache asks for (e.g. an attention observer); none for the full cache."""
+    fn = getattr(cache, "model_kwargs", None)
+    return fn() if fn is not None else {}
+
+
 @dataclass
 class PrefillResult:
     last_logits: torch.Tensor  # [vocab], float32, on GPU
@@ -101,13 +107,14 @@ def greedy_decode(model: PreTrainedModel, cache: Cache, first_logits: torch.Tens
     tok = int(torch.argmax(first_logits).item())
     res = DecodeResult(tokens=[tok])
     ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
+    extra = cache_model_kwargs(cache)
     for _ in range(n_tokens):
         ids.fill_(tok)
         start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
         torch.cuda.synchronize()
         t0 = time.perf_counter()
         start.record()
-        out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1)
+        out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1, **extra)
         nxt = torch.argmax(out.logits[0, -1])
         end.record()
         tok = int(nxt.item())  # host sync: the token must reach the host in real generation
@@ -128,11 +135,22 @@ def teacher_forced_steps(model: PreTrainedModel, cache: Cache, context_ids: torc
     positions x vocab tensors in host RAM (a full-vocab float32 row is ~0.5 MB for Llama 3).
     """
     pre = prefill(model, cache, context_ids, chunk_size)
-    yield torch.log_softmax(pre.last_logits, dim=-1)
+    yield from teacher_forced_decode(model, cache, pre.last_logits, continuation_ids)
+
+
+@torch.inference_mode()
+def teacher_forced_decode(model: PreTrainedModel, cache: Cache, first_logits: torch.Tensor, continuation_ids: torch.Tensor) -> Iterator[torch.Tensor]:
+    """The decode half of `teacher_forced_steps`, on a cache that is already prefilled.
+
+    Split out so one exact prefill can be scored under many residency policies: a policy's
+    cache is built from the prefilled KV, and row 0 (from the prefill logits) is shared.
+    """
+    yield torch.log_softmax(first_logits.float(), dim=-1)
     ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
+    extra = cache_model_kwargs(cache)
     for tok in continuation_ids.view(-1).tolist()[:-1]:
         ids.fill_(tok)
-        out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1)
+        out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1, **extra)
         yield torch.log_softmax(out.logits[0, -1].float(), dim=-1)
 
 

@@ -64,6 +64,12 @@ class PreallocatedLayer(CacheLayerMixin):
         # Contents need not be zeroed: only the [:length] prefix is ever read.
         self.length = 0
 
+    def truncate(self, length: int) -> None:
+        """Forget tokens past `length`, so a prefill can be decoded from more than once."""
+        if not 0 <= length <= self.length:
+            raise ValueError(f"cannot truncate length {self.length} to {length}")
+        self.length = length
+
     def resident_bytes(self) -> int:
         if not self.is_initialized:
             return 0
@@ -77,6 +83,10 @@ class FullGPUCache(Cache):
     def __init__(self, num_layers: int, max_len: int) -> None:
         super().__init__(layers=[PreallocatedLayer(max_len) for _ in range(num_layers)])
         self.max_len = max_len
+
+    def truncate(self, length: int) -> None:
+        for layer in self.layers:
+            layer.truncate(length)
 
     def stats(self) -> CacheStats:
         layers = [l for l in self.layers if isinstance(l, PreallocatedLayer)]
