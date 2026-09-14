@@ -35,6 +35,9 @@ def provenance() -> dict[str, Any]:
         # A dirty tree means the numbers may come from uncommitted code; record it rather
         # than refusing to run, since Phase 0 scripts are often edited between runs.
         "git_dirty": bool(status) if status is not None else None,
+        # Which tracked files were modified, so a dirty flag can be judged (e.g. plotting code
+        # edited mid-run vs the benchmark itself) instead of only rerun on suspicion.
+        "git_dirty_files": [line[3:] for line in status.splitlines()] if status else [],
         "argv": sys.argv,
         "python": sys.version.split()[0],
     }
