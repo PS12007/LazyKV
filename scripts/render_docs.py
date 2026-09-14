@@ -421,6 +421,149 @@ def block_run_provenance(ctx: Mapping[str, Any]) -> str:
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
+def block_p1_latency(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase1.analysis.contexts")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in rows_in:
+        rows.append(
+            [
+                f"{r['ctx_len']:,}",
+                rng(r["decode_wall_median_s"], ms),
+                rng(r["decode_wall_p10_s"], ms, show_range=False) + " / " + rng(r["decode_wall_p90_s"], ms, show_range=False),
+                rng(r["decode_tokens_per_s"], lambda v: f"{v:.1f}"),
+                rng(r["ttft_cold_s"], lambda v: f"{v:.2f} s"),
+                rng(r["ttft_warm_s"], lambda v: f"{v:.2f} s"),
+                rng(r["prefill_tokens_per_s_warm"], lambda v: f"{v:,.0f}"),
+                rng(r["peak_allocated_bytes"], iec, show_range=False),
+                rng(r["gpu_resident_kv_bytes"], iec, show_range=False),
+            ]
+        )
+    return table(
+        ["Context", "Decode / token", "p10 / p90", "Tokens/s", "TTFT, plans cold", "TTFT, plans warm", "Prefill tok/s (warm)", "Peak allocated", "GPU KV resident"],
+        rows,
+        ["---:"] * 9,
+    )
+
+
+def block_p1_layer_split(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase1.analysis.contexts")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    us_ = lambda v: f"{v * 1e6:.0f} µs"  # noqa: E731
+    rows = []
+    for r in rows_in:
+        p = r["per_layer_mean_s"]
+        rows.append(
+            [
+                f"{r['ctx_len']:,}",
+                rng(p["layer_s"], us_),
+                rng(p["attention_kernel_s"], us_, show_range=False),
+                rng(p["attention_other_s"], us_, show_range=False),
+                rng(p["mlp_s"], us_, show_range=False),
+                rng(p["other_s"], us_, show_range=False),
+                f"{100 * r['attention_kernel_share_of_layer']:.0f}%" if r.get("attention_kernel_share_of_layer") is not None else NOT_MEASURED,
+                rng(r["profiler_overhead_ratio"], lambda v: f"{v:.2f}×", show_range=False),
+            ]
+        )
+    return table(
+        ["Context", "Whole layer", "Attention kernel", "Attention: proj + RoPE + cache write", "MLP", "Norms + residual", "Kernel share", "Profiler overhead"],
+        rows,
+        ["---:"] * 8,
+    )
+
+
+def block_p1_window(ctx: Mapping[str, Any]) -> str:
+    w = lookup(ctx, "phase1.analysis.window")
+    if not isinstance(w, Mapping) or not w.get("available"):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in w["rows"]:
+        rows.append(
+            [
+                f"{r['ctx_len']:,}",
+                ms(r["layer_window_s"]),
+                ms(r["phase0_bound_attention_s"]) if "phase0_bound_attention_s" in r else "–",
+                f"{r['window_over_phase0_bound']:.1f}×" if "window_over_phase0_bound" in r else "–",
+                f"{r['tokens_fetchable_within_layer']:,.0f}",
+                f"{100 * r['fetchable_fraction_within_layer']:.0f}%",
+                f"{100 * r['phase0_fetchable_fraction']:.1f}%" if r.get("phase0_fetchable_fraction") is not None else "–",
+                ms(r["fetch_all_one_layer_s"]),
+            ]
+        )
+    return table(
+        ["Context", "Measured layer window", "Phase 0 bound (attention only)", "Window ÷ bound", "Tokens fetchable in window", "Share of context", "Phase 0 share", "Fetch whole layer"],
+        rows,
+        ["---:"] * 8,
+    )
+
+
+def block_p1_strategies(ctx: Mapping[str, Any]) -> str:
+    checks = lookup(ctx, "phase1.analysis.attention.checks")
+    if not isinstance(checks, list):
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            f"`{c['strategy']}`",
+            "yes" if c["ok"] else "**no**",
+            f"{c['max_rel_err_decode']:.1e}" if c["max_rel_err_decode"] is not None else "–",
+            f"{c['max_rel_err_prefill']:.1e}" if c["max_rel_err_prefill"] is not None else "–",
+            ms(c["seconds_decode_growing_median"]) if c["seconds_decode_growing_median"] is not None else "–",
+            ms(c["seconds_decode_growing_max"]) if c["seconds_decode_growing_max"] is not None else "–",
+        ]
+        for c in checks
+    ]
+    return table(
+        ["Strategy", "Correct", "Rel. err decode", "Rel. err prefill", "Median call, KV growing by 1/step", "Max call"],
+        rows,
+        ["---", "---", "---:", "---:", "---:", "---:"],
+    )
+
+
+def block_p1_affinity(ctx: Mapping[str, Any]) -> str:
+    a = lookup(ctx, "phase1.analysis.affinity")
+    if not isinstance(a, Mapping):
+        return f"_{NOT_MEASURED}_"
+    names = {"default": "Default scheduling", "p_cores_only": "P-cores only", "e_cores_only": "E-cores only"}
+    rows = [
+        [names[k], f"`{c['mask']}`", ms(c["decode_wall_s"]["median"]), ms(c["p10_s"]), ms(c["p90_s"])]
+        for k, c in a["conditions"].items()
+    ]
+    return table(["Affinity", "Mask", "Decode median", "p10", "p90"], rows, ["---", "---", "---:", "---:", "---:"])
+
+
+def block_p1_quality(ctx: Mapping[str, Any]) -> str:
+    q = lookup(ctx, "phase1.analysis.quality_reference")
+    if not isinstance(q, Mapping):
+        return f"_{NOT_MEASURED}_"
+    label = {
+        "self_repeat": "Reference vs itself (fresh cache)",
+        "chunk_size_2048_vs_256": "Prefill chunk 2048 vs 256",
+        "hf_stock_sdpa_dynamic_cache": "LazyKV path vs stock transformers sdpa + DynamicCache",
+    }
+    rows = []
+    for r in q["rows"]:
+        for name, d in r["comparisons"].items():
+            nice = label.get(name, name.replace("kernel_math_vs_", "Math kernel vs `") + "`" if name.startswith("kernel_math_vs_") else name)
+            rows.append(
+                [
+                    f"{r['ctx_len']:,}",
+                    nice,
+                    str(d["positions"]),
+                    f"{100 * d['top1_agreement']:.1f}% [{100 * d['top1_ci95'][0]:.1f}, {100 * d['top1_ci95'][1]:.1f}]",
+                    f"{d['mean_kl']:.2e} [{d['kl_ci95'][0]:.1e}, {d['kl_ci95'][1]:.1e}]",
+                    f"{d['max_kl']:.2e}",
+                    "yes" if d["exact_match"] else "no",
+                ]
+            )
+    return table(
+        ["Context", "Comparison", "Positions", "Top-1 agreement [95% CI]", "Mean KL, nats [95% CI]", "Max KL", "Bit-identical"],
+        rows,
+        ["---:", "---", "---:", "---:", "---:", "---:", "---"],
+    )
+
+
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
 }

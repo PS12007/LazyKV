@@ -28,6 +28,7 @@ import torch  # noqa: E402
 
 from harness import sysinfo  # noqa: E402
 from harness.corpus import load_tokens  # noqa: E402
+from harness.gpu_memory import allocator_counters, cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from harness.telemetry import TelemetryLogger  # noqa: E402
@@ -40,6 +41,7 @@ log = logging.getLogger("baseline")
 
 MODEL_REPO = "unsloth/Llama-3.2-1B-Instruct"
 MODEL_REVISION = "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+SPILL_THRESHOLD_BYTES = 64 * 2**20
 
 
 def gpu_spinup(seconds: float = 2.0) -> None:
@@ -74,8 +76,9 @@ def pct(xs: list[float], q: float) -> float:
     return s[min(len(s) - 1, max(0, round(q * (len(s) - 1))))]
 
 
-def run_condition(lm, cache: FullGPUCache, tokens: torch.Tensor, ctx: int, args: argparse.Namespace) -> dict[str, Any]:  # noqa: ANN001
+def run_condition(lm, cache: FullGPUCache, tokens: torch.Tensor, ctx: int, args: argparse.Namespace, shared_baseline: int | None = None) -> dict[str, Any]:  # noqa: ANN001
     cache_layers_reset(cache)
+    retries_before = allocator_counters()
     torch.cuda.reset_peak_memory_stats()
     gpu_spinup(1.0)
     ids = tokens[:ctx]
@@ -98,6 +101,11 @@ def run_condition(lm, cache: FullGPUCache, tokens: torch.Tensor, ctx: int, args:
         prof_wall = pdec.wall_s
         per_layer = prof.collect()
 
+    after = process_gpu_memory()
+    retries_after = allocator_counters()
+    spill = None
+    if after.shared_bytes is not None and shared_baseline is not None:
+        spill = after.shared_bytes - shared_baseline
     layers = sorted(per_layer)
     comp = {k: [per_layer[i][k] for i in layers] for k in ("layer_s", "attention_kernel_s", "attention_other_s", "mlp_s", "other_s")}
     free, total = torch.cuda.mem_get_info()
@@ -130,6 +138,12 @@ def run_condition(lm, cache: FullGPUCache, tokens: torch.Tensor, ctx: int, args:
             "host_kv_bytes": stats_after_decode.host_kv_bytes,
             "gpu_residency_fraction": stats_after_decode.gpu_residency_fraction,
             "gpu_allocated_kv_bytes": stats_after_decode.gpu_allocated_kv_bytes,
+            "process_gpu_memory_after": after.to_dict(),
+            "shared_growth_bytes": spill,
+            # A condition that pushed memory into shared system RAM is not a valid measurement.
+            "spilled_to_shared": None if spill is None else spill > SPILL_THRESHOLD_BYTES,
+            "alloc_retries_during": retries_after["num_alloc_retries"] - retries_before["num_alloc_retries"],
+            "ooms_during": retries_after["num_ooms"] - retries_before["num_ooms"],
         },
         "generated_token_ids_head": dec.tokens[:16],
     }
@@ -163,6 +177,9 @@ def main() -> None:
     torch.manual_seed(args.seed)
 
     lm = load(MODEL_REPO, MODEL_REVISION)
+    memory_cap = cap_allocator_to_dedicated()
+    shared_baseline = process_gpu_memory().shared_bytes
+    log.info("allocator cap %s; shared GPU memory baseline %s bytes", memory_cap, shared_baseline)
     log.info("loaded %s, attention strategy %s", MODEL_REPO, lm.attention_strategy)
     tokens = load_tokens(args.book, lm.tokenizer)
     needed = max(contexts) + args.warmup_steps + args.decode_tokens + args.profile_warmup + args.profile_tokens + 8
@@ -174,7 +191,7 @@ def main() -> None:
     cache = FullGPUCache(lm.num_layers, max_len)
 
     # Global warmup: allocate the full cache, JIT cuDNN plans for both prefill and decode.
-    run_condition(lm, cache, tokens, min(contexts), argparse.Namespace(**{**vars(args), "decode_tokens": 8, "profile_tokens": 4}))
+    run_condition(lm, cache, tokens, min(contexts), argparse.Namespace(**{**vars(args), "decode_tokens": 8, "profile_tokens": 4}), shared_baseline)
 
     order_rng = random.Random(args.seed + args.run_id)
     results: list[dict[str, Any]] = []
@@ -184,14 +201,15 @@ def main() -> None:
             order_rng.shuffle(order)
             for ctx in order:
                 tel.mark(f"ctx{ctx}_rep{rep}_start")
-                r = run_condition(lm, cache, tokens, ctx, args)
+                r = run_condition(lm, cache, tokens, ctx, args, shared_baseline)
                 r["repeat"] = rep
                 results.append(r)
                 tel.mark(f"ctx{ctx}_rep{rep}_end")
                 log.info(
-                    "rep %d ctx %d: TTFT %.2fs, decode median %.2f ms (%.1f tok/s), layer %.3f ms, peak alloc %.2f GiB",
+                    "rep %d ctx %d: TTFT %.2fs, decode median %.2f ms (%.1f tok/s), layer %.3f ms, peak alloc %.2f GiB, spill %s, retries %d",
                     rep, ctx, r["ttft_wall_s"], 1e3 * r["decode_wall_s"]["median"], r["decode_tokens_per_s"],
                     1e3 * r["per_layer_mean_s"]["layer_s"], r["memory"]["max_memory_allocated_bytes"] / 2**30,
+                    r["memory"]["spilled_to_shared"], r["memory"]["alloc_retries_during"],
                 )
     write_metrics(
         out_dir,
@@ -206,6 +224,7 @@ def main() -> None:
             },
             "attention": {"strategy": lm.attention_strategy, "bucket": current_strategy()[1], "checks": [c.__dict__ for c in lm.kernel_checks]},
             "cache": {"policy": "full_gpu_preallocated", "max_len": max_len},
+            "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "spill_threshold_bytes": SPILL_THRESHOLD_BYTES},
             "results": results,
             "telemetry": {**tel.summary(), "marks": tel.marks, "csv": "telemetry.csv"},
             "system": {"software_gpu": sysinfo.gpu_and_software()},

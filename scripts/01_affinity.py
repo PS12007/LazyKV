@@ -20,6 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.corpus import load_tokens  # noqa: E402
+from harness.gpu_memory import cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
@@ -79,6 +80,8 @@ def main() -> None:
     conditions = {"default": all_mask, "p_cores_only": masks[max(masks)], "e_cores_only": masks[min(masks)]}
 
     lm = load(MODEL_REPO, MODEL_REVISION)
+    memory_cap = cap_allocator_to_dedicated()
+    shared_baseline = process_gpu_memory().shared_bytes
     tokens = load_tokens("moby_dick", lm.tokenizer)
     cache = FullGPUCache(lm.num_layers, 8192)
     samples: dict[str, list[float]] = {k: [] for k in conditions}
@@ -103,12 +106,14 @@ def main() -> None:
         s = sorted(xs)
         return s[round(q * (len(s) - 1))]
 
+    shared_after = process_gpu_memory().shared_bytes
     write_metrics(
         RESULTS_DIR / "phase1" / "affinity",
         {
             "config": vars(args),
             "core_class_masks": {str(k): hex(v) for k, v in masks.items()},
             "attention_strategy": lm.attention_strategy,
+            "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": shared_after},
             "conditions": {
                 name: {
                     "mask": hex(mask),
