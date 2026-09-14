@@ -151,6 +151,12 @@ def lazykv_attention_forward(
     if timer.enabled:
         end.record()
         timer.events.append((getattr(module, "layer_idx", -1), start, end))
+    # Policies that learn from attention (LRU usage, later H2O scores) need the post-RoPE
+    # query, which only exists here. Transformers forwards extra model() kwargs down to this
+    # function, so the cache is handed in per call rather than registered globally.
+    observer = kwargs.get("lazykv_observer")
+    if observer is not None:
+        observer.observe(int(getattr(module, "layer_idx")), query, key)
     return out.transpose(1, 2).contiguous(), None
 
 
