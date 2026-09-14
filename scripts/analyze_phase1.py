@@ -1,9 +1,14 @@
 """Derive Phase 1 decision quantities from baseline runs, affinity, and quality metrics.
 
 Reads   results/phase1/baseline/run_*/metrics.json
-        results/phase1/affinity/metrics.json          (optional)
-        results/phase1/quality_reference/metrics.json  (optional)
-        results/phase0/analysis/metrics.json           (PCIe numbers for the window arithmetic)
+        results/phase1/affinity/metrics.json                (optional)
+        results/phase1/quality_reference/metrics.json        (optional)
+        results/phase1/kernel_repeatability/metrics.json     (optional)
+        results/phase1/latency_regimes/metrics.json          (optional)
+        results/phase1/baseline_os_throttling/run_*/         (optional: first baseline, before the throttling fix)
+        results/phase1/affinity_os_throttling/               (optional: first affinity run, same)
+        results/phase1/quality_reference_first_run/          (optional: first quality run, cuDNN reference)
+        results/phase0/analysis/metrics.json                 (PCIe numbers for the window arithmetic)
 Writes  results/phase1/analysis/metrics.json
 
 Aggregation: within a run, each (context, repeat) condition gives a median; the run's value
@@ -38,8 +43,26 @@ def load_json(path: Path) -> dict[str, Any] | None:
     return json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
 
 
+def load_runs(name: str) -> list[dict[str, Any]]:
+    return [json.loads(p.read_text(encoding="utf-8")) for p in sorted((RESULTS_DIR / "phase1" / name).glob("run_*/metrics.json"))]
+
+
+def per_run_median(runs: list[dict[str, Any]], ctx: int, metric: str, reps: str = "all") -> list[float]:
+    """One value per run: the median over that run's repeats at this context."""
+    vals = []
+    for run in runs:
+        rows = [r for r in run["results"] if r["ctx_len"] == ctx]
+        if reps == "cold":
+            rows = [r for r in rows if r["repeat"] == 0]
+        elif reps == "warm":
+            rows = [r for r in rows if r["repeat"] > 0]
+        if rows:
+            vals.append(statistics.median(_get(r, metric) for r in rows))
+    return vals
+
+
 def main() -> None:
-    runs = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((RESULTS_DIR / "phase1" / "baseline").glob("run_*/metrics.json"))]
+    runs = load_runs("baseline")
     if not runs:
         raise SystemExit("no baseline runs")
     p0 = load_json(RESULTS_DIR / "phase0" / "analysis" / "metrics.json")
@@ -50,18 +73,8 @@ def main() -> None:
 
     per_ctx = []
     for ctx in contexts:
-        def per_run(metric: str, reps: str = "all") -> list[float]:
-            vals = []
-            for run in runs:
-                rows = [r for r in run["results"] if r["ctx_len"] == ctx]
-                if reps == "cold":
-                    rows = [r for r in rows if r["repeat"] == 0]
-                elif reps == "warm":
-                    rows = [r for r in rows if r["repeat"] > 0]
-                if not rows:
-                    continue
-                vals.append(statistics.median(_get(r, metric) for r in rows))
-            return vals
+        def per_run(metric: str, reps: str = "all", ctx: int = ctx) -> list[float]:
+            return per_run_median(runs, ctx, metric, reps)
 
         decode_median = per_run("decode_wall_s.median")
         row: dict[str, Any] = {
@@ -147,15 +160,137 @@ def main() -> None:
         "affinity": load_json(RESULTS_DIR / "phase1" / "affinity" / "metrics.json"),
         "quality_reference": load_json(RESULTS_DIR / "phase1" / "quality_reference" / "metrics.json"),
     }
-    aff = payload["affinity"]
-    if aff:
-        c = aff["conditions"]
-        payload["affinity_summary"] = {
-            "e_over_default_median": c["e_cores_only"]["decode_wall_s"]["median"] / c["default"]["decode_wall_s"]["median"],
-            "p_over_default_median": c["p_cores_only"]["decode_wall_s"]["median"] / c["default"]["decode_wall_s"]["median"],
+    for key, name in (("affinity_summary", "affinity"), ("affinity_os_throttling_summary", "affinity_os_throttling")):
+        aff = load_json(RESULTS_DIR / "phase1" / name / "metrics.json")
+        if aff:
+            c = aff["conditions"]
+            payload[key] = {
+                "conditions": {k: {"median_s": v["decode_wall_s"]["median"], "p10_s": v["p10_s"], "p90_s": v["p90_s"]} for k, v in c.items()},
+                "e_over_default_median": c["e_cores_only"]["decode_wall_s"]["median"] / c["default"]["decode_wall_s"]["median"],
+                "p_over_default_median": c["p_cores_only"]["decode_wall_s"]["median"] / c["default"]["decode_wall_s"]["median"],
+            }
+
+    # The first baseline ran under Windows' default power throttling, same code otherwise, so
+    # the per-context difference is what leaving host scheduling to the OS cost.
+    throttled = load_runs("baseline_os_throttling")
+    if throttled:
+        rows_t = []
+        for ctx in contexts:
+            before = across(per_run_median(throttled, ctx, "decode_wall_s.median"))
+            after = across(per_run_median(runs, ctx, "decode_wall_s.median"))
+            before_p90 = across(per_run_median(throttled, ctx, "decode_wall_p90_s"))
+            after_p90 = across(per_run_median(runs, ctx, "decode_wall_p90_s"))
+            rows_t.append({
+                "ctx_len": ctx,
+                "decode_median_os_throttling_s": before,
+                "decode_median_opted_out_s": after,
+                "decode_p90_os_throttling_s": before_p90,
+                "decode_p90_opted_out_s": after_p90,
+                "median_ratio_before_over_after": before["median"] / after["median"] if before.get("n_runs") and after.get("n_runs") else None,
+                "p90_ratio_before_over_after": before_p90["median"] / after_p90["median"] if before_p90.get("n_runs") and after_p90.get("n_runs") else None,
+            })
+        payload["throttling_before_after"] = {"run_provenance_before": [r["provenance"] for r in throttled], "rows": rows_t}
+
+    kr = load_json(RESULTS_DIR / "phase1" / "kernel_repeatability" / "metrics.json")
+    if kr:
+        strategies = list(dict.fromkeys(r["strategy"] for r in kr["rows"]))
+        payload["kernel_repeatability"] = {
+            "config": kr["config"],
+            "torch": kr["torch"],
+            "cudnn": kr["cudnn"],
+            "rows": [{k: v for k, v in r.items() if k != "unrepeatable_calls"} for r in kr["rows"]],
+            "by_strategy": {
+                st: {
+                    "calls": sum(r["decode_calls_checked"] for r in kr["rows"] if r["strategy"] == st),
+                    "not_repeatable": sum(r["calls_not_repeatable"] for r in kr["rows"] if r["strategy"] == st),
+                }
+                for st in strategies
+            },
         }
+        # Accuracy of the variants: every distinct output's error against float64, pooled.
+        errs = [e for r in kr["rows"] for u in r["unrepeatable_calls"] for e in u["rel_err_vs_float64"]]
+        gaps = [u["max_abs_between_variants_rel"] for r in kr["rows"] for u in r["unrepeatable_calls"]]
+        payload["kernel_repeatability"]["variants"] = {
+            "n_variant_outputs": len(errs),
+            "rel_err_vs_float64_max": max(errs) if errs else None,
+            "rel_err_vs_float64_min": min(errs) if errs else None,
+            "gap_between_variants_rel_max": max(gaps) if gaps else None,
+            "gap_between_variants_rel_median": statistics.median(gaps) if gaps else None,
+        }
+
+    lr = load_json(RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json")
+    if lr:
+        keep = ("tokens", "decode_wall_s", "p90_s", "slow_fraction", "per_block_slow_fraction", "p_core_fraction", "p_core_fraction_slow_tokens", "p_core_fraction_fast_tokens", "slow_episode_tokens")
+
+        def trim(d: dict[str, Any]) -> dict[str, Any]:
+            return {k: {f: v[f] for f in keep} for k, v in d.items()}
+
+        ft, fs = lr["factor_throttling"], lr["factor_nvidia_smi"]
+        payload["latency_regimes"] = {
+            "config": lr["config"],
+            "provenance": lr["provenance"],
+            "slow_threshold_s": lr["slow_threshold_s"],
+            "fast_reference_p10_s": lr["fast_reference_p10_s"],
+            "slow_threshold_rule": lr["slow_threshold_rule"],
+            "conditions": trim(lr["conditions"]),
+            "factor_throttling": trim(ft),
+            "factor_nvidia_smi": trim(fs),
+            "cpu_performance_pct": {k: v for k, v in lr["cpu_performance_pct"].items() if k != "trace"},
+            "throttling_median_ratio": ft["os_default"]["decode_wall_s"]["median"] / ft["opted_out"]["decode_wall_s"]["median"],
+            "throttling_p90_ratio": ft["os_default"]["p90_s"] / ft["opted_out"]["p90_s"],
+            "nvidia_smi_median_ratio": fs["on"]["decode_wall_s"]["median"] / fs["off"]["decode_wall_s"]["median"],
+        }
+
+    fq = load_json(RESULTS_DIR / "phase1" / "quality_reference_first_run" / "metrics.json")
+    payload["quality_first_run"] = fq
+    q = payload["quality_reference"]
+    floors = ("self_repeat", "fast_kernel_self_repeat")
+    if q:
+        def span(name: str, field: str) -> dict[str, float] | None:
+            vals = [r["comparisons"][name][field] for r in q["rows"] if name in r["comparisons"]]
+            return {"min": min(vals), "max": max(vals)} if vals else None
+
+        cross = [c for r in q["rows"] for n, c in r["comparisons"].items() if n not in floors]
+        payload["quality_summary"] = {
+            "self_repeat_all_exact": all(r["comparisons"]["self_repeat"]["exact_match"] for r in q["rows"]),
+            "contexts": [r["ctx_len"] for r in q["rows"]],
+            "fast_kernel_self_repeat_top1": span("fast_kernel_self_repeat", "top1_agreement"),
+            "fast_kernel_self_repeat_kl": span("fast_kernel_self_repeat", "mean_kl"),
+            "cross_path_top1": {"min": min(c["top1_agreement"] for c in cross), "max": max(c["top1_agreement"] for c in cross)},
+            "cross_path_kl": {"min": min(c["mean_kl"] for c in cross), "max": max(c["mean_kl"] for c in cross)},
+        }
+    if fq:
+        sr = [r["comparisons"]["self_repeat"] for r in fq["rows"]]
+        payload["quality_first_run_summary"] = {
+            "self_repeat_top1": {"min": min(c["top1_agreement"] for c in sr), "max": max(c["top1_agreement"] for c in sr)},
+            "self_repeat_kl": {"min": min(c["mean_kl"] for c in sr), "max": max(c["mean_kl"] for c in sr)},
+            "self_repeat_any_exact": any(c["exact_match"] for c in sr),
+        }
+
+    meds = [(r["ctx_len"], r["decode_wall_median_s"]["median"]) for r in per_ctx]
+    payload["decode_growth"] = {"first_ctx": meds[0][0], "last_ctx": meds[-1][0], "last_over_first": meds[-1][1] / meds[0][1]}
+    payload["window_summary"] = _window_summary(window)
     path = write_metrics(RESULTS_DIR / "phase1" / "analysis", payload)
     print("wrote", path)
+
+
+def _window_summary(window: dict[str, Any]) -> dict[str, Any] | None:
+    if not window.get("available"):
+        return None
+    rows = window["rows"]
+    last = rows[-1]
+    with_bound = [r for r in rows if "window_over_phase0_bound" in r]
+    return {
+        "layer_window_min_s": min(r["layer_window_s"] for r in rows),
+        "layer_window_max_s": max(r["layer_window_s"] for r in rows),
+        "tokens_fetchable_min": min(r["tokens_fetchable_within_layer"] for r in rows),
+        "tokens_fetchable_max": max(r["tokens_fetchable_within_layer"] for r in rows),
+        "longest_ctx": last["ctx_len"],
+        "longest_ctx_fetchable_fraction": last["fetchable_fraction_within_layer"],
+        "longest_ctx_phase0_fraction": last.get("phase0_fetchable_fraction"),
+        "window_over_phase0_bound_min": min((r["window_over_phase0_bound"] for r in with_bound), default=None),
+        "window_over_phase0_bound_max": max((r["window_over_phase0_bound"] for r in with_bound), default=None),
+    }
 
 
 def _get(row: dict[str, Any], dotted: str) -> Any:
