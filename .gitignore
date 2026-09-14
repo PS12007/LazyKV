@@ -22,3 +22,6 @@ results/**/tmp/
 Thumbs.db
 .vscode/
 .idea/
+
+# Smoke-test outputs are never reported
+results/**/*_quick/
