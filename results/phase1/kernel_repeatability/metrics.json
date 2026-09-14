@@ -1,0 +1,357 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-14T18:28:51+00:00",
+    "git_commit": "e22dc3e967e727c8a5ba368a63cc30f01adc18cd",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\01_kernel_repeatability.py"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "contexts": "4096,16384",
+    "steps": 32,
+    "repeats": 4,
+    "book": "pride_and_prejudice"
+  },
+  "model": {
+    "repo": "unsloth/Llama-3.2-1B-Instruct",
+    "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+  },
+  "bucket": 1024,
+  "torch": "2.12.0+cu130",
+  "cudnn": 92000,
+  "rows": [
+    {
+      "strategy": "cudnn_bucketed",
+      "ctx_len": 4096,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 7,
+      "fraction_not_repeatable": 0.013671875,
+      "layers_affected": [
+        4,
+        8,
+        11,
+        13,
+        14
+      ],
+      "max_rel_err_vs_float64_any_variant": 0.0027506064106097667,
+      "min_rel_err_vs_float64_any_variant": 0.001996349654387281,
+      "max_abs_between_variants_rel": 0.00039089062601005,
+      "unrepeatable_calls": [
+        {
+          "decode_step": 0,
+          "layer": 8,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0020369807411904704,
+            0.0020369807411904704
+          ],
+          "max_abs_between_variants_rel": 0.00039089062601005
+        },
+        {
+          "decode_step": 0,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.001996349654387281,
+            0.001996349654387281
+          ],
+          "max_abs_between_variants_rel": 7.614567250775427e-05
+        },
+        {
+          "decode_step": 0,
+          "layer": 14,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0027506064106097667,
+            0.0027506064106097667
+          ],
+          "max_abs_between_variants_rel": 0.00021062124304514036
+        },
+        {
+          "decode_step": 18,
+          "layer": 11,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.002628251919086045,
+            0.002628251919086045
+          ],
+          "max_abs_between_variants_rel": 0.0003218747360405418
+        },
+        {
+          "decode_step": 20,
+          "layer": 4,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0021579705389556717,
+            0.0021579705389556717
+          ],
+          "max_abs_between_variants_rel": 0.00014791700895434062
+        },
+        {
+          "decode_step": 21,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0024238299636727954,
+            0.0024238299636727954
+          ],
+          "max_abs_between_variants_rel": 3.985202211287423e-05
+        },
+        {
+          "decode_step": 31,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0024651908759545085,
+            0.0024651908759545085
+          ],
+          "max_abs_between_variants_rel": 0.0001051242859559516
+        }
+      ]
+    },
+    {
+      "strategy": "cudnn",
+      "ctx_len": 4096,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 4,
+      "fraction_not_repeatable": 0.0078125,
+      "layers_affected": [
+        1,
+        8,
+        13
+      ],
+      "max_rel_err_vs_float64_any_variant": 0.0031023749468221174,
+      "min_rel_err_vs_float64_any_variant": 0.0017349767266343053,
+      "max_abs_between_variants_rel": 0.0012293804140498762,
+      "unrepeatable_calls": [
+        {
+          "decode_step": 0,
+          "layer": 8,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0020369807411904704,
+            0.0020369807411904704
+          ],
+          "max_abs_between_variants_rel": 0.00039089062601005
+        },
+        {
+          "decode_step": 2,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.002108614581551464,
+            0.002108614581551464
+          ],
+          "max_abs_between_variants_rel": 0.0012293804140498762
+        },
+        {
+          "decode_step": 12,
+          "layer": 1,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0017349767266343053,
+            0.0017349767266343053
+          ],
+          "max_abs_between_variants_rel": 0.000258886157487906
+        },
+        {
+          "decode_step": 24,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0031023749468221174,
+            0.0031023749468221174
+          ],
+          "max_abs_between_variants_rel": 0.00020768700521941205
+        }
+      ]
+    },
+    {
+      "strategy": "efficient",
+      "ctx_len": 4096,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 0,
+      "fraction_not_repeatable": 0.0,
+      "layers_affected": [],
+      "max_rel_err_vs_float64_any_variant": null,
+      "min_rel_err_vs_float64_any_variant": null,
+      "max_abs_between_variants_rel": null,
+      "unrepeatable_calls": []
+    },
+    {
+      "strategy": "math",
+      "ctx_len": 4096,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 0,
+      "fraction_not_repeatable": 0.0,
+      "layers_affected": [],
+      "max_rel_err_vs_float64_any_variant": null,
+      "min_rel_err_vs_float64_any_variant": null,
+      "max_abs_between_variants_rel": null,
+      "unrepeatable_calls": []
+    },
+    {
+      "strategy": "cudnn_bucketed",
+      "ctx_len": 16384,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 4,
+      "fraction_not_repeatable": 0.0078125,
+      "layers_affected": [
+        2,
+        4,
+        10,
+        13
+      ],
+      "max_rel_err_vs_float64_any_variant": 0.0035734128976581576,
+      "min_rel_err_vs_float64_any_variant": 0.001834567229509914,
+      "max_abs_between_variants_rel": 0.0004364924356388223,
+      "unrepeatable_calls": [
+        {
+          "decode_step": 10,
+          "layer": 10,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.00203297527875494,
+            0.00203297527875494
+          ],
+          "max_abs_between_variants_rel": 3.448626704566199e-05
+        },
+        {
+          "decode_step": 13,
+          "layer": 13,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.001834567229509914,
+            0.001834567229509914
+          ],
+          "max_abs_between_variants_rel": 0.00024602686897386936
+        },
+        {
+          "decode_step": 26,
+          "layer": 2,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0035734128976581576,
+            0.0035734128976581576
+          ],
+          "max_abs_between_variants_rel": 0.0004364924356388223
+        },
+        {
+          "decode_step": 31,
+          "layer": 4,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0030548274813876116,
+            0.0030548274813876116
+          ],
+          "max_abs_between_variants_rel": 2.5116557178520324e-05
+        }
+      ]
+    },
+    {
+      "strategy": "cudnn",
+      "ctx_len": 16384,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 4,
+      "fraction_not_repeatable": 0.0078125,
+      "layers_affected": [
+        2,
+        6,
+        7,
+        14
+      ],
+      "max_rel_err_vs_float64_any_variant": 0.0035734128976581576,
+      "min_rel_err_vs_float64_any_variant": 0.0022784254537343705,
+      "max_abs_between_variants_rel": 0.0005469604462708035,
+      "unrepeatable_calls": [
+        {
+          "decode_step": 5,
+          "layer": 6,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.003061411118854993,
+            0.003061411118854993
+          ],
+          "max_abs_between_variants_rel": 0.00043235405651674785
+        },
+        {
+          "decode_step": 8,
+          "layer": 14,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.002900370302482364,
+            0.002900370302482364
+          ],
+          "max_abs_between_variants_rel": 0.00024791235076622936
+        },
+        {
+          "decode_step": 23,
+          "layer": 7,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0022784254537343705,
+            0.0022784254537343705
+          ],
+          "max_abs_between_variants_rel": 0.0005469604462708035
+        },
+        {
+          "decode_step": 26,
+          "layer": 2,
+          "distinct_outputs": 2,
+          "rel_err_vs_float64": [
+            0.0035734128976581576,
+            0.0035734128976581576
+          ],
+          "max_abs_between_variants_rel": 0.0004364924356388223
+        }
+      ]
+    },
+    {
+      "strategy": "efficient",
+      "ctx_len": 16384,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 0,
+      "fraction_not_repeatable": 0.0,
+      "layers_affected": [],
+      "max_rel_err_vs_float64_any_variant": null,
+      "min_rel_err_vs_float64_any_variant": null,
+      "max_abs_between_variants_rel": null,
+      "unrepeatable_calls": []
+    },
+    {
+      "strategy": "math",
+      "ctx_len": 16384,
+      "decode_calls_checked": 512,
+      "repeats_per_call": 4,
+      "calls_not_repeatable": 0,
+      "fraction_not_repeatable": 0.0,
+      "layers_affected": [],
+      "max_rel_err_vs_float64_any_variant": null,
+      "min_rel_err_vs_float64_any_variant": null,
+      "max_abs_between_variants_rel": null,
+      "unrepeatable_calls": []
+    }
+  ],
+  "memory_guard": {
+    "allocator_cap": {
+      "free_bytes_at_cap": 4834983936,
+      "total_bytes": 8546484224,
+      "margin_bytes": 268435456,
+      "fraction": 0.8285317731138189,
+      "limit_bytes": 7081033728
+    },
+    "shared_baseline_bytes": 81788928,
+    "shared_after_bytes": 81788928
+  }
+}

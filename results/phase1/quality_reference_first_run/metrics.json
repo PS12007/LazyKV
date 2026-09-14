@@ -1,0 +1,229 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-14T16:32:50+00:00",
+    "git_commit": "f2992fc616b1016224c2688e6cf55ed9e2944d71",
+    "git_dirty": true,
+    "argv": [
+      "scripts/01_quality.py"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "contexts": "4096,16384,32768",
+    "continuation": 256,
+    "book": "pride_and_prejudice",
+    "hf_max_ctx": 16384
+  },
+  "model": {
+    "repo": "unsloth/Llama-3.2-1B-Instruct",
+    "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+  },
+  "attention": {
+    "strategy": "cudnn_bucketed",
+    "bucket": 1024
+  },
+  "kl_direction": "KL(first || second), nats, per position; CI is a percentile bootstrap over positions (positions are not independent, so it understates uncertainty)",
+  "rows": [
+    {
+      "ctx_len": 4096,
+      "continuation": 256,
+      "comparisons": {
+        "self_repeat": {
+          "positions": 256,
+          "top1_agreement": 0.97265625,
+          "mean_kl": 0.0007553474895203505,
+          "max_kl": 0.004178785996599855,
+          "kl_ci95": [
+            0.0006694790883920082,
+            0.0008413349430770531
+          ],
+          "top1_ci95": [
+            0.94921875,
+            0.9921875
+          ],
+          "exact_match": false
+        },
+        "hf_stock_sdpa_dynamic_cache": {
+          "positions": 256,
+          "top1_agreement": 0.97265625,
+          "mean_kl": 0.0010436325269803516,
+          "max_kl": 0.012928757379484995,
+          "kl_ci95": [
+            0.0009157282082131542,
+            0.00119275926341851
+          ],
+          "top1_ci95": [
+            0.953125,
+            0.9921875
+          ],
+          "exact_match": false
+        },
+        "chunk_size_2048_vs_256": {
+          "positions": 256,
+          "top1_agreement": 0.96875,
+          "mean_kl": 0.0011601726110445475,
+          "max_kl": 0.016623922464262492,
+          "kl_ci95": [
+            0.0010037721335098449,
+            0.001338402912099811
+          ],
+          "top1_ci95": [
+            0.9453125,
+            0.98828125
+          ],
+          "exact_match": false
+        },
+        "kernel_math_vs_cudnn_bucketed": {
+          "positions": 256,
+          "top1_agreement": 0.96484375,
+          "mean_kl": 0.000984043638534578,
+          "max_kl": 0.004500886535161954,
+          "kl_ci95": [
+            0.0008883260444824628,
+            0.0010837463628904983
+          ],
+          "top1_ci95": [
+            0.94140625,
+            0.984375
+          ],
+          "exact_match": false
+        }
+      },
+      "wall_s": 43.57400869999947,
+      "peak_host_working_set_bytes": 3973795840
+    },
+    {
+      "ctx_len": 16384,
+      "continuation": 256,
+      "comparisons": {
+        "self_repeat": {
+          "positions": 256,
+          "top1_agreement": 0.9921875,
+          "mean_kl": 0.0005303976456414444,
+          "max_kl": 0.00501881545839135,
+          "kl_ci95": [
+            0.00044527961430881994,
+            0.0006187002565104868
+          ],
+          "top1_ci95": [
+            0.98046875,
+            1.0
+          ],
+          "exact_match": false
+        },
+        "hf_stock_sdpa_dynamic_cache": {
+          "positions": 256,
+          "top1_agreement": 0.98046875,
+          "mean_kl": 0.0011251947151355206,
+          "max_kl": 0.0063573634200629345,
+          "kl_ci95": [
+            0.0009930413590493294,
+            0.0012590601889251858
+          ],
+          "top1_ci95": [
+            0.9609375,
+            0.99609375
+          ],
+          "exact_match": false
+        },
+        "chunk_size_2048_vs_256": {
+          "positions": 256,
+          "top1_agreement": 0.98828125,
+          "mean_kl": 0.001125391483783849,
+          "max_kl": 0.0076590939985276135,
+          "kl_ci95": [
+            0.0009894813320440819,
+            0.0012755389591677102
+          ],
+          "top1_ci95": [
+            0.97265625,
+            1.0
+          ],
+          "exact_match": false
+        },
+        "kernel_math_vs_cudnn_bucketed": {
+          "positions": 256,
+          "top1_agreement": 0.984375,
+          "mean_kl": 0.001163345174627096,
+          "max_kl": 0.012263178881651009,
+          "kl_ci95": [
+            0.0010234062123850194,
+            0.0013263842942239457
+          ],
+          "top1_ci95": [
+            0.96875,
+            0.99609375
+          ],
+          "exact_match": false
+        }
+      },
+      "wall_s": 82.90101729999878,
+      "peak_host_working_set_bytes": 3973795840
+    },
+    {
+      "ctx_len": 32768,
+      "continuation": 256,
+      "comparisons": {
+        "self_repeat": {
+          "positions": 256,
+          "top1_agreement": 0.98046875,
+          "mean_kl": 0.000765633731888467,
+          "max_kl": 0.005384789228871048,
+          "kl_ci95": [
+            0.0006687118806466691,
+            0.0008694674209616357
+          ],
+          "top1_ci95": [
+            0.9609375,
+            0.99609375
+          ],
+          "exact_match": false
+        },
+        "chunk_size_2048_vs_256": {
+          "positions": 256,
+          "top1_agreement": 0.97265625,
+          "mean_kl": 0.0013619321015247514,
+          "max_kl": 0.008584217763723694,
+          "kl_ci95": [
+            0.0011983525430731706,
+            0.0015417146107940367
+          ],
+          "top1_ci95": [
+            0.94921875,
+            0.9921875
+          ],
+          "exact_match": false
+        },
+        "kernel_math_vs_cudnn_bucketed": {
+          "positions": 256,
+          "top1_agreement": 0.98046875,
+          "mean_kl": 0.001244846449586851,
+          "max_kl": 0.00898941884591353,
+          "kl_ci95": [
+            0.0010976118058121489,
+            0.0013974321093443104
+          ],
+          "top1_ci95": [
+            0.9609375,
+            0.99609375
+          ],
+          "exact_match": false
+        }
+      },
+      "wall_s": 132.7931607999999,
+      "peak_host_working_set_bytes": 3973795840
+    }
+  ],
+  "memory_guard": {
+    "allocator_cap": {
+      "free_bytes_at_cap": 4834983936,
+      "total_bytes": 8546484224,
+      "margin_bytes": 268435456,
+      "fraction": 0.8285317731138189,
+      "limit_bytes": 7081033728
+    },
+    "shared_baseline_bytes": 81788928,
+    "shared_after_bytes": 81788928
+  }
+}
