@@ -1,8 +1,8 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-14T15:20:05+00:00",
-    "git_commit": "eebdc345a521433a661ca9ee7cd81f007f91fdc4",
+    "generated_at_utc": "2026-09-14T15:24:28+00:00",
+    "git_commit": "10a11812ff28f94252ac3a97f998f8632c126da2",
     "git_dirty": true,
     "argv": [
       "scripts/analyze_phase0.py"
@@ -1810,6 +1810,14 @@
     "knee80_tokens_per_layer": 193.02873580192497,
     "block_64tok_fraction_of_asymptote": 0.434040881866708,
     "pcie_over_host_memcpy": 3.409255889206204,
+    "fetch_over_attention_long_ctx": {
+      "min_tokens_per_layer": 16384,
+      "max_tokens_per_layer": 262144,
+      "min": 11.483898982402907,
+      "max": 13.31734544263652,
+      "fetchable_fraction_min": 0.07479560180155125,
+      "fetchable_fraction_max": 0.08591595272371923
+    },
     "rows": [
       {
         "tokens_per_layer": 256,

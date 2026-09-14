@@ -319,6 +319,16 @@ def design_arithmetic(
             row["cpu_over_fetch_with_gather"] = c / row["fetch_with_1thread_gather_s"]
         rows.append(row)
     knees = pcie["pinned_h2d"]
+    # Long-context regime only: at 4K tokens attention is dominated by kernel launch cost.
+    long_ctx = [r for r in rows if "fetch_over_gpu_attention" in r and r["tokens_per_layer"] >= 16_384]
+    fetch_vs_attn = {
+        "min_tokens_per_layer": min(r["tokens_per_layer"] for r in long_ctx),
+        "max_tokens_per_layer": max(r["tokens_per_layer"] for r in long_ctx),
+        "min": min(r["fetch_over_gpu_attention"] for r in long_ctx),
+        "max": max(r["fetch_over_gpu_attention"] for r in long_ctx),
+        "fetchable_fraction_min": min(r["fetchable_fraction_within_gpu_attention"] for r in long_ctx),
+        "fetchable_fraction_max": max(r["fetchable_fraction_within_gpu_attention"] for r in long_ctx),
+    }
     return {
         "available": True,
         "model": model["key"],
@@ -332,6 +342,7 @@ def design_arithmetic(
         "knee80_tokens_per_layer": knees["knee80_bytes"]["median"] / bytes_per_token_layer_bf16,
         "block_64tok_fraction_of_asymptote": _effective_fraction(64 * bytes_per_token_layer_bf16, t0, B),
         "pcie_over_host_memcpy": B / memcpy,
+        "fetch_over_attention_long_ctx": fetch_vs_attn,
         "rows": rows,
         "caveats": [
             "CPU partial attention measured in float32 with random KV; bf16 storage would add a cast.",
