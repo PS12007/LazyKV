@@ -1,6 +1,7 @@
-"""Phase 0 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Phase 0 and Phase 1 figures, rendered in light and dark variants for the README's <picture> tags.
 
-Reads results/phase0/analysis/metrics.json and run_1 telemetry. Writes docs/figures/*.png.
+Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json
+and results/phase1/latency_regimes/metrics.json. Writes docs/figures/*.png.
 Palette: validated categorical slots (fixed order), recessive hairline grid, 2px lines.
 """
 
@@ -246,7 +247,9 @@ def fig_p1_latency(a: dict[str, Any], t: Theme) -> None:
     ax.annotate("median", (xs[-1], med[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     ax.annotate("p10–p90", (xs[-1], p90[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     ax.set_xscale("log", base=2)
+    ax.set_xticks(xs)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
     ax.set_ylim(bottom=0)
     ax.set_xlim(xs[0] / 1.3, xs[-1] * 2.2)
     ax.set_title("Decode, ms per token", color=t.ink, fontsize=10, loc="left")
@@ -258,11 +261,12 @@ def fig_p1_latency(a: dict[str, Any], t: Theme) -> None:
     warm = [r["ttft_warm_s"]["median"] for r in rows]
     for ys, label, color in ((cold, "cuDNN plans cold", t.series[1]), (warm, "plans warm", t.series[0])):
         ax.plot(xs, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=label)
-        ax.annotate(label, (xs[-1], ys[-1]), xytext=(6, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     ax.set_xscale("log", base=2)
+    ax.set_xticks(xs)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
     ax.set_ylim(bottom=0)
-    ax.set_xlim(xs[0] / 1.3, xs[-1] * 3.2)
+    ax.set_xlim(xs[0] / 1.3, xs[-1] * 1.3)
     ax.set_title("Time to first token, s", color=t.ink, fontsize=10, loc="left")
     ax.set_xlabel("Context (tokens)")
     leg = ax.legend(loc="upper left", frameon=False, fontsize=8.5)
@@ -323,11 +327,13 @@ def fig_p1_window(a: dict[str, Any], t: Theme) -> None:
         ax.annotate(label, (xx[-1], ys[-1]), xytext=(7, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     if p0:
         px, py = zip(*p0)
-        ax.plot(px, py, color=t.series[2], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="Phase 0 bound: attention op alone")
+        ax.plot(px, py, color=t.series[2], linewidth=2, linestyle=(0, (4, 3)), marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="Phase 0 bound: attention op alone (measured contexts only)")
         ax.annotate("Phase 0 bound (attention only)", (px[-1], py[-1]), xytext=(7, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
+    ax.set_xticks(xs)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: _k(v)))
+    ax.xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
     ax.set_xlim(xs[0] / 1.3, xs[-1] * 6)
     ax.set_xlabel("Context (tokens), Llama-3.2-1B")
@@ -340,10 +346,55 @@ def fig_p1_window(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p1_window", t)
 
 
+def fig_p1_regimes(lr: dict[str, Any], t: Theme) -> None:
+    """Every timed token of the latency-regime experiment on one timeline, by core class."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    p_mask = int(lr["core_class_masks"][str(max(int(k) for k in lr["core_class_masks"]))], 16)
+    fig, ax = new_fig(t, 9.0, 4.6)
+    blocks = sorted(lr["blocks"], key=lambda b: b["t_end_s"][0])
+    t_start = blocks[0]["t_end_s"][0]
+    for b in blocks:
+        x0, x1 = b["t_end_s"][0] - t_start, b["t_end_s"][-1] - t_start
+        if b["throttling"] == "opted_out":
+            ax.axvspan(x0, x1, color=t.grid, linewidth=0, zorder=0)
+    pts = {True: ([], []), False: ([], [])}
+    for b in blocks:
+        for w, ts, c in zip(b["wall_s"], b["t_end_s"], b["processor"]):
+            xs, ys = pts[bool(p_mask >> c & 1)]
+            xs.append(ts - t_start)
+            ys.append(w * 1e3)
+    # Shape as well as color, so core class never rides on color alone.
+    for on_p, color, marker, label in ((True, t.series[0], "o", "P-core"), (False, t.series[1], "^", "E-core")):
+        xs, ys = pts[on_p]
+        ax.scatter(xs, ys, s=7, color=color, marker=marker, linewidths=0, alpha=0.8, zorder=2)
+    ax.axhline(lr["slow_threshold_s"] * 1e3, color=t.muted, linewidth=1, linestyle=(0, (4, 3)), zorder=1)
+    ax.annotate("slow-token threshold", (0, lr["slow_threshold_s"] * 1e3), xytext=(4, 4), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    ax.set_ylim(0, max(max(pts[True][1], default=0), max(pts[False][1], default=0)) * 1.08)
+    ax.set_xlim(left=0)
+    ax.set_xlabel("Seconds since the first timed token")
+    ax.set_ylabel("Decode wall time per token, ms")
+    handles = [
+        Line2D([], [], linestyle="none", marker="o", markersize=6, color=t.series[0], label="Thread on a P-core"),
+        Line2D([], [], linestyle="none", marker="^", markersize=6, color=t.series[1], label="Thread on an E-core"),
+        Patch(facecolor=t.grid, edgecolor="none", label="Power throttling opted out"),
+        Patch(facecolor=t.surface, edgecolor=t.axis, linewidth=0.6, label="Power throttling OS-managed"),
+    ]
+    leg = ax.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, -0.36), ncol=4, frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "Windows moved the benchmark onto E-cores", f"Llama-3.2-1B decode at {lr['config']['ctx']:,} tokens; {len(blocks)} interleaved blocks; nvidia-smi polling on in half of each kind")
+    fig.subplots_adjust(left=0.08, right=0.97, top=0.84, bottom=0.25)
+    save(fig, "p1_latency_regimes", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
     p1 = json.loads(p1_path.read_text(encoding="utf-8")) if p1_path.exists() else None
+    lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
+    lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
     for t in (LIGHT, DARK):
         fig_pcie(a, t)
@@ -354,6 +405,8 @@ def main() -> None:
             fig_p1_latency(p1, t)
             fig_p1_layer_split(p1, t)
             fig_p1_window(p1, t)
+        if lr is not None:
+            fig_p1_regimes(lr, t)
     print("figures written to", FIG_DIR)
 
 
