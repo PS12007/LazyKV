@@ -84,7 +84,9 @@ def probe(lm, tokens: torch.Tensor, strategy: str, ctx: int, steps: int, repeats
     restore = set_strategy_for_test(strategy)
     try:
         max_len = -(-(ctx + steps + 8) // bucket) * bucket
-        teacher_forced_logprobs(lm.model, FullGPUCache(lm.num_layers, max_len), tokens[:ctx], tokens[ctx : ctx + steps + 1], 2048)
+        # Math prefill materializes chunk x ctx scores (about 4 GiB for a 2048 chunk at 16K).
+        chunk = 256 if strategy == "math" else 2048
+        teacher_forced_logprobs(lm.model, FullGPUCache(lm.num_layers, max_len), tokens[:ctx], tokens[ctx : ctx + steps + 1], chunk)
     finally:
         attention.attend = attend
         restore()
