@@ -161,8 +161,14 @@ class BlockPoolLayer(CacheLayerMixin):
         groups = n_q // n_kv
         live = key.shape[-2]
         # Scores for the sealed slots only need the full softmax denominator, which spans the tail too.
-        q = query.float().view(1, n_kv, groups, 1, d)
-        scores = (q @ key.float().unsqueeze(2).transpose(-1, -2)) / math.sqrt(d)  # [1, kv, g, 1, live]
+        # Cost matters here because it scales with resident KV. The first Phase 2 speed run found
+        # this observer copying the resident keys every layer every token: a float32 cast of the
+        # whole cache, and a matmul whose broadcast over the query-group dimension expanded the
+        # keys groups-fold. Now the query's group axis rides in the matrix rows ([1, kv, g, d] @
+        # [1, kv, d, live]), batch dims match so nothing is expanded, and only the small score
+        # tensor is upcast for a stable softmax.
+        q = query.view(1, n_kv, groups, d)
+        scores = (q @ key.transpose(-1, -2)).float() / math.sqrt(d)  # [1, kv, g, live]
         probs = torch.softmax(scores, dim=-1)[..., : self.n_used * bs]
         mass = probs.reshape(1, n_kv, groups, self.n_used, bs).sum(-1)  # [1, kv, g, n_used]
         blocks_resident = self.n_used + (1 if live > self.n_used * bs else 0)
