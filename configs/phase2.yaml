@@ -1,0 +1,36 @@
+# Phase 2 gate: GPU-only residency policies (ladder rungs 1-3) under a budget sweep.
+# Budgets are fractions of the KV for the whole sequence (prompt + generated tokens).
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+# 64 tokens per block: the granularity Phase 0's PCIe analysis used. For GPU-only rungs it
+# sets only eviction granularity; the block-size sweep is scheduled for Phase 4.
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+# "full" (FullGPUCache) and "block_full" (the pool at 100%) run once each; evicting policies run at every budget.
+# window = sliding window without a sink: a control that separates LRU's effect from losing the sink.
+policies: [window_sink, window, lru]
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
