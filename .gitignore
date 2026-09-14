@@ -1,0 +1,24 @@
+# Environments
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Model weights and HF caches never enter the repo
+models/
+hf_cache/
+*.safetensors
+*.bin
+*.gguf
+
+# Raw benchmark logs and scratch files; curated metrics.json + telemetry CSVs are committed
+logs/
+*.log
+scratch/
+results/**/tmp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

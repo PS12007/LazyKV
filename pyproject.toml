@@ -1,0 +1,24 @@
+[project]
+name = "lazykv"
+version = "0.0.1"
+description = "Tiered KV-cache runtime and residency-policy study for long-context inference on one 8 GB consumer GPU"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+dependencies = [
+    # Blackwell (sm_120) needs a cu128+ build; the exact pinned wheel is in requirements.lock.
+    "torch==2.12.0",
+    # Pinned because LazyKV subclasses transformers.Cache and patches one attention forward;
+    # that internal API moves between releases.
+    "transformers==5.16.1",
+    "numpy==2.5.2",
+    "pyyaml==6.0.3",
+    "matplotlib==3.11.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.1.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
