@@ -1,9 +1,9 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-14T15:13:10+00:00",
-    "git_commit": "aa17eeee870061d312d7107300d90413c4c5c8b6",
-    "git_dirty": false,
+    "generated_at_utc": "2026-09-14T15:16:23+00:00",
+    "git_commit": "af322a72aba91f36fe79c589c49abc860880e742",
+    "git_dirty": true,
     "argv": [
       "scripts/analyze_phase0.py"
     ],
@@ -1804,35 +1804,45 @@
     "kv_bytes_per_token_per_layer_bf16": 2048,
     "pinned_h2d_bps_used": 26517187693.05726,
     "per_transfer_overhead_s_used": 6.445207260625385e-06,
+    "host_memcpy_bps_used": 7777998646.863496,
     "block_64tok_bytes_per_layer": 131072,
+    "knee50_tokens_per_layer": 72.38464593280862,
+    "knee80_tokens_per_layer": 193.02873580192497,
+    "block_64tok_fraction_of_asymptote": 0.434040881866708,
+    "pcie_over_host_memcpy": 3.409255889206204,
     "rows": [
       {
         "tokens_per_layer": 256,
         "kv_bytes_per_layer_bf16": 524288,
         "fetch_one_transfer_s": 2.6216836366575762e-05,
         "fetch_64tok_blocks_s": 4.5552458148451916e-05,
+        "fetch_with_1thread_gather_s": 9.362337933523787e-05,
         "fetch_all_layers_one_transfer_s": 0.0004194693818652122,
         "cpu_partial_attn_s": 0.00015888613861624444,
         "cpu_partial_attn_all_layers_s": 0.002542178217859911,
         "cpu_over_fetch_one": 6.060461925864204,
-        "cpu_over_fetch_blocks": 3.487981660582331
+        "cpu_over_fetch_blocks": 3.487981660582331,
+        "cpu_over_fetch_with_gather": 1.6970775862225584
       },
       {
         "tokens_per_layer": 1024,
         "kv_bytes_per_layer_bf16": 2097152,
         "fetch_one_transfer_s": 8.553172368442688e-05,
         "fetch_64tok_blocks_s": 0.00018220983259380766,
+        "fetch_with_1thread_gather_s": 0.0003551578955590753,
         "fetch_all_layers_one_transfer_s": 0.0013685075789508301,
         "cpu_partial_attn_s": 0.00027720705882743724,
         "cpu_partial_attn_all_layers_s": 0.004435312941238996,
         "cpu_over_fetch_one": 3.240985296288487,
-        "cpu_over_fetch_blocks": 1.5213616898787383
+        "cpu_over_fetch_blocks": 1.5213616898787383,
+        "cpu_over_fetch_with_gather": 0.780517798685199
       },
       {
         "tokens_per_layer": 4096,
         "kv_bytes_per_layer_bf16": 8388608,
         "fetch_one_transfer_s": 0.0003227912729558314,
         "fetch_64tok_blocks_s": 0.0007288393303752307,
+        "fetch_with_1thread_gather_s": 0.001401295960454425,
         "fetch_all_layers_one_transfer_s": 0.005164660367293302,
         "gpu_attention_s": 0.00011289600282907486,
         "gpu_attention_all_layers_s": 0.0018063360452651978,
@@ -1840,13 +1850,15 @@
         "cpu_partial_attn_s": 0.000493130392156922,
         "cpu_partial_attn_all_layers_s": 0.007890086274510752,
         "cpu_over_fetch_one": 1.527706705454824,
-        "cpu_over_fetch_blocks": 0.6765968459784437
+        "cpu_over_fetch_blocks": 0.6765968459784437,
+        "cpu_over_fetch_with_gather": 0.351910236005394
       },
       {
         "tokens_per_layer": 16384,
         "kv_bytes_per_layer_bf16": 33554432,
         "fetch_one_transfer_s": 0.0012718294700414495,
         "fetch_64tok_blocks_s": 0.0029153573215009226,
+        "fetch_with_1thread_gather_s": 0.005585848220035825,
         "fetch_all_layers_one_transfer_s": 0.020349271520663192,
         "gpu_attention_s": 0.00010441599786281585,
         "gpu_attention_all_layers_s": 0.0016706559658050536,
@@ -1854,13 +1866,15 @@
         "cpu_partial_attn_s": 0.001979028571440722,
         "cpu_partial_attn_all_layers_s": 0.03166445714305155,
         "cpu_over_fetch_one": 1.5560486826714468,
-        "cpu_over_fetch_blocks": 0.6788288203457175
+        "cpu_over_fetch_blocks": 0.6788288203457175,
+        "cpu_over_fetch_with_gather": 0.3542932950347923
       },
       {
         "tokens_per_layer": 65536,
         "kv_bytes_per_layer_bf16": 134217728,
         "fetch_one_transfer_s": 0.005067982258383921,
         "fetch_64tok_blocks_s": 0.01166142928600369,
+        "fetch_with_1thread_gather_s": 0.02232405725836142,
         "fetch_all_layers_one_transfer_s": 0.08108771613414274,
         "gpu_attention_s": 0.0004413119852542877,
         "gpu_attention_all_layers_s": 0.0070609917640686035,
@@ -1868,13 +1882,15 @@
         "cpu_partial_attn_s": 0.0096344250000584,
         "cpu_partial_attn_all_layers_s": 0.1541508000009344,
         "cpu_over_fetch_one": 1.9010376336894728,
-        "cpu_over_fetch_blocks": 0.8261787439402349
+        "cpu_over_fetch_blocks": 0.8261787439402349,
+        "cpu_over_fetch_with_gather": 0.4315714159194718
       },
       {
         "tokens_per_layer": 262144,
         "kv_bytes_per_layer_bf16": 536870912,
         "fetch_one_transfer_s": 0.02025259341175381,
         "fetch_64tok_blocks_s": 0.04664571714401476,
+        "fetch_with_1thread_gather_s": 0.08927689341166381,
         "fetch_all_layers_one_transfer_s": 0.324041494588061,
         "gpu_attention_s": 0.0015207680463790894,
         "gpu_attention_all_layers_s": 0.02433228874206543,

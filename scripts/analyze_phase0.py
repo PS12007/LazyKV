@@ -255,6 +255,11 @@ def analyze_nvme(runs: list[dict[str, Any]], pinned_h2d: list[float]) -> dict[st
     }
 
 
+def _effective_fraction(size: float, t0: float, bandwidth: float) -> float:
+    """Fraction of asymptotic bandwidth a single transfer of `size` achieves under the fit."""
+    return (size / (t0 + size / bandwidth)) / bandwidth
+
+
 def design_arithmetic(
     pcie: dict[str, Any], vram: dict[str, Any], cpu: dict[str, Any], kv: dict[str, Any] | None
 ) -> dict[str, Any]:
@@ -273,6 +278,10 @@ def design_arithmetic(
 
     B = pcie["pinned_h2d"]["asymptote_bps"]["median"]
     t0 = pcie["pinned_h2d"]["fit_t0_s"]["median"]
+    # A single batched transfer assumes the selected blocks are already contiguous in
+    # pinned memory. If they are scattered, someone gathers them first, and a 1-thread
+    # host memcpy is slower than the link itself on this machine. Cost it explicitly.
+    memcpy = cpu["host_memcpy_bps_1thread"]["median"]
     rows = []
     attn_by_ctx = {a["ctx_len"]: a for a in vram["decode_attention"]}
     cpu_by_tokens = {c["tokens"]: c for c in cpu["partial_attn_best"]}
@@ -288,6 +297,7 @@ def design_arithmetic(
             "kv_bytes_per_layer_bf16": nbytes,
             "fetch_one_transfer_s": fetch_one,
             "fetch_64tok_blocks_s": fetch_blocks,
+            "fetch_with_1thread_gather_s": nbytes / memcpy + fetch_one,
             "fetch_all_layers_one_transfer_s": n_layers * fetch_one,
         }
         if n in attn_by_ctx:
@@ -301,7 +311,9 @@ def design_arithmetic(
             row["cpu_partial_attn_all_layers_s"] = n_layers * c
             row["cpu_over_fetch_one"] = c / fetch_one
             row["cpu_over_fetch_blocks"] = c / fetch_blocks
+            row["cpu_over_fetch_with_gather"] = c / row["fetch_with_1thread_gather_s"]
         rows.append(row)
+    knees = pcie["pinned_h2d"]
     return {
         "available": True,
         "model": model["key"],
@@ -309,7 +321,12 @@ def design_arithmetic(
         "kv_bytes_per_token_per_layer_bf16": bytes_per_token_layer_bf16,
         "pinned_h2d_bps_used": B,
         "per_transfer_overhead_s_used": t0,
+        "host_memcpy_bps_used": memcpy,
         "block_64tok_bytes_per_layer": 64 * bytes_per_token_layer_bf16,
+        "knee50_tokens_per_layer": knees["knee50_bytes"]["median"] / bytes_per_token_layer_bf16,
+        "knee80_tokens_per_layer": knees["knee80_bytes"]["median"] / bytes_per_token_layer_bf16,
+        "block_64tok_fraction_of_asymptote": _effective_fraction(64 * bytes_per_token_layer_bf16, t0, B),
+        "pcie_over_host_memcpy": B / memcpy,
         "rows": rows,
         "caveats": [
             "CPU partial attention measured in float32 with random KV; bf16 storage would add a cast.",

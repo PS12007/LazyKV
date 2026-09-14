@@ -1,0 +1,205 @@
+# System info
+
+The machine every LazyKV result is conditional on. **Every value on this page is rendered
+from `results/phase0/**/metrics.json`** by `scripts/render_docs.py`. Nothing here is
+typed by hand. Raw collection code: `harness/sysinfo.py`. Benchmarks: `scripts/00_feasibility.py`.
+
+## Host
+
+| | |
+|---|---|
+| OS | {{ phase0.feasibility.run_1.system.host.os.Caption }} (version {{ phase0.feasibility.run_1.system.host.os.Version }}, build {{ phase0.feasibility.run_1.system.host.os.BuildNumber }}) |
+| CPU | {{ phase0.feasibility.run_1.system.host.cpu.Name }}: {{ phase0.feasibility.run_1.system.host.cpu.NumberOfCores }} cores, {{ phase0.feasibility.run_1.system.host.cpu.NumberOfLogicalProcessors }} logical processors (hybrid P/E cores) |
+| RAM | {{ phase0.feasibility.run_1.system.host.ram_total_bytes | iec }} in **{{ phase0.feasibility.run_1.system.host.ram_dimm_count }} DIMM** (see below) |
+| Power | {{ phase0.feasibility.run_1.system.host.power_plan }}; battery status code {{ phase0.feasibility.run_1.system.host.battery.0.BatteryStatus }} (2 = on AC) |
+| Hardware-accelerated GPU scheduling (`HwSchMode`) | {{> hags }} |
+
+{{> ram }}
+
+> **Single-channel memory.** One DIMM means single-channel DDR5, which halves host memory
+> bandwidth compared with a dual-channel pair. That limits pageable copies, host-side
+> gathers, and any CPU-side attention (design (c) in `docs/BRIEF.md` §B1). The measured
+> single-thread host memcpy is {{ phase0.analysis.cpu.host_memcpy_bps_1thread.median | gbps }}.
+
+{{> disks }}
+
+## GPU
+
+| | |
+|---|---|
+| GPU | {{ phase0.feasibility.run_1.system.software_gpu.nvidia_smi.name }} |
+| Compute capability | ({{ phase0.feasibility.run_1.system.software_gpu.cuda_capability.0 }}, {{ phase0.feasibility.run_1.system.software_gpu.cuda_capability.1 }}) |
+| VRAM total (CUDA) | {{ phase0.feasibility.run_1.system.software_gpu.cuda_mem_total_bytes | iec }} |
+| VRAM free when benchmark started | {{ phase0.feasibility.run_1.system.software_gpu.cuda_mem_free_bytes_at_start | iec }} (the rest is held by the Windows desktop and other apps) |
+| Torch CUDA arch list | {{ phase0.feasibility.run_1.system.software_gpu.cuda_arch_list | str }} |
+
+{{> nvidia_smi }}
+
+`pcie.link.width.max` is what the GPU supports. The link width actually observed under load
+is recorded in the telemetry table below, and on this laptop it is narrower than the maximum.
+
+### `torch.cuda.get_device_properties(0)`, in full
+
+{{> device_properties }}
+
+### CUDA driver attributes
+
+Read directly with `cuDeviceGetAttribute` from `nvcuda.dll`, because torch does not expose
+`asyncEngineCount`. Attributes with independently known values (`PCI_BUS_ID`, `TCC_DRIVER`
+= 0 under WDDM, `INTEGRATED` = 0) confirm that the enum mapping is correct.
+
+{{> driver_attributes }}
+
+**asyncEngineCount = {{ phase0.analysis.overlap.async_engine_count.0 }}.** This GPU has one copy
+engine: an H2D copy and a D2H copy cannot run at the same time, as measured below.
+
+## Software
+
+| | |
+|---|---|
+| Python | {{ phase0.feasibility.run_1.provenance.python }} |
+| torch | {{ phase0.feasibility.run_1.system.software_gpu.torch }} (CUDA {{ phase0.feasibility.run_1.system.software_gpu.torch_cuda }}, cuDNN {{ phase0.feasibility.run_1.system.software_gpu.cudnn }}) |
+| transformers | {{ phase0.feasibility.run_1.system.software_gpu.transformers }} |
+| numpy | {{ phase0.feasibility.run_1.system.software_gpu.numpy }} |
+| torch CPU threads (default) | {{ phase0.feasibility.run_1.system.software_gpu.torch_num_threads_default }} |
+
+{{> env_vars }}
+
+**`expandable_segments:True` probe:** the allocation succeeded = {{ phase0.feasibility.run_1.system.expandable_segments.alloc_ok }},
+and PyTorch warned "not supported on this platform" = **{{ phase0.feasibility.run_1.system.expandable_segments.warned_not_supported }}**.
+The §B6 fragmentation experiment with expandable segments cannot run on this Windows build,
+so LazyKV should use preallocated block pools.
+
+---
+
+# Phase 0 microbenchmarks
+
+**Method.** Runs {{ phase0.analysis.run_ids | str }} are independent process-level runs
+executed back to back with the machine otherwise idle. Each run uses
+{{ phase0.feasibility.run_1.config.warmup }} discarded warmup rounds and
+{{ phase0.feasibility.run_1.config.repeats }} timed repeats. Within every repeat the
+conditions are interleaved in a freshly randomized order. Each run reports per-condition
+medians. **Tables show the median of those per-run medians, with the min–max across runs
+in parentheses.** GPU sections begin with a two-second spin-up, because the GPU drops to a
+low clock within seconds of idling (see the telemetry figure). Transfers use wall time with
+explicit synchronization; CUDA-event timings are recorded as a cross-check. GB/s means
+10⁹ bytes per second; sizes use binary units.
+
+{{> run_provenance }}
+
+## 1. PCIe bandwidth
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/pcie_bandwidth-dark.png">
+  <img alt="PCIe bandwidth vs transfer size, pinned and pageable, both directions" src="docs/figures/pcie_bandwidth-light.png">
+</picture>
+
+GB/s per transfer size:
+
+{{> pcie_curve }}
+
+Knees and the per-transfer overhead fit (t = t0 + size / B, relative-error weighted). The
+empirical knee is the answer to "where does pinned H2D reach 80%". The two-parameter fit
+saturates more gently than the real curve, so its knee sits later. It is useful for
+estimating t0, not for locating the knee.
+
+{{> pcie_knees }}
+
+- **Pinned H2D asymptote: {{ phase0.analysis.pcie.pinned_h2d.asymptote_bps.median | gbps }}**, with the link trained at the generation and width shown in the telemetry table.
+- **Pinned H2D reaches 80% of its asymptote at {{ phase0.analysis.pcie.pinned_h2d.knee80_bytes.median | iec }}** (empirical, interpolated in log-size). Below the 50% knee ({{ phase0.analysis.pcie.pinned_h2d.knee50_bytes.median | iec }}), per-transfer overhead dominates. The fitted overhead is {{ phase0.analysis.pcie.pinned_h2d.fit_t0_s.median | us }} per transfer.
+- Pinned memory gives {{ phase0.analysis.pcie.pinned_over_pageable_h2d_asymptote.median | x }} the asymptotic H2D bandwidth of pageable memory.
+- Pageable H2D is not monotonic: it peaks in the middle of the size sweep and falls back at the largest sizes. The cause was not isolated in Phase 0, and it does not matter for LazyKV, which will only transfer from pinned pools.
+
+## 2. VRAM bandwidth
+
+- **Device-to-device copy ({{ phase0.analysis.vram.d2d_copy_size_bytes | iec }}): {{ phase0.analysis.vram.d2d_copy_bps.median | gbps }}** ({{ phase0.analysis.vram.d2d_copy_bps.min | gbps }} – {{ phase0.analysis.vram.d2d_copy_bps.max | gbps }}).
+
+Decode attention over one layer's KV, per SDPA path. Llama-3.2-1B geometry: 32 query
+heads, 8 KV heads, head_dim 64, bf16, one query token. Every path's output is compared
+with the math kernel.
+
+{{> attention }}
+
+> **Kernel-selection trap.** This Windows torch build has no FlashAttention compiled in, and
+> default SDPA dispatch with `enable_gqa=True` falls back to the math kernel. At 65,536
+> tokens the default path is **{{ phase0.analysis.vram.decode_attention.2.default_over_best | x }}**
+> slower than the best correct kernel (`{{ phase0.analysis.vram.decode_attention.2.best_backend }}`),
+> and at 262,144 tokens it is {{ phase0.analysis.vram.decode_attention.3.default_over_best | x }} slower.
+> A full-GPU baseline left on default dispatch would be artificially slow, which would make
+> every offloading policy look better than it is. Phase 1 must pin the attention backend.
+
+## 3. The ratio
+
+**VRAM device-to-device copy ÷ pinned H2D = {{ phase0.analysis.vram.ratio_d2d_over_pinned_h2d.median | x }}**
+(min {{ phase0.analysis.vram.ratio_d2d_over_pinned_h2d.min | .2f }}, max {{ phase0.analysis.vram.ratio_d2d_over_pinned_h2d.max | .2f }} across runs).
+
+The brief assumed 20–40× before any measurement. **That assumption is refuted on this
+machine.** The consequences are worked through in `docs/IMPLEMENTATION_PLAN.md` §3.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/bandwidth_ladder-dark.png">
+  <img alt="Bandwidth of every data path on this machine, log scale" src="docs/figures/bandwidth_ladder-light.png">
+</picture>
+
+{{> bandwidth_ladder }}
+
+## 4. Async overlap
+
+A compute kernel (fp16 matmul, calibrated to about the same duration as the copy) runs on
+one CUDA stream while a pinned copy runs on another. The overlap fraction is
+(T_compute + T_copy − T_both) / min(T_compute, T_copy): 1 means wall time equals the longer
+of the two, and 0 means wall time equals their sum.
+
+{{> overlap }}
+
+- Compute and copy overlap almost completely. A layer's compute can hide a transfer of equal duration.
+- **H2D and D2H do not overlap at all**, which matches asyncEngineCount = {{ phase0.analysis.overlap.async_engine_count.0 }}. Any D2H write-back scheduled while a prefetch is in flight delays that prefetch by its full duration.
+
+## 5. CPU-side attention
+
+Exact partial attention for merge: scores, log-sum-exp, and a softmax-weighted sum over
+values. It returns only O(head_dim) bytes. The data is float32 with Llama-3.2-1B GQA
+geometry (8 KV heads × 4 query heads each, head_dim 64). `torch.set_num_threads` is set
+explicitly, and Windows chooses P- versus E-core placement. Time per call at each thread
+count (median across runs):
+
+{{> cpu_threads }}
+
+Best thread count against the same operation on the GPU:
+
+{{> cpu_vs_gpu }}
+
+The GPU reference column has one slow outlier run at the larger sizes (see the max of its
+range). It is reported rather than dropped, and the median is robust to it.
+
+Adding threads stops helping before the logical CPU count, and larger thread counts
+sometimes lose. One *hypothesis*, not tested in Phase 0, is that single-channel memory
+bandwidth rather than core count limits the large cases.
+
+## 6. NVMe
+
+Unbuffered reads (`FILE_FLAG_NO_BUFFERING`, queue depth 1) of a
+{{ phase0.feasibility.run_1.nvme.file_bytes | iec }} file written to the system NVMe drive.
+
+{{> nvme }}
+
+Pinned PCIe H2D is **{{ phase0.analysis.nvme.pinned_h2d_over_nvme_seq.median | x }}** faster than
+sequential NVMe reads and **{{ phase0.analysis.nvme.pinned_h2d_over_nvme_rand128k.median | x }}** faster
+than random 128 KiB reads. An SSD tier can add capacity, never speed (§B9).
+
+## Thermal and link-state control
+
+{{> telemetry }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/telemetry_run1-dark.png">
+  <img alt="GPU temperature, power, clock and PCIe link generation over feasibility run 1" src="docs/figures/telemetry_run1-light.png">
+</picture>
+
+The link idles at a low PCIe generation and trains up under load. The graphics clock falls
+to its floor within seconds whenever the GPU is idle, including during the CPU section.
+This is why every GPU section starts with a spin-up. One smoke test run earlier the same
+day, before these fixes, measured a pinned H2D figure far below the runs reported here.
+Neither two later quick runs nor the three full runs reproduced it, and its cause is not
+known. Smoke-test outputs are not retained (`.gitignore`), so no number is quoted for it.
+It is the reason between-run spread is reported at all.
