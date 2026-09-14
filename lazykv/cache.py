@@ -32,8 +32,11 @@ class PreallocatedLayer(CacheLayerMixin):
         self.dtype, self.device = key_states.dtype, key_states.device
         # Allocated once, up front: expandable_segments is unsupported on this platform and
         # a growing allocation would fragment the caching allocator mid-run.
-        self.keys = torch.empty((1, h, self.max_len, d), dtype=key_states.dtype, device=key_states.device)
-        self.values = torch.empty((1, value_states.shape[1], self.max_len, value_states.shape[3]), dtype=value_states.dtype, device=value_states.device)
+        # Zeroed, not empty: the bucketed decode path reads padding rows past `length` and
+        # masks them with -inf. Masking cannot neutralize NaN/inf, and recycled allocator
+        # blocks can contain them (a Phase 1 test caught all-NaN logits from exactly this).
+        self.keys = torch.zeros((1, h, self.max_len, d), dtype=key_states.dtype, device=key_states.device)
+        self.values = torch.zeros((1, value_states.shape[1], self.max_len, value_states.shape[3]), dtype=value_states.dtype, device=value_states.device)
         self.is_initialized = True
 
     def update(self, key_states: torch.Tensor, value_states: torch.Tensor, *args: object, **kwargs: object) -> tuple[torch.Tensor, torch.Tensor]:

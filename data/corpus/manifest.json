@@ -1,0 +1,22 @@
+{
+  "tokenizer": {
+    "repo": "unsloth/Llama-3.2-1B-Instruct",
+    "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+  },
+  "books": {
+    "pride_and_prejudice": {
+      "url": "https://www.gutenberg.org/cache/epub/1342/pg1342.txt",
+      "raw_sha256": "3f6bb9d6f78e0293b56acd4714dd68cb7d6d1d293402031ce9d5a216bcaf9d75",
+      "body_sha256": "3709883de831a8cd1b6f2ead5640644c4e26abe972ca382b774b221c90c26bd5",
+      "body_chars": 743242,
+      "body_tokens": 173029
+    },
+    "moby_dick": {
+      "url": "https://www.gutenberg.org/cache/epub/2701/pg2701.txt",
+      "raw_sha256": "907420db6c4b68c70e2988cd2ad9c8cf79138667a01b63376d18dd17fef1a18b",
+      "body_sha256": "877c3f2d6b67a0f45219d972c0329556bd0c9f6aab478344f35274f25917907e",
+      "body_chars": 1240868,
+      "body_tokens": 308485
+    }
+  }
+}

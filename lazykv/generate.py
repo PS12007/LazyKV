@@ -27,7 +27,7 @@ class LoadedModel:
     tokenizer: PreTrainedTokenizerBase
     repo: str
     revision: str | None
-    attention_backend: str
+    attention_strategy: str
     kernel_checks: list[KernelCheck]
 
     @property
@@ -41,12 +41,12 @@ class LoadedModel:
         return 2 * c.num_hidden_layers * c.num_key_value_heads * head_dim * torch.finfo(self.model.dtype).bits // 8
 
 
-def load(repo: str, revision: str | None = None, backend: str | None = None, dtype: torch.dtype = torch.bfloat16) -> LoadedModel:
+def load(repo: str, revision: str | None = None, strategy: str | None = None, dtype: torch.dtype = torch.bfloat16) -> LoadedModel:
     tokenizer = AutoTokenizer.from_pretrained(repo, revision=revision)
     model = AutoModelForCausalLM.from_pretrained(repo, revision=revision, dtype=dtype, attn_implementation="sdpa")
     c = model.config
     head_dim = getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads
-    chosen, checks = install(backend, c.num_attention_heads, c.num_key_value_heads, head_dim)
+    chosen, checks = install(strategy, c.num_attention_heads, c.num_key_value_heads, head_dim)
     # Switch only after install() registered the implementation name.
     model.set_attn_implementation(IMPLEMENTATION_NAME)
     model.to("cuda").eval()

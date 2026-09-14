@@ -35,7 +35,8 @@ def tiny_models():  # noqa: ANN201
     ref = LlamaForCausalLM(cfg).to(dtype=torch.float32)
     ref.set_attn_implementation("eager")
     ref = ref.cuda().eval()
-    install(None, cfg.num_attention_heads, cfg.num_key_value_heads, cfg.head_dim)
+    # Small bucket so the padded, masked decode path is exercised inside these short caches.
+    install("cudnn_bucketed", cfg.num_attention_heads, cfg.num_key_value_heads, cfg.head_dim, bucket=64)
     # Separate config object: set_attn_implementation mutates the config, and a shared one
     # would silently switch the eager reference onto the kernel under test.
     ours = LlamaForCausalLM(copy.deepcopy(cfg))
@@ -130,3 +131,44 @@ def test_attention_rejects_external_mask(tiny_models) -> None:  # noqa: ANN001
     k = torch.randn(1, 2, 4, 16, device="cuda", dtype=torch.bfloat16)
     with pytest.raises(RuntimeError, match="owns causality"):
         lazykv_attention_forward(torch.nn.Module(), q, k, k, torch.ones(1, 1, 1, 4, device="cuda", dtype=torch.bool))
+
+
+@cuda
+@pytest.mark.parametrize("strategy", ["cudnn_bucketed", "cudnn", "efficient", "math"])
+def test_every_strategy_matches_reference_with_garbage_padding(strategy: str) -> None:
+    from lazykv.attention import _reference, attend
+
+    torch.manual_seed(1)
+    store_k = torch.randn(1, 2, 256, 16, device="cuda", dtype=torch.bfloat16) * 50  # padding must be masked, not ignored by luck
+    store_v = torch.randn_like(store_k) * 50
+    live = 100
+    k, v = store_k[:, :, :live], store_v[:, :, :live]
+    for q_len in (1, 17):
+        q = torch.randn(1, 8, q_len, 16, device="cuda", dtype=torch.bfloat16)
+        ref = _reference(q, k, v, 16**-0.5)
+        got = attend(q, k, v, 16**-0.5, strategy, bucket=64).float()
+        assert ((got - ref).abs().max() / ref.abs().max()).item() < 1e-2, (strategy, q_len)
+
+
+def test_extend_view_respects_storage() -> None:
+    from lazykv.attention import _extend_view
+
+    base = torch.arange(1 * 2 * 10 * 3, dtype=torch.float32).view(1, 2, 10, 3)
+    view = base[:, :, :4]
+    ext = _extend_view(view, 8)
+    assert ext is not None and torch.equal(ext, base[:, :, :8])
+    assert _extend_view(view, 11) is None
+    assert _extend_view(torch.zeros(1, 2, 4, 3), 8) is None
+
+
+@cuda
+def test_preallocated_storage_is_finite_even_on_recycled_memory() -> None:
+    """Padding rows are read (and masked) by the bucketed path, so they must be finite."""
+    from lazykv.cache import PreallocatedLayer
+
+    poison = torch.full((1, 2, 256, 16), float("nan"), device="cuda", dtype=torch.bfloat16)
+    del poison  # hand a NaN-filled block back to the caching allocator
+    layer = PreallocatedLayer(max_len=256)
+    x = torch.randn(1, 2, 3, 16, device="cuda", dtype=torch.bfloat16)
+    layer.update(x, x)
+    assert torch.isfinite(layer.keys).all() and torch.isfinite(layer.values).all()
