@@ -653,6 +653,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--quick", action="store_true", help="smoke test, <90 s")
     parser.add_argument("--sections", default="pcie,vram,overlap,cpu,nvme")
+    parser.add_argument(
+        "--run-id",
+        type=int,
+        default=1,
+        help="independent process-level repeat; between-run spread is reported, not just within-run IQR",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -664,9 +670,11 @@ def main() -> None:
     cfg = Config(quick=args.quick)
     torch.manual_seed(cfg.seed)
     sections = set(args.sections.split(","))
-    out_dir = RESULTS_DIR / "phase0" / ("feasibility_quick" if cfg.quick else "feasibility")
+    out_dir = RESULTS_DIR / "phase0" / ("feasibility_quick" if cfg.quick else "feasibility") / f"run_{args.run_id}"
 
-    payload: dict[str, Any] = {"config": {"quick": cfg.quick, "warmup": cfg.warmup, "repeats": cfg.reps, "seed": cfg.seed}}
+    payload: dict[str, Any] = {
+        "config": {"quick": cfg.quick, "warmup": cfg.warmup, "repeats": cfg.reps, "seed": cfg.seed, "run_id": args.run_id}
+    }
     t_start = time.perf_counter()
     with TelemetryLogger(out_dir / "telemetry.csv") as tel:
         time.sleep(1.0)  # idle baseline samples before load

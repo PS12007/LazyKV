@@ -25,7 +25,9 @@ def _git(*args: str) -> str | None:
 
 
 def provenance() -> dict[str, Any]:
-    status = _git("status", "--porcelain")
+    # Untracked files (e.g. the results being written right now) do not change the code
+    # that produced the numbers, so only tracked modifications count as dirty.
+    status = _git("status", "--porcelain", "--untracked-files=no")
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
