@@ -4,7 +4,6 @@ version = "0.0.1"
 description = "Tiered KV-cache runtime and residency-policy study for long-context inference on one 8 GB consumer GPU"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
 dependencies = [
     # Blackwell (sm_120) needs a cu128+ build; the exact pinned wheel is in requirements.lock.
     "torch==2.12.0",
