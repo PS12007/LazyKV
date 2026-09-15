@@ -69,8 +69,11 @@ class PrefillResult:
 
 
 @torch.inference_mode()
-def prefill(model: PreTrainedModel, cache: Cache, input_ids: torch.Tensor, chunk_size: int) -> PrefillResult:
+def prefill(model: PreTrainedModel, cache: Cache, input_ids: torch.Tensor, chunk_size: int, observer: object | None = None) -> PrefillResult:
     """Chunked prefill computing logits for the final position only.
+
+    `observer` (e.g. lazykv.scoring.PrefillScorer) sees each layer's post-RoPE query and key.
+    It reads attention inputs only, so the KV written is identical with or without it.
 
     Full-sequence logits at 64K would be a vocab x 64K tensor (docs/KV_MEMORY_MODEL.md),
     larger than the GPU. Chunking also bounds attention and MLP activation memory.
@@ -83,8 +86,9 @@ def prefill(model: PreTrainedModel, cache: Cache, input_ids: torch.Tensor, chunk
     start.record()
     logits = None
     chunks = 0
+    extra = {"lazykv_observer": observer} if observer is not None else {}
     for s in range(0, n, chunk_size):
-        out = model(input_ids=ids[:, s : s + chunk_size], past_key_values=cache, use_cache=True, logits_to_keep=1)
+        out = model(input_ids=ids[:, s : s + chunk_size], past_key_values=cache, use_cache=True, logits_to_keep=1, **extra)
         logits = out.logits
         chunks += 1
     assert logits is not None
