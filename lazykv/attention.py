@@ -94,8 +94,13 @@ def _padding_mask(length: int, bucket_len: int, dtype: torch.dtype, device: torc
     return _CONFIG._mask
 
 
-def attend(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, scaling: float | None, strategy: str, bucket: int = DEFAULT_BUCKET) -> torch.Tensor:
-    """Exact attention of `query` over all of `key`/`value` with lower-right causality."""
+def attend(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, scaling: float | None, strategy: str, bucket: int = DEFAULT_BUCKET, mask: torch.Tensor | None = None) -> torch.Tensor:
+    """Exact attention of `query` over all of `key`/`value` with lower-right causality.
+
+    `mask` (decode only) is an additive mask over the key length, for callers that hand in a
+    constant-shape key set with unused positions (query-aware selection). It replaces bucketing:
+    such a caller's shape is already constant, so its cuDNN plan is already cached.
+    """
     q_len, kv_len = query.shape[-2], key.shape[-2]
     F = torch.nn.functional.scaled_dot_product_attention
     if strategy in ("cudnn", "cudnn_bucketed"):
@@ -117,7 +122,9 @@ def attend(query: torch.Tensor, key: torch.Tensor, value: torch.Tensor, scaling:
         with sdpa_kernel([backend]):
             return F(query, key, value, attn_mask=causal_lower_right(q_len, kv_len), scale=scaling, enable_gqa=strategy != "efficient")
 
-    mask = None
+    if mask is not None:
+        with sdpa_kernel([backend]):
+            return F(query, key, value, attn_mask=mask, scale=scaling, enable_gqa=strategy != "efficient")
     if strategy == "cudnn_bucketed":
         bucket_len = -(-kv_len // bucket) * bucket
         if bucket_len != kv_len:
@@ -147,7 +154,15 @@ def lazykv_attention_forward(
     if timer.enabled:
         start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
         start.record()
-    out = attend(query, key, value, scaling, _CONFIG.strategy, _CONFIG.bucket)
+    # Query-aware policies replace the key set for this decode step: the selector returns the
+    # gathered KV and a mask, or None to attend densely (prefill, dense layers, budget covers all).
+    mask = None
+    selector = kwargs.get("lazykv_selector")
+    if selector is not None:
+        chosen = selector.select(int(getattr(module, "layer_idx")), query, key, value)
+        if chosen is not None:
+            key, value, mask = chosen
+    out = attend(query, key, value, scaling, _CONFIG.strategy, _CONFIG.bucket, mask=mask)
     if timer.enabled:
         end.record()
         timer.events.append((getattr(module, "layer_idx", -1), start, end))
