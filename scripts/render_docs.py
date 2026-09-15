@@ -31,6 +31,8 @@ OUTPUTS = {
     "RESEARCH_LOG.md.tmpl": "docs/RESEARCH_LOG.md",
     "PHASE_0.md.tmpl": "docs/phases/PHASE_0.md",
     "PHASE_1.md.tmpl": "docs/phases/PHASE_1.md",
+    "PHASE_2.md.tmpl": "docs/phases/PHASE_2.md",
+    "PHASE_3.md.tmpl": "docs/phases/PHASE_3.md",
 }
 
 GENERATED_BANNER = (
@@ -722,6 +724,195 @@ def block_p1_supporting_provenance(ctx: Mapping[str, Any]) -> str:
     if not rows:
         return f"_{NOT_MEASURED}_"
     return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+POLICY_NAMES = {
+    "full": "Full cache (rung 1)",
+    "block_full": "Block pool, 100%",
+    "window_sink": "Window + sink (rung 2)",
+    "window": "Window, no sink (control)",
+    "lru": "LRU (rung 3)",
+    "h2o": "H2O-style (rung 4)",
+    "quest": "Quest-style (rung 5)",
+}
+
+
+def _mib(v: float) -> str:
+    return f"{v / 2**20:,.0f} MiB"
+
+
+def _pct_budget(b: float) -> str:
+    return f"{100 * b:g}%"
+
+
+def _sweep_niah(ctx: Mapping[str, Any], phase: str) -> str:
+    rows_in = lookup(ctx, f"{phase}.analysis.niah")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    kinds = list(rows_in[0]["by_kind"])
+    depths = list(rows_in[0]["by_depth"])
+    rows = []
+    for r in rows_in:
+        rows.append(
+            [
+                POLICY_NAMES.get(r["policy"], r["policy"]),
+                _pct_budget(r["budget"]),
+                f"{100 * r['resident_fraction_median']:.1f}%",
+                f"{100 * r['accuracy']:.1f}% [{100 * r['accuracy_ci95'][0]:.0f}, {100 * r['accuracy_ci95'][1]:.0f}]",
+                f"{100 * r['retention']:.0f}%" if r["retention"] is not None else NOT_MEASURED,
+            ]
+            + [f"{100 * r['by_kind'][k]:.0f}%" for k in kinds]
+            + [f"{100 * r['by_depth'][d]:.0f}%" for d in depths]
+        )
+    header = ["Policy", "Budget", "Resident at answer", "Accuracy [95% CI]", "Retention"] + [k for k in kinds] + [f"depth {float(d) * 100:g}%" for d in depths]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:"] + ["---:"] * (len(kinds) + len(depths)))
+
+
+def _sweep_teacher_forced(ctx: Mapping[str, Any], phase: str) -> str:
+    rows_in = lookup(ctx, f"{phase}.analysis.teacher_forced")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            f"{100 * r['top1_agreement']:.1f}%",
+            f"{100 * r['top1_min_doc']:.1f}%",
+            f"{r['mean_kl']:.2e}",
+            f"{r['mean_kl_max_doc']:.2e}",
+            "**yes**" if r["exact_all_docs"] else "no",
+        ]
+        for r in rows_in
+    ]
+    return table(["Policy", "Budget", "Top-1 agreement (mean of documents)", "Worst document", "Mean KL, nats", "Worst document KL", "Bit-identical"], rows, ["---", "---:", "---:", "---:", "---:", "---:", "---"])
+
+
+def _sweep_speed(ctx: Mapping[str, Any], phase: str) -> str:
+    rows_in = lookup(ctx, f"{phase}.analysis.speed")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    ms_ = lambda v: f"{v * 1e3:.2f} ms"  # noqa: E731
+    rows = []
+    for r in rows_in:
+        mgr = r["manager_host_s_per_token"]
+        obs = r["manager_observe_s_per_token"]
+        rows.append(
+            [
+                POLICY_NAMES.get(r["policy"], r["policy"]),
+                _pct_budget(r["budget"]),
+                rng(r["decode_wall_median_s"], ms_),
+                rng(r["tokens_per_s"], lambda v: f"{v:.1f}", show_range=False),
+                f"{r['over_full']:.2f}×" if r["over_full"] is not None else NOT_MEASURED,
+                rng(r["decode_wall_p90_s"], ms_, show_range=False),
+                rng(mgr, ms_, show_range=False) if mgr.get("n_runs") else "–",
+                rng(obs, ms_, show_range=False) if obs.get("n_runs") else "–",
+                rng(r["boundary_build_s"], ms_, show_range=False) if r["boundary_build_s"].get("n_runs") and r["policy"] != "full" else "–",
+                rng(r["gpu_resident_kv_bytes"], _mib, show_range=False),
+                rng(r["max_memory_allocated_bytes"], iec, show_range=False),
+                "**yes**" if r["any_spill"] else "no",
+            ]
+        )
+    return table(
+        ["Policy", "Budget", "Decode / token (range over runs)", "Tokens/s", "÷ full", "p90", "Manager host time / token", "of which attention observation", "Boundary build", "Resident KV", "Peak allocated", "Spill"],
+        rows,
+        ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---"],
+    )
+
+
+def _sweep_headline(ctx: Mapping[str, Any], phase: str) -> str:
+    h = lookup(ctx, f"{phase}.analysis.headline")
+    if not isinstance(h, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for policy, v in h.items():
+        rows.append(
+            [
+                POLICY_NAMES.get(policy, policy),
+                _pct_budget(v["min_budget_meeting_target"]) if v["min_budget_meeting_target"] is not None else "**none below 100%**",
+                f"{v['tokens_per_s_at_that_budget']:.1f}" if v["tokens_per_s_at_that_budget"] is not None else "–",
+                f"{100 * v['best_retention_below_full']:.0f}% at {_pct_budget(v['best_retention_budget'])}" if v["best_retention_below_full"] is not None else NOT_MEASURED,
+            ]
+        )
+    return table(["Policy", "Smallest budget retaining ≥ 99% of full-cache NIAH accuracy", "Tokens/s there", "Best retention measured"], rows, ["---", "---:", "---:", "---:"])
+
+
+def _sweep_provenance(ctx: Mapping[str, Any], phase: str) -> str:
+    src = lookup(ctx, f"{phase}.analysis.sources")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row("Policy quality (NIAH + teacher-forced)", src["policy_quality"])]
+    rows += [_provenance_row(f"Budget speed run {i}", p) for i, p in enumerate(src["budget_speed"], 1)]
+    return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+# The budget-sweep tables are the same for Phase 2 and Phase 3; only the results directory differs.
+def block_p2_niah(ctx: Mapping[str, Any]) -> str:
+    return _sweep_niah(ctx, "phase2")
+
+
+def block_p2_teacher_forced(ctx: Mapping[str, Any]) -> str:
+    return _sweep_teacher_forced(ctx, "phase2")
+
+
+def block_p2_speed(ctx: Mapping[str, Any]) -> str:
+    return _sweep_speed(ctx, "phase2")
+
+
+def block_p2_headline(ctx: Mapping[str, Any]) -> str:
+    return _sweep_headline(ctx, "phase2")
+
+
+def block_p2_provenance(ctx: Mapping[str, Any]) -> str:
+    return _sweep_provenance(ctx, "phase2")
+
+
+def block_p3_niah(ctx: Mapping[str, Any]) -> str:
+    return _sweep_niah(ctx, "phase3")
+
+
+def block_p3_teacher_forced(ctx: Mapping[str, Any]) -> str:
+    return _sweep_teacher_forced(ctx, "phase3")
+
+
+def block_p3_speed(ctx: Mapping[str, Any]) -> str:
+    return _sweep_speed(ctx, "phase3")
+
+
+def block_p3_headline(ctx: Mapping[str, Any]) -> str:
+    return _sweep_headline(ctx, "phase3")
+
+
+def block_p3_provenance(ctx: Mapping[str, Any]) -> str:
+    return _sweep_provenance(ctx, "phase3")
+
+
+def block_p3_paired(ctx: Mapping[str, Any]) -> str:
+    paired = lookup(ctx, "phase3.analysis.paired_vs_reference")
+    ref = lookup(ctx, "phase3.analysis.reference_policy")
+    if not isinstance(paired, Mapping) or not paired:
+        return f"_{NOT_MEASURED}_"
+    budgets = [r["budget"] for r in next(iter(paired.values()))]
+    rows = []
+    for policy, entries in paired.items():
+        cells = []
+        for r in entries:
+            lo, hi = r["ci95"]
+            cells.append(f"{100 * r['accuracy_minus_reference']:+.1f} pp [{100 * lo:+.0f}, {100 * hi:+.0f}] ({r['prompts_better']}↑ {r['prompts_worse']}↓)")
+        rows.append([f"{POLICY_NAMES.get(policy, policy)} − {POLICY_NAMES.get(str(ref), str(ref))}"] + cells)
+    return table(["Accuracy difference [95% CI] (prompts better↑ worse↓)"] + [f"budget {_pct_budget(b)}" for b in budgets], rows, ["---"] + ["---:"] * len(budgets))
+
+
+def block_p3_h2o(ctx: Mapping[str, Any]) -> str:
+    h = lookup(ctx, "phase3.analysis.h2o")
+    if not isinstance(h, Mapping) or not h:
+        return f"_{NOT_MEASURED}_"
+    budgets = list(h["block0_resident_layers_min_by_budget"])
+    rows = [
+        ["Layers keeping block 0 (worst prompt), of " + str(h["layers"])] + [str(h["block0_resident_layers_min_by_budget"][b]) for b in budgets],
+        ["Prompt blocks evicted at the boundary, all layers (median)"] + [f"{h['boundary_evicted_blocks_median_by_budget'][b]:,.0f}" for b in budgets],
+        ["Decode-time evictions, all layers (median)"] + [f"{h['decode_evictions_median_by_budget'][b]:,.0f}" for b in budgets],
+    ]
+    return table(["H2O-style, NIAH prompts"] + [f"budget {float(b) * 100:g}%" for b in budgets], rows, ["---"] + ["---:"] * len(budgets))
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {

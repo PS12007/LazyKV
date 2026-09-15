@@ -1,0 +1,148 @@
+# Phase 2 gate report: blocks and GPU-only policies
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Phase 2 built the block-granular, fixed-budget GPU KV pool and the first two eviction rungs
+of the policy ladder, and swept them at {{ phase2.analysis.context | int }} tokens against the full cache.
+Nothing is offloaded yet: an evicted block is gone. The results set the floor that
+query-aware selection (Phase 3) and the CPU tier (Phase 4) have to beat.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: a 100% pool matches the full cache; after many evictions, each slot's layer-0 keys equal the full cache's keys for the logical block the slot table names; a first decode step over a window+sink pool matches an independently built reference far more closely than a wrong-position one (verified by mutation: breaking position tracking fails both tests); storage is bucket-aligned; LRU victim order. All earlier tests still pass.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py` (NIAH and teacher-forced divergence) and `scripts/02_budget_speed.py` ({{ phase2.analysis.speed_runs }} independent runs), launched detached from a clean tree. Provenance below.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was built
+
+| Piece | Where | Design choice and why |
+|---|---|---|
+| Block pool | `lazykv/blocks.py` | Resident KV is always one contiguous prefix of a preallocated tensor: sealed blocks, then the tail block being filled. Attention gets a plain view (no mask, no gather), so the kernel verified in Phase 1 is reused unchanged, and at a fixed budget the shape stays within one cuDNN plan bucket. |
+| Eviction | `lazykv/blocks.py` | The tail seals lazily when the next token needs room: into a free slot in place, or copied over the policy's victim. That is one {{ phase2.analysis.block_size }}-token copy per {{ phase2.analysis.block_size }} decode steps. |
+| Prefill | `lazykv/sweep.py` | Exact, into the full cache. Policies act at the prefill→decode boundary and during decode, so every condition starts from the same prefill, which is computed once per prompt. Peak memory during prefill is the full KV. |
+| Rung 2: window + sink | `lazykv/policies.py` | First block (holds BOS and the chat header) plus the most recent blocks. |
+| Rung 3: LRU | `lazykv/policies.py` | A block is "used" at a step when some query head gives it more than a uniform share of attention, observed through the attention function. No history exists at the boundary, so prompt blocks are kept by recency. |
+| Control: window, no sink | `lazykv/policies.py` | LRU's boundary choice without LRU, to separate the two effects. |
+| NIAH | `lazykv/niah.py` | Single, multi-key and multi-value needles adapted from RULER (arXiv 2404.06654), assembled at the token level to an exact length, chat date pinned. |
+
+Budgets are fractions of the whole sequence's KV (prompt plus generated tokens); the tail block
+counts against the budget. Block size is {{ phase2.analysis.block_size }} tokens; the block-size sweep is scheduled for Phase 4.
+
+## Headline findings
+
+1. **No GPU-only policy reaches the brief's headline target.** None retains ≥ 99% of the full
+   cache's NIAH accuracy at any budget below 100%. The best is window + sink, at
+   {{ phase2.analysis.headline.window_sink.best_retention_below_full | pct0 }} retention with a
+   {{ phase2.analysis.headline.window_sink.best_retention_budget | pct0 }} budget.
+2. **Without the attention sink, the model breaks.** The no-sink window agrees with the full cache on
+   {{ phase2.analysis.summary.window_tf_top1.min | pct }}–{{ phase2.analysis.summary.window_tf_top1.max | pct }}
+   of teacher-forced tokens at every budget, even the largest. Window + sink keeps
+   {{ phase2.analysis.summary.window_sink_tf_top1.min | pct }}–{{ phase2.analysis.summary.window_sink_tf_top1.max | pct }}.
+   Even when the needle is inside the window (depth {{ phase2.analysis.summary.last_depth | pct0 }}),
+   NIAH accuracy is {{ phase2.analysis.summary.window_at_last_depth.min | pct0 }}–{{ phase2.analysis.summary.window_at_last_depth.max | pct0 }}
+   without the sink and {{ phase2.analysis.summary.window_sink_at_last_depth.min | pct0 }}–{{ phase2.analysis.summary.window_sink_at_last_depth.max | pct0 }} with it.
+3. **LRU is the no-sink window.** Of {{ phase2.analysis.lru_vs_window.prompts_compared }} NIAH prompt × budget
+   pairs, {{ phase2.analysis.lru_vs_window.prompts_scored_differently }} score differently from the control, and
+   teacher-forced KL differs by at most {{ phase2.analysis.lru_vs_window.tf_kl_max_rel_diff | pct }}.
+   Block-level LRU cannot help in a GPU-only cache: every prompt block it evicts at the boundary
+   is gone before any use could be observed, and the few decode-time evictions do not change
+   answers. This was predicted when the policy was written. It is kept as the measured result,
+   not tuned away.
+4. **Eviction is nearly free in latency; observing attention is not.** Window policies run at
+   {{ phase2.analysis.summary.over_full.window_sink.min | .2f }}–{{ phase2.analysis.summary.over_full.window_sink.max | .2f }}×
+   the full cache's per-token time, with {{ phase2.analysis.summary.manager_ms_per_token.window_sink.min | .2f }}–{{ phase2.analysis.summary.manager_ms_per_token.window_sink.max | .2f }} ms
+   of manager host time per token. LRU runs at {{ phase2.analysis.summary.over_full.lru.min | .2f }}–{{ phase2.analysis.summary.over_full.lru.max | .2f }}×,
+   and {{ phase2.analysis.summary.observe_ms_per_token_lru.min | .1f }}–{{ phase2.analysis.summary.observe_ms_per_token_lru.max | .1f }} ms
+   of its time per token goes to observing attention. As Phase 1 predicted for a host-bound decode,
+   the added cost is kernel launches, not GPU work. Phase 3's selection and H2O-style scoring
+   will pay the same kind of cost.
+5. **The pool itself is exact and cheap.** At 100% budget, its worst-document teacher-forced KL against the
+   full cache is {{ phase2.analysis.summary.block_full_tf_max_kl | .1e }} with top-1 agreement
+   {{ phase2.analysis.summary.block_full_tf_min_top1 | pct }}. {{ phase2.analysis.summary.block_full_niah_prompts_scored_differently }}
+   NIAH prompts score differently, and it runs at {{ phase2.analysis.summary.block_full_over_full | .2f }}× the full cache's per-token time.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p2_pareto-dark.png">
+  <img alt="NIAH accuracy and decode tokens per second versus GPU KV budget for window plus sink, window without sink, and LRU" src="../figures/p2_pareto-light.png">
+</picture>
+
+## 1. NIAH retrieval
+
+{{ phase2.analysis.niah_prompts_per_condition }} prompts per condition at {{ phase2.analysis.prompt_len_median | int }} tokens: every combination of
+{{ phase2.analysis.summary.niah_kinds }} needle kinds, {{ phase2.analysis.summary.niah_depths }} depths and {{ phase2.analysis.summary.niah_samples }} samples. Scored on the repeatable quality kernel. The full cache scores
+{{ phase2.analysis.full_niah_accuracy | pct }} [{{ phase2.analysis.full_niah_accuracy_ci95.0 | pct0 }}, {{ phase2.analysis.full_niah_accuracy_ci95.1 | pct0 }}]:
+{{ phase2.analysis.summary.full_by_kind.single | pct0 }} single, {{ phase2.analysis.summary.full_by_kind.multikey | pct0 }} multi-key,
+{{ phase2.analysis.summary.full_by_kind.multivalue | pct0 }} multi-value. Retention divides by that. CIs are bootstraps over
+prompts; prompts share a haystack book, so they understate uncertainty.
+
+{{> p2_niah }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p2_depth-dark.png">
+  <img alt="NIAH accuracy by needle depth for each policy, one line per budget" src="../figures/p2_depth-light.png">
+</picture>
+
+Depth explains the window results mechanically. A window with budget *f* keeps roughly the last
+*f* of the prompt, plus the sink. Needles earlier than that are evicted at the boundary and cannot be found.
+
+## 2. Teacher-forced divergence
+
+{{ phase2.analysis.summary.teacher_forced_documents }} passages of {{ phase2.analysis.context | int }} tokens from a second book, {{ phase2.analysis.summary.teacher_forced_positions }} continuation positions each,
+compared with the full cache's distributions from the same prefill.
+
+{{> p2_teacher_forced }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p2_kl-dark.png">
+  <img alt="Mean KL divergence from the full cache versus budget, log scale" src="../figures/p2_kl-light.png">
+</picture>
+
+## 3. Speed
+
+Fast kernel, power throttling opted out, {{ phase2.analysis.speed_runs }} independent runs; each run prefills
+once per repeat and runs every condition in shuffled order from it. Conditions that spilled into shared
+system memory: {{ phase2.analysis.summary.conditions_with_spill }}.
+
+{{> p2_speed }}
+
+## 4. The smallest budget that keeps accuracy (brief §B8)
+
+{{> p2_headline }}
+
+## Incidents fixed during Phase 2
+
+- **Pool storage ending mid-bucket.** The bucketed cuDNN decode pads its view to the next bucket
+  boundary *inside existing storage*. A pool sized to its budget ended short of that boundary, so every
+  step fell back to unbucketed cuDNN and rebuilt a plan per token. In the 4K smoke test that made decode
+  several times slower (smoke output not retained, so no number is quoted). Storage is now rounded up to a
+  bucket, and a test guards it.
+- **LRU observer copying the cache.** The first full run's LRU observer cast every resident key
+  to float32 and broadcast a matmul over the query-group axis, copying the resident keys several
+  times per layer per token. Its latency grew with the budget. After the fix, the whole sweep was
+  rerun from one commit. The pre-fix results are kept in `results/phase2/*_observer_fp32/` and are
+  not used in any table here.
+- **Chat template date.** The Llama 3.2 template stamps today's date, which would change prompts
+  and their lengths from day to day. It is pinned.
+
+## Deviations from the plan
+
+| Plan said | What happened | Reason |
+|---|---|---|
+| Rungs 2 and 3 | Plus a no-sink window control | LRU's boundary choice drops the sink; the control shows that this accounts for the whole LRU result |
+| Budget sweep at 32K | 75% to 6.25%, plus the full cache and a 100% pool | 100% for an evicting policy is the pool, measured once |
+| (not specified) | Prefill exact; policies act from the boundary on | One prefill serves every condition, and prefill approximation is kept out of the comparison. Consequence: prefill still needs the full KV once |
+| NIAH "single and multi-needle" | Single, multi-key and multi-value | RULER's task definitions |
+
+## Implications for Phase 3
+
+- **Keep the sink in every policy.** Losing it dominates everything else measured here.
+- **Boundary decisions matter most.** GPU-only eviction spends almost its whole error budget at the
+  prefill→decode boundary, before a query exists. Query-aware selection with nothing evicted (rung 5)
+  removes that: blocks stay resident and each step picks among them.
+- **Selection must be cheap in kernel launches,** not just in GPU work. LRU's observer already costs
+  several milliseconds per token on this host-bound decode.
+
+## Run provenance
+
+{{> p2_provenance }}
