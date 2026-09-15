@@ -1,0 +1,1868 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-15T23:03:01+00:00",
+    "git_commit": "281adb11975068247809b6b3ce0cba948a4ed4c7",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts/analyze_phase2.py"
+    ],
+    "python": "3.12.10"
+  },
+  "sources": {
+    "policy_quality": {
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-15T22:46:24+00:00",
+      "git_commit": "5b1c5ef9c778182829f363d5bf88e7cf4e51a242",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py"
+      ],
+      "python": "3.12.10"
+    },
+    "budget_speed": [
+      {
+        "schema_version": 1,
+        "generated_at_utc": "2026-09-15T22:51:08+00:00",
+        "git_commit": "5b1c5ef9c778182829f363d5bf88e7cf4e51a242",
+        "git_dirty": false,
+        "git_dirty_files": [],
+        "argv": [
+          "scripts\\02_budget_speed.py",
+          "--run-id",
+          "1"
+        ],
+        "python": "3.12.10"
+      },
+      {
+        "schema_version": 1,
+        "generated_at_utc": "2026-09-15T22:55:58+00:00",
+        "git_commit": "5b1c5ef9c778182829f363d5bf88e7cf4e51a242",
+        "git_dirty": false,
+        "git_dirty_files": [],
+        "argv": [
+          "scripts\\02_budget_speed.py",
+          "--run-id",
+          "2"
+        ],
+        "python": "3.12.10"
+      },
+      {
+        "schema_version": 1,
+        "generated_at_utc": "2026-09-15T23:00:41+00:00",
+        "git_commit": "5b1c5ef9c778182829f363d5bf88e7cf4e51a242",
+        "git_dirty": false,
+        "git_dirty_files": [],
+        "argv": [
+          "scripts\\02_budget_speed.py",
+          "--run-id",
+          "3"
+        ],
+        "python": "3.12.10"
+      }
+    ]
+  },
+  "context": 32768,
+  "block_size": 64,
+  "kv_bytes_per_token": 32768,
+  "prompt_len_median": 32768,
+  "full_niah_accuracy": 0.8888888888888888,
+  "full_niah_accuracy_ci95": [
+    0.8222222222222222,
+    0.95
+  ],
+  "niah_prompts_per_condition": 45,
+  "niah": [
+    {
+      "policy": "block_full",
+      "budget": 1.0,
+      "label": "block_full@1",
+      "prompts": 45,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "agrees_with_full": 1.0,
+      "by_kind": {
+        "single": 1.0,
+        "multikey": 0.9333333333333333,
+        "multivalue": 0.7333333333333333
+      },
+      "by_depth": {
+        "0": 0.8888888888888888,
+        "0.25": 0.8888888888888888,
+        "0.5": 0.9722222222222222,
+        "0.75": 0.7777777777777778,
+        "1": 0.9166666666666666
+      },
+      "gpu_resident_kv_bytes_median": 1074233344,
+      "resident_fraction_median": 1.0
+    },
+    {
+      "policy": "full",
+      "budget": 1.0,
+      "label": "full@1",
+      "prompts": 45,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "agrees_with_full": 1.0,
+      "by_kind": {
+        "single": 1.0,
+        "multikey": 0.9333333333333333,
+        "multivalue": 0.7333333333333333
+      },
+      "by_depth": {
+        "0": 0.8888888888888888,
+        "0.25": 0.8888888888888888,
+        "0.5": 0.9722222222222222,
+        "0.75": 0.7777777777777778,
+        "1": 0.9166666666666666
+      },
+      "gpu_resident_kv_bytes_median": 1074233344,
+      "resident_fraction_median": 1.0
+    },
+    {
+      "policy": "lru",
+      "budget": 0.75,
+      "label": "lru@0.75",
+      "prompts": 45,
+      "accuracy": 0.2611111111111111,
+      "accuracy_ci95": [
+        0.15,
+        0.3888888888888889
+      ],
+      "retention": 0.29375,
+      "agrees_with_full": 0.26666666666666666,
+      "by_kind": {
+        "single": 0.6,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.05
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.027777777777777776,
+        "0.5": 0.3611111111111111,
+        "0.75": 0.4444444444444444,
+        "1": 0.4444444444444444
+      },
+      "gpu_resident_kv_bytes_median": 803700736,
+      "resident_fraction_median": 0.7481621572156301
+    },
+    {
+      "policy": "lru",
+      "budget": 0.5,
+      "label": "lru@0.5",
+      "prompts": 45,
+      "accuracy": 0.22777777777777777,
+      "accuracy_ci95": [
+        0.11666666666666667,
+        0.35555555555555557
+      ],
+      "retention": 0.25625000000000003,
+      "agrees_with_full": 0.2222222222222222,
+      "by_kind": {
+        "single": 0.4,
+        "multikey": 0.2,
+        "multivalue": 0.08333333333333333
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.027777777777777776,
+        "0.5": 0.027777777777777776,
+        "0.75": 0.4722222222222222,
+        "1": 0.5833333333333334
+      },
+      "gpu_resident_kv_bytes_median": 535265280,
+      "resident_fraction_median": 0.4982765457706738
+    },
+    {
+      "policy": "lru",
+      "budget": 0.25,
+      "label": "lru@0.25",
+      "prompts": 45,
+      "accuracy": 0.12222222222222222,
+      "accuracy_ci95": [
+        0.03888888888888889,
+        0.21666666666666667
+      ],
+      "retention": 0.1375,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.03333333333333333
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.0,
+        "1": 0.6111111111111112
+      },
+      "gpu_resident_kv_bytes_median": 266829824,
+      "resident_fraction_median": 0.2483909343257176
+    },
+    {
+      "policy": "lru",
+      "budget": 0.125,
+      "label": "lru@0.125",
+      "prompts": 45,
+      "accuracy": 0.1111111111111111,
+      "accuracy_ci95": [
+        0.022222222222222223,
+        0.2
+      ],
+      "retention": 0.125,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.0
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.0,
+        "1": 0.5555555555555556
+      },
+      "gpu_resident_kv_bytes_median": 132612096,
+      "resident_fraction_median": 0.12344812860323949
+    },
+    {
+      "policy": "lru",
+      "budget": 0.0625,
+      "label": "lru@0.0625",
+      "prompts": 45,
+      "accuracy": 0.12777777777777777,
+      "accuracy_ci95": [
+        0.044444444444444446,
+        0.2222222222222222
+      ],
+      "retention": 0.14375,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.05
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.027777777777777776,
+        "1": 0.6111111111111112
+      },
+      "gpu_resident_kv_bytes_median": 65503232,
+      "resident_fraction_median": 0.06097672574200043
+    },
+    {
+      "policy": "window",
+      "budget": 0.75,
+      "label": "window@0.75",
+      "prompts": 45,
+      "accuracy": 0.2611111111111111,
+      "accuracy_ci95": [
+        0.15,
+        0.3888888888888889
+      ],
+      "retention": 0.29375,
+      "agrees_with_full": 0.26666666666666666,
+      "by_kind": {
+        "single": 0.6,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.05
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.027777777777777776,
+        "0.5": 0.3611111111111111,
+        "0.75": 0.4444444444444444,
+        "1": 0.4444444444444444
+      },
+      "gpu_resident_kv_bytes_median": 803700736,
+      "resident_fraction_median": 0.7481621572156301
+    },
+    {
+      "policy": "window",
+      "budget": 0.5,
+      "label": "window@0.5",
+      "prompts": 45,
+      "accuracy": 0.22777777777777777,
+      "accuracy_ci95": [
+        0.11666666666666667,
+        0.35555555555555557
+      ],
+      "retention": 0.25625000000000003,
+      "agrees_with_full": 0.2222222222222222,
+      "by_kind": {
+        "single": 0.4,
+        "multikey": 0.2,
+        "multivalue": 0.08333333333333333
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.027777777777777776,
+        "0.5": 0.027777777777777776,
+        "0.75": 0.4722222222222222,
+        "1": 0.5833333333333334
+      },
+      "gpu_resident_kv_bytes_median": 535265280,
+      "resident_fraction_median": 0.4982765457706738
+    },
+    {
+      "policy": "window",
+      "budget": 0.25,
+      "label": "window@0.25",
+      "prompts": 45,
+      "accuracy": 0.12222222222222222,
+      "accuracy_ci95": [
+        0.03888888888888889,
+        0.21666666666666667
+      ],
+      "retention": 0.1375,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.03333333333333333
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.0,
+        "1": 0.6111111111111112
+      },
+      "gpu_resident_kv_bytes_median": 266829824,
+      "resident_fraction_median": 0.2483909343257176
+    },
+    {
+      "policy": "window",
+      "budget": 0.125,
+      "label": "window@0.125",
+      "prompts": 45,
+      "accuracy": 0.1111111111111111,
+      "accuracy_ci95": [
+        0.022222222222222223,
+        0.2
+      ],
+      "retention": 0.125,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.0
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.0,
+        "1": 0.5555555555555556
+      },
+      "gpu_resident_kv_bytes_median": 132612096,
+      "resident_fraction_median": 0.12344812860323949
+    },
+    {
+      "policy": "window",
+      "budget": 0.0625,
+      "label": "window@0.0625",
+      "prompts": 45,
+      "accuracy": 0.12777777777777777,
+      "accuracy_ci95": [
+        0.044444444444444446,
+        0.2222222222222222
+      ],
+      "retention": 0.14375,
+      "agrees_with_full": 0.13333333333333333,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.13333333333333333,
+        "multivalue": 0.05
+      },
+      "by_depth": {
+        "0": 0.0,
+        "0.25": 0.0,
+        "0.5": 0.0,
+        "0.75": 0.027777777777777776,
+        "1": 0.6111111111111112
+      },
+      "gpu_resident_kv_bytes_median": 65503232,
+      "resident_fraction_median": 0.06097672574200043
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.75,
+      "label": "window_sink@0.75",
+      "prompts": 45,
+      "accuracy": 0.5555555555555556,
+      "accuracy_ci95": [
+        0.42777777777777776,
+        0.6833333333333333
+      ],
+      "retention": 0.6250000000000001,
+      "agrees_with_full": 0.5333333333333333,
+      "by_kind": {
+        "single": 0.6,
+        "multikey": 0.5333333333333333,
+        "multivalue": 0.5333333333333333
+      },
+      "by_depth": {
+        "0": 0.08333333333333333,
+        "0.25": 0.1388888888888889,
+        "0.5": 0.9166666666666666,
+        "0.75": 0.75,
+        "1": 0.8888888888888888
+      },
+      "gpu_resident_kv_bytes_median": 803700736,
+      "resident_fraction_median": 0.7481621572156301
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "label": "window_sink@0.5",
+      "prompts": 45,
+      "accuracy": 0.4166666666666667,
+      "accuracy_ci95": [
+        0.29444444444444445,
+        0.5444444444444444
+      ],
+      "retention": 0.46875000000000006,
+      "agrees_with_full": 0.3111111111111111,
+      "by_kind": {
+        "single": 0.4,
+        "multikey": 0.4,
+        "multivalue": 0.45
+      },
+      "by_depth": {
+        "0": 0.1111111111111111,
+        "0.25": 0.1111111111111111,
+        "0.5": 0.1111111111111111,
+        "0.75": 0.9166666666666666,
+        "1": 0.8333333333333334
+      },
+      "gpu_resident_kv_bytes_median": 535265280,
+      "resident_fraction_median": 0.4982765457706738
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "label": "window_sink@0.25",
+      "prompts": 45,
+      "accuracy": 0.21666666666666667,
+      "accuracy_ci95": [
+        0.11666666666666667,
+        0.31666666666666665
+      ],
+      "retention": 0.24375000000000002,
+      "agrees_with_full": 0.2222222222222222,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.2,
+        "multivalue": 0.25
+      },
+      "by_depth": {
+        "0": 0.05555555555555555,
+        "0.25": 0.08333333333333333,
+        "0.5": 0.05555555555555555,
+        "0.75": 0.1111111111111111,
+        "1": 0.7777777777777778
+      },
+      "gpu_resident_kv_bytes_median": 266829824,
+      "resident_fraction_median": 0.2483909343257176
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "label": "window_sink@0.125",
+      "prompts": 45,
+      "accuracy": 0.19444444444444445,
+      "accuracy_ci95": [
+        0.09444444444444444,
+        0.3
+      ],
+      "retention": 0.21875000000000003,
+      "agrees_with_full": 0.17777777777777778,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.2,
+        "multivalue": 0.18333333333333332
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.08333333333333333,
+        "0.5": 0.0,
+        "0.75": 0.08333333333333333,
+        "1": 0.7777777777777778
+      },
+      "gpu_resident_kv_bytes_median": 132612096,
+      "resident_fraction_median": 0.12344812860323949
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "label": "window_sink@0.0625",
+      "prompts": 45,
+      "accuracy": 0.17777777777777778,
+      "accuracy_ci95": [
+        0.07777777777777778,
+        0.2833333333333333
+      ],
+      "retention": 0.2,
+      "agrees_with_full": 0.15555555555555556,
+      "by_kind": {
+        "single": 0.2,
+        "multikey": 0.2,
+        "multivalue": 0.13333333333333333
+      },
+      "by_depth": {
+        "0": 0.027777777777777776,
+        "0.25": 0.05555555555555555,
+        "0.5": 0.0,
+        "0.75": 0.05555555555555555,
+        "1": 0.75
+      },
+      "gpu_resident_kv_bytes_median": 65503232,
+      "resident_fraction_median": 0.06097672574200043
+    }
+  ],
+  "teacher_forced": [
+    {
+      "policy": "block_full",
+      "budget": 1.0,
+      "label": "block_full@1",
+      "documents": 2,
+      "top1_agreement": 1.0,
+      "top1_min_doc": 1.0,
+      "mean_kl": 0.0,
+      "mean_kl_max_doc": 0.0,
+      "exact_all_docs": true
+    },
+    {
+      "policy": "full",
+      "budget": 1.0,
+      "label": "full@1",
+      "documents": 2,
+      "top1_agreement": 1.0,
+      "top1_min_doc": 1.0,
+      "mean_kl": 0.0,
+      "mean_kl_max_doc": 0.0,
+      "exact_all_docs": true
+    },
+    {
+      "policy": "lru",
+      "budget": 0.75,
+      "label": "lru@0.75",
+      "documents": 2,
+      "top1_agreement": 0.166015625,
+      "top1_min_doc": 0.15234375,
+      "mean_kl": 4.20961528346122,
+      "mean_kl_max_doc": 4.328302757857704,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.5,
+      "label": "lru@0.5",
+      "documents": 2,
+      "top1_agreement": 0.169921875,
+      "top1_min_doc": 0.1640625,
+      "mean_kl": 4.185040632191999,
+      "mean_kl_max_doc": 4.320469516979666,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.25,
+      "label": "lru@0.25",
+      "documents": 2,
+      "top1_agreement": 0.138671875,
+      "top1_min_doc": 0.12109375,
+      "mean_kl": 4.3736375092217346,
+      "mean_kl_max_doc": 4.545939512275108,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.125,
+      "label": "lru@0.125",
+      "documents": 2,
+      "top1_agreement": 0.138671875,
+      "top1_min_doc": 0.125,
+      "mean_kl": 4.583398343629634,
+      "mean_kl_max_doc": 4.750009693147012,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.0625,
+      "label": "lru@0.0625",
+      "documents": 2,
+      "top1_agreement": 0.126953125,
+      "top1_min_doc": 0.11328125,
+      "mean_kl": 4.781901414307715,
+      "mean_kl_max_doc": 4.942611110927033,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.75,
+      "label": "window@0.75",
+      "documents": 2,
+      "top1_agreement": 0.166015625,
+      "top1_min_doc": 0.15234375,
+      "mean_kl": 4.209304112730794,
+      "mean_kl_max_doc": 4.3248948606518,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.5,
+      "label": "window@0.5",
+      "documents": 2,
+      "top1_agreement": 0.171875,
+      "top1_min_doc": 0.16015625,
+      "mean_kl": 4.178921085026506,
+      "mean_kl_max_doc": 4.3141562703662615,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.25,
+      "label": "window@0.25",
+      "documents": 2,
+      "top1_agreement": 0.140625,
+      "top1_min_doc": 0.125,
+      "mean_kl": 4.371410949351477,
+      "mean_kl_max_doc": 4.5448430064208445,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.125,
+      "label": "window@0.125",
+      "documents": 2,
+      "top1_agreement": 0.142578125,
+      "top1_min_doc": 0.12890625,
+      "mean_kl": 4.590945448891068,
+      "mean_kl_max_doc": 4.7410386994112885,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.0625,
+      "label": "window@0.0625",
+      "documents": 2,
+      "top1_agreement": 0.125,
+      "top1_min_doc": 0.109375,
+      "mean_kl": 4.761454469597137,
+      "mean_kl_max_doc": 4.930402003729108,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.75,
+      "label": "window_sink@0.75",
+      "documents": 2,
+      "top1_agreement": 0.935546875,
+      "top1_min_doc": 0.9296875,
+      "mean_kl": 0.016320885556549165,
+      "mean_kl_max_doc": 0.02174672394578,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "label": "window_sink@0.5",
+      "documents": 2,
+      "top1_agreement": 0.912109375,
+      "top1_min_doc": 0.89453125,
+      "mean_kl": 0.034105713749880806,
+      "mean_kl_max_doc": 0.04449702539999058,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "label": "window_sink@0.25",
+      "documents": 2,
+      "top1_agreement": 0.845703125,
+      "top1_min_doc": 0.82421875,
+      "mean_kl": 0.1088540189477734,
+      "mean_kl_max_doc": 0.12794398370596172,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "label": "window_sink@0.125",
+      "documents": 2,
+      "top1_agreement": 0.826171875,
+      "top1_min_doc": 0.8125,
+      "mean_kl": 0.14318751735993301,
+      "mean_kl_max_doc": 0.1555191719511342,
+      "exact_all_docs": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "label": "window_sink@0.0625",
+      "documents": 2,
+      "top1_agreement": 0.80859375,
+      "top1_min_doc": 0.8046875,
+      "mean_kl": 0.16833021507870471,
+      "mean_kl_max_doc": 0.17190869479155876,
+      "exact_all_docs": false
+    }
+  ],
+  "speed": [
+    {
+      "policy": "block_full",
+      "budget": 1.0,
+      "label": "block_full@1",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.01940764999744715,
+        "min": 0.019054099997447338,
+        "max": 0.02488900000025751
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.029295199987245724,
+        "min": 0.02400550000311341,
+        "max": 0.032156100001884624
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 51.52607348811104,
+        "min": 40.178392060334026,
+        "max": 52.48214295789196
+      },
+      "over_full": 1.0465758373621903,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0010321917320002935,
+        "min": 0.0009722548880075154,
+        "max": 0.0011934789448636899
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.025459099997533485,
+        "min": 0.02528580000216607,
+        "max": 0.027529500002856366
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 1078099968,
+        "min": 1078099968,
+        "max": 1078099968
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4797106176,
+        "min": 4797106176,
+        "max": 4797132800
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 0,
+        "min": 0,
+        "max": 0
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "full",
+      "budget": 1.0,
+      "label": "full@1",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.01854394999827491,
+        "min": 0.018170750001445413,
+        "max": 0.018839650008885656
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.020995899991248734,
+        "min": 0.01866649999283254,
+        "max": 0.023109699992346577
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 53.92594350680557,
+        "min": 53.079542323151095,
+        "max": 55.03350163974816
+      },
+      "over_full": 1.0,
+      "manager_host_s_per_token": {
+        "n_runs": 0
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 1078099968,
+        "min": 1078099968,
+        "max": 1078099968
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3648182272,
+        "min": 3648182272,
+        "max": 3648182272
+      },
+      "evictions": {
+        "n_runs": 0
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.75,
+      "label": "lru@0.75",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.031023999996250495,
+        "min": 0.023782750002283137,
+        "max": 0.038147849998495076
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.038123099991935305,
+        "min": 0.026630299995304085,
+        "max": 0.044087399990530685
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 32.233109854334,
+        "min": 26.213797108865894,
+        "max": 42.04728216476229
+      },
+      "over_full": 1.6729984711529402,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.007121377444587108,
+        "min": 0.0055220082656723705,
+        "max": 0.007631810529934789
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.005907127819473932,
+        "min": 0.0045042669165772705,
+        "max": 0.006267875187336187
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.025252100007492118,
+        "min": 0.022875599999679253,
+        "max": 0.02619780000532046
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 805470208,
+        "min": 805470208,
+        "max": 805470208
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4511943680,
+        "min": 4511935488,
+        "max": 4511962112
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.5,
+      "label": "lru@0.5",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.025450700006331317,
+        "min": 0.025346150003315415,
+        "max": 0.025766600003407802
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.0304477999889059,
+        "min": 0.027813900000182912,
+        "max": 0.04287800000747666
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 39.29165012165607,
+        "min": 38.809932232725444,
+        "max": 39.45372373592023
+      },
+      "over_full": 1.3724530107500785,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.00599755338317438,
+        "min": 0.005863795489448305,
+        "max": 0.006734443612920148
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.004969366163512538,
+        "min": 0.004833339096096877,
+        "max": 0.0055865872197493885
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.015990199986845255,
+        "min": 0.015203800008748658,
+        "max": 0.020387900003697723
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 537034752,
+        "min": 537034752,
+        "max": 537034752
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4235023360,
+        "min": 4235023360,
+        "max": 4235023360
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.25,
+      "label": "lru@0.25",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.02451029999065213,
+        "min": 0.024240049999207258,
+        "max": 0.03401954999571899
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.03663170000072569,
+        "min": 0.027737700002035126,
+        "max": 0.043401899994933046
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 40.7991742402739,
+        "min": 29.39486266355198,
+        "max": 41.25404031892277
+      },
+      "over_full": 1.3217410526307636,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0068404360901244,
+        "min": 0.0059207120322302,
+        "max": 0.008267511274487032
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.005683521050837283,
+        "min": 0.0049115037583856306,
+        "max": 0.006982112781838794
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.010141999999177642,
+        "min": 0.010001199989346787,
+        "max": 0.016404000009060837
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 266502144,
+        "min": 266502144,
+        "max": 266502144
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3924467200,
+        "min": 3924467200,
+        "max": 3924485632
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.125,
+      "label": "lru@0.125",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.025673650001408532,
+        "min": 0.02469405000738334,
+        "max": 0.02628749999712454
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.030351499997777864,
+        "min": 0.026141299997107126,
+        "max": 0.03703289999975823
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 38.95044140374029,
+        "min": 38.04089396516919,
+        "max": 40.49558495674089
+      },
+      "over_full": 1.3844757995894552,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0062552586463069946,
+        "min": 0.005847380452030478,
+        "max": 0.006791131583189494
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.005215781954637049,
+        "min": 0.004844278195296078,
+        "max": 0.0056874548888999855
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.008184599995729513,
+        "min": 0.007937500005937181,
+        "max": 0.009304899998824112
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 132284416,
+        "min": 132284416,
+        "max": 132284416
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3785998848,
+        "min": 3785994752,
+        "max": 3786025472
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "lru",
+      "budget": 0.0625,
+      "label": "lru@0.0625",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.0254099999947357,
+        "min": 0.024748199990426656,
+        "max": 0.02812130000529578
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.027283100003842264,
+        "min": 0.02530589999514632,
+        "max": 0.03955149999819696
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 39.35458481728352,
+        "min": 35.56023369515921,
+        "max": 40.40697910905965
+      },
+      "over_full": 1.370258224224047,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.005935216542242333,
+        "min": 0.005892733831257958,
+        "max": 0.007282481206488214
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0049257639105584035,
+        "min": 0.004898830072751227,
+        "max": 0.006123333835897309
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.011033400005544536,
+        "min": 0.007739000007859431,
+        "max": 0.011572399991564453
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 65175552,
+        "min": 65175552,
+        "max": 65175552
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3716819456,
+        "min": 3716803072,
+        "max": 3716819456
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.75,
+      "label": "window@0.75",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.022998300002655014,
+        "min": 0.01985399999830406,
+        "max": 0.026404249998449814
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.033317599998554215,
+        "min": 0.02491030000965111,
+        "max": 0.033551500004250556
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 43.48147471267685,
+        "min": 37.87269095159718,
+        "max": 50.367684098187794
+      },
+      "over_full": 1.2402050266957405,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0011535548907879712,
+        "min": 0.0010048548856844664,
+        "max": 0.001257402254522365
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.021628600006806664,
+        "min": 0.021486600002390333,
+        "max": 0.023890600001323037
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 805470208,
+        "min": 805470208,
+        "max": 805470208
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4511836160,
+        "min": 4511823872,
+        "max": 4511854592
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.5,
+      "label": "window@0.5",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.01953230000071926,
+        "min": 0.019180900002538692,
+        "max": 0.02056855000409996
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.025851500002318062,
+        "min": 0.0233973000140395,
+        "max": 0.027297300010104664
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 51.1972476340818,
+        "min": 48.617914233169984,
+        "max": 52.13519698594147
+      },
+      "over_full": 1.053297706396765,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0010255909775632357,
+        "min": 0.0009891157912937714,
+        "max": 0.0010349466203916748
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.012475400013499893,
+        "min": 0.012346900010015815,
+        "max": 0.01300710000214167
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 537034752,
+        "min": 537034752,
+        "max": 537034752
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4234946560,
+        "min": 4234938368,
+        "max": 4234964992
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.25,
+      "label": "window@0.25",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.02166494999983115,
+        "min": 0.019869899995683227,
+        "max": 0.028456300002289936
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.0269964000035543,
+        "min": 0.023246799988555722,
+        "max": 0.034999399998923764
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 46.15750324869403,
+        "min": 35.141603086821824,
+        "max": 50.32737961525986
+      },
+      "over_full": 1.168302869768662,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.001042934589650783,
+        "min": 0.0009856744342452068,
+        "max": 0.0012870203014121817
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.008252499988884665,
+        "min": 0.008214400004362687,
+        "max": 0.009173099999316037
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 266502144,
+        "min": 266502144,
+        "max": 266502144
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3924454912,
+        "min": 3924436480,
+        "max": 3924471296
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.125,
+      "label": "window@0.125",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.01985584999783896,
+        "min": 0.019044549997488502,
+        "max": 0.026388450001832098
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.024244300002465025,
+        "min": 0.020943700001225807,
+        "max": 0.033266400001593865
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 50.362991264984196,
+        "min": 37.89536709926396,
+        "max": 52.50846043261063
+      },
+      "over_full": 1.0707454452630691,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.000990736090050331,
+        "min": 0.0009299548847436261,
+        "max": 0.0011974706755875772
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.005106099997647107,
+        "min": 0.004610799995134585,
+        "max": 0.009499400010099635
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 132284416,
+        "min": 132284416,
+        "max": 132284416
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3786026496,
+        "min": 3785979392,
+        "max": 3786042880
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window",
+      "budget": 0.0625,
+      "label": "window@0.0625",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.02154895000421675,
+        "min": 0.01985640000202693,
+        "max": 0.02711944999464322
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.03353869999409653,
+        "min": 0.02221379999537021,
+        "max": 0.0337876999983564
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 46.405973367812244,
+        "min": 36.87390416094447,
+        "max": 50.36159625601421
+      },
+      "over_full": 1.16204746055837,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0010967127797395144,
+        "min": 0.0009667819541576144,
+        "max": 0.0012346165431085694
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.005559799988986924,
+        "min": 0.005519599988474511,
+        "max": 0.008327199990162626
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 65175552,
+        "min": 65175552,
+        "max": 65175552
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3716761088,
+        "min": 3716761088,
+        "max": 3716769280
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.75,
+      "label": "window_sink@0.75",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.019422099998337217,
+        "min": 0.0191869999980554,
+        "max": 0.022392349994333927
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.020930900005623698,
+        "min": 0.019942100014304742,
+        "max": 0.027650999996694736
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 51.487738199556844,
+        "min": 44.65810869573922,
+        "max": 52.11862198891697
+      },
+      "over_full": 1.0473550672938612,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.00096390526164043,
+        "min": 0.000961529326566523,
+        "max": 0.0010912902264801534
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.01985340000828728,
+        "min": 0.019568800009437837,
+        "max": 0.019908000002033077
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 805470208,
+        "min": 805470208,
+        "max": 805470208
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4511870976,
+        "min": 4511836160,
+        "max": 4511870976
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "label": "window_sink@0.5",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.019450550003966782,
+        "min": 0.01924064999911934,
+        "max": 0.01952780000283383
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.021174800000153482,
+        "min": 0.020218799996655434,
+        "max": 0.034483600000385195
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 51.41242791571745,
+        "min": 51.20904555837741,
+        "max": 51.97329612283217
+      },
+      "over_full": 1.0488892606902094,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0009729548915870543,
+        "min": 0.0009714428580950777,
+        "max": 0.0010674902227229292
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.012202400001115166,
+        "min": 0.011864000000059605,
+        "max": 0.014230100001441315
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 537034752,
+        "min": 537034752,
+        "max": 537034752
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 4234981376,
+        "min": 4234934272,
+        "max": 4234981376
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "label": "window_sink@0.25",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.01993120000406634,
+        "min": 0.01972359999490436,
+        "max": 0.025873000005958602
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.03382729999430012,
+        "min": 0.027101800005766563,
+        "max": 0.03547299999627285
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 50.17259371216892,
+        "min": 38.65033045142419,
+        "max": 50.70068345831148
+      },
+      "over_full": 1.0748087654421243,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.001109779700028528,
+        "min": 0.0010397421053647505,
+        "max": 0.001181308271125295
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.009397199988598004,
+        "min": 0.009040600009029731,
+        "max": 0.00987189999432303
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 266502144,
+        "min": 266502144,
+        "max": 266502144
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3924454912,
+        "min": 3924428288,
+        "max": 3924471296
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "label": "window_sink@0.125",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.019772450003074482,
+        "min": 0.01950080000096932,
+        "max": 0.026494199999433476
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.022159300002385862,
+        "min": 0.021704300001147203,
+        "max": 0.03257090000261087
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 50.575421854373474,
+        "min": 37.744110032436645,
+        "max": 51.27994748678481
+      },
+      "over_full": 1.0662480218569321,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0009715210499121156,
+        "min": 0.0009551759369634582,
+        "max": 0.0012075293262548662
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.005269199988106266,
+        "min": 0.005165800001122989,
+        "max": 0.007648800004972145
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 132284416,
+        "min": 132284416,
+        "max": 132284416
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3785991680,
+        "min": 3785991680,
+        "max": 3786010112
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "label": "window_sink@0.0625",
+      "decode_wall_median_s": {
+        "n_runs": 3,
+        "median": 0.019516799999109935,
+        "min": 0.01920255000004545,
+        "max": 0.019645550004497636
+      },
+      "decode_wall_p90_s": {
+        "n_runs": 3,
+        "median": 0.026020499994046986,
+        "min": 0.022159999993164092,
+        "max": 0.0279210000007879
+      },
+      "tokens_per_s": {
+        "n_runs": 3,
+        "median": 51.237907856083226,
+        "min": 50.902112680533804,
+        "max": 52.076416934086005
+      },
+      "over_full": 1.0524618541856252,
+      "manager_host_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0009855225575471618,
+        "min": 0.0009380090198106714,
+        "max": 0.0010622255635426793
+      },
+      "manager_observe_s_per_token": {
+        "n_runs": 3,
+        "median": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "boundary_build_s": {
+        "n_runs": 3,
+        "median": 0.005379599999287166,
+        "min": 0.005122600006870925,
+        "max": 0.005440499997348525
+      },
+      "gpu_resident_kv_bytes": {
+        "n_runs": 3,
+        "median": 65175552,
+        "min": 65175552,
+        "max": 65175552
+      },
+      "max_memory_allocated_bytes": {
+        "n_runs": 3,
+        "median": 3716787712,
+        "min": 3716756992,
+        "max": 3716820480
+      },
+      "evictions": {
+        "n_runs": 3,
+        "median": 32,
+        "min": 32,
+        "max": 32
+      },
+      "any_spill": false
+    }
+  ],
+  "speed_runs": 3,
+  "full_decode_median_s": {
+    "n_runs": 3,
+    "median": 0.01854394999827491,
+    "min": 0.018170750001445413,
+    "max": 0.018839650008885656
+  },
+  "headline": {
+    "window_sink": {
+      "retention_target": 0.99,
+      "min_budget_meeting_target": null,
+      "tokens_per_s_at_that_budget": null,
+      "best_retention_below_full": 0.6250000000000001,
+      "best_retention_budget": 0.75
+    },
+    "window": {
+      "retention_target": 0.99,
+      "min_budget_meeting_target": null,
+      "tokens_per_s_at_that_budget": null,
+      "best_retention_below_full": 0.29375,
+      "best_retention_budget": 0.75
+    },
+    "lru": {
+      "retention_target": 0.99,
+      "min_budget_meeting_target": null,
+      "tokens_per_s_at_that_budget": null,
+      "best_retention_below_full": 0.29375,
+      "best_retention_budget": 0.75
+    }
+  },
+  "lru_vs_window": {
+    "prompts_compared": 225,
+    "prompts_scored_differently": 0,
+    "niah_accuracy_max_abs_diff": 0.0,
+    "tf_top1_max_abs_diff": 0.00390625,
+    "tf_kl_max_rel_diff": 0.0042942644608146285
+  },
+  "summary": {
+    "window_sink_tf_top1": {
+      "min": 0.80859375,
+      "max": 0.935546875
+    },
+    "window_sink_tf_kl": {
+      "min": 0.016320885556549165,
+      "max": 0.16833021507870471
+    },
+    "window_tf_top1": {
+      "min": 0.125,
+      "max": 0.171875
+    },
+    "window_tf_kl": {
+      "min": 4.178921085026506,
+      "max": 4.761454469597137
+    },
+    "block_full_tf_max_kl": 0.0,
+    "block_full_tf_min_top1": 1.0,
+    "block_full_niah_prompts_scored_differently": 0,
+    "teacher_forced_documents": 2,
+    "teacher_forced_positions": 256,
+    "niah_kinds": 3,
+    "niah_depths": 5,
+    "niah_samples": 3,
+    "last_depth": 1.0,
+    "window_sink_at_last_depth": {
+      "min": 0.75,
+      "max": 0.8888888888888888
+    },
+    "window_at_last_depth": {
+      "min": 0.4444444444444444,
+      "max": 0.6111111111111112
+    },
+    "full_by_kind": {
+      "single": 1.0,
+      "multikey": 0.9333333333333333,
+      "multivalue": 0.7333333333333333
+    },
+    "over_full": {
+      "window_sink": {
+        "min": 1.0473550672938612,
+        "max": 1.0748087654421243
+      },
+      "window": {
+        "min": 1.053297706396765,
+        "max": 1.2402050266957405
+      },
+      "lru": {
+        "min": 1.3217410526307636,
+        "max": 1.6729984711529402
+      }
+    },
+    "manager_ms_per_token": {
+      "window_sink": {
+        "min": 0.96390526164043,
+        "max": 1.1097797000285279
+      },
+      "window": {
+        "min": 0.990736090050331,
+        "max": 1.1535548907879711
+      },
+      "lru": {
+        "min": 5.935216542242332,
+        "max": 7.121377444587108
+      }
+    },
+    "observe_ms_per_token_lru": {
+      "min": 4.925763910558404,
+      "max": 5.907127819473932
+    },
+    "block_full_over_full": 1.0465758373621903,
+    "conditions_with_spill": 0
+  }
+}
