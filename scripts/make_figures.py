@@ -389,10 +389,155 @@ def fig_p1_regimes(lr: dict[str, Any], t: Theme) -> None:
     save(fig, "p1_latency_regimes", t)
 
 
+P2_POLICIES = (("window_sink", "Window + sink (rung 2)"), ("window", "Window, no sink (control)"), ("lru", "LRU (rung 3)"))
+# Ordinal budget ramp, one hue, validated per mode: small budget recedes, large budget stands out.
+BUDGET_RAMP = {
+    "light": ("#86b6ef", "#5598e7", "#2a78d6", "#1c5cab", "#104281"),
+    "dark": ("#256abf", "#3987e5", "#6da7ec", "#9ec5f4", "#cde2fb"),
+}
+
+
+def _same_series(rows_a: list[dict[str, Any]], rows_b: list[dict[str, Any]], key: str, rel: float = 1e-9) -> bool:
+    """True when two policies measured identical values at every budget (then one hides the other)."""
+    va = {r["budget"]: r[key] for r in rows_a}
+    vb = {r["budget"]: r[key] for r in rows_b}
+    return bool(va) and va.keys() == vb.keys() and all(abs(va[b] - vb[b]) <= rel * max(abs(va[b]), abs(vb[b]), 1e-12) for b in va)
+
+
+def _budget_axis(ax: plt.Axes, budgets: list[float]) -> None:
+    ax.set_xscale("log", base=2)
+    ax.set_xticks(budgets)
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{100 * v:g}%"))
+    ax.xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
+    ax.set_xlim(min(budgets) / 1.4, 1.4)
+
+
+def fig_p2_pareto(a: dict[str, Any], t: Theme) -> None:
+    """NIAH accuracy and decode speed against GPU KV budget: two plots, never a dual axis."""
+    fig, axes = plt.subplots(1, 2, figsize=(9.6, 4.6), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    niah = {n["label"]: n for n in a["niah"]}
+    speed = {s["label"]: s for s in a["speed"]}
+    budgets = sorted({n["budget"] for n in a["niah"]} | {1.0})
+
+    ax = axes[0]
+    style_axes(ax, t)
+    full = niah["full@1"]
+    ax.axhline(100 * full["accuracy"], color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    ax.annotate("full cache", (1.0, 100 * full["accuracy"]), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+    niah_rows = {pol: sorted((n for n in a["niah"] if n["policy"] == pol), key=lambda n: n["budget"]) for pol, _ in P2_POLICIES}
+    lru_is_window = _same_series(niah_rows["lru"], niah_rows["window"], "accuracy")
+    for (policy, name), color in zip(P2_POLICIES, t.series):
+        rows = niah_rows[policy]
+        xs = [n["budget"] for n in rows]
+        ys = [100 * n["accuracy"] for n in rows]
+        lo = [100 * (n["accuracy"] - n["accuracy_ci95"][0]) for n in rows]
+        hi = [100 * (n["accuracy_ci95"][1] - n["accuracy"]) for n in rows]
+        # An identical series would be invisible under the next one; draw it wider underneath.
+        wide = policy == "window" and lru_is_window
+        ax.errorbar(xs, ys, yerr=[lo, hi], color=color, linewidth=5 if wide else 2, marker="o", markersize=8 if wide else 5, markeredgecolor=t.surface, markeredgewidth=1.2, capsize=0, elinewidth=1, label=name, zorder=1 if wide else 2)
+    if lru_is_window:
+        ax.text(0.98, 0.03, "LRU and window, no sink: identical at every budget", transform=ax.transAxes, ha="right", va="bottom", color=t.ink2, fontsize=8.5)
+    bf = niah.get("block_full@1")
+    if bf:
+        ax.plot([1.0], [100 * bf["accuracy"]], linestyle="none", marker="D", markersize=6, color=t.series[3], markeredgecolor=t.surface, markeredgewidth=1.2, label="Block pool, 100%")
+    _budget_axis(ax, budgets)
+    ax.set_ylim(-3, 103)
+    ax.set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("GPU KV budget (share of the sequence's KV)")
+
+    ax = axes[1]
+    style_axes(ax, t)
+    if speed:
+        fs = speed["full@1"]["tokens_per_s"]["median"]
+        ax.axhline(fs, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        ax.annotate("full cache", (1.0, fs), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+        tops = [fs]
+        for (policy, name), color in zip(P2_POLICIES, t.series):
+            rows = sorted((r for r in a["speed"] if r["policy"] == policy), key=lambda r: r["budget"])
+            ys = [r["tokens_per_s"]["median"] for r in rows]
+            tops += ys
+            ax.plot([r["budget"] for r in rows], ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+        if "block_full@1" in speed:
+            ax.plot([1.0], [speed["block_full@1"]["tokens_per_s"]["median"]], linestyle="none", marker="D", markersize=6, color=t.series[3], markeredgecolor=t.surface, markeredgewidth=1.2)
+        ax.set_ylim(0, max(tops) * 1.18)
+    _budget_axis(ax, budgets)
+    ax.set_title("Decode tokens/s (fast kernel)", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("GPU KV budget (share of the sequence's KV)")
+
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(1.1, -0.2), ncol=4, frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, f"GPU-only residency policies at {a['context']:,} tokens", f"{a['niah_prompts_per_condition']} NIAH prompts per point (95% bootstrap CI); speed is the median of {a['speed_runs']} independent runs")
+    fig.subplots_adjust(left=0.07, right=0.97, top=0.82, bottom=0.27, wspace=0.25)
+    save(fig, "p2_pareto", t)
+
+
+def fig_p2_depth(a: dict[str, Any], t: Theme) -> None:
+    """Accuracy by needle depth: evicting policies only find needles their window still holds."""
+    fig, axes = plt.subplots(1, len(P2_POLICIES), figsize=(9.6, 3.9), dpi=160, sharey=True)
+    fig.patch.set_facecolor(t.surface)
+    budgets = sorted({n["budget"] for n in a["niah"] if n["policy"] in dict(P2_POLICIES)})
+    ramp = BUDGET_RAMP[t.name]
+    full = next(n for n in a["niah"] if n["label"] == "full@1")
+    depths = [float(d) for d in full["by_depth"]]
+    for ax, (policy, name) in zip(axes, P2_POLICIES):
+        style_axes(ax, t)
+        ax.plot([100 * d for d in depths], [100 * full["by_depth"][f"{d:g}"] for d in depths], color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        for budget, color in zip(budgets, ramp):
+            row = next(n for n in a["niah"] if n["policy"] == policy and n["budget"] == budget)
+            ax.plot([100 * d for d in depths], [100 * row["by_depth"][f"{d:g}"] for d in depths], color=color, linewidth=2, marker="o", markersize=4, markeredgecolor=t.surface, markeredgewidth=1, label=f"{100 * budget:g}%")
+        ax.set_title(name, color=t.ink, fontsize=10, loc="left")
+        ax.set_xticks([100 * d for d in depths])
+        ax.set_xlabel("Needle depth in the prompt, %")
+        ax.set_ylim(-4, 104)
+    axes[0].set_ylabel("NIAH accuracy, %")
+    handles, labels = axes[0].get_legend_handles_labels()
+    from matplotlib.lines import Line2D
+
+    handles.append(Line2D([], [], color=t.muted, linewidth=1, linestyle=(0, (4, 3))))
+    labels.append("full cache")
+    leg = fig.legend(handles, [f"budget {l}" if l != "full cache" else l for l in labels], loc="lower center", ncol=len(labels), frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "Where the needle is decides whether it survives", "Accuracy by needle depth, one line per budget; darker is a larger budget")
+    fig.subplots_adjust(left=0.07, right=0.98, top=0.8, bottom=0.26, wspace=0.12)
+    save(fig, "p2_depth", t)
+
+
+def fig_p2_kl(a: dict[str, Any], t: Theme) -> None:
+    fig, ax = new_fig(t, 9.0, 4.2)
+    budgets = sorted({r["budget"] for r in a["teacher_forced"] if r["policy"] in dict(P2_POLICIES)})
+    floor = min((r["mean_kl"] for r in a["teacher_forced"] if r["mean_kl"] > 0), default=1e-6)
+    tf_rows = {pol: sorted((r for r in a["teacher_forced"] if r["policy"] == pol), key=lambda r: r["budget"]) for pol, _ in P2_POLICIES}
+    # KL of two no-sink policies can differ in the last digits; "overlap" here means visually indistinguishable.
+    lru_is_window = _same_series(tf_rows["lru"], tf_rows["window"], "mean_kl", rel=0.02)
+    for (policy, name), color in zip(P2_POLICIES, t.series):
+        rows = tf_rows[policy]
+        ys = [r["mean_kl"] for r in rows]
+        wide = policy == "window" and lru_is_window
+        ax.plot([r["budget"] for r in rows], ys, color=color, linewidth=5 if wide else 2, marker="o", markersize=8 if wide else 5, markeredgecolor=t.surface, markeredgewidth=1.2, label=name, zorder=1 if wide else 2)
+        if lru_is_window and policy == "lru":
+            continue
+        text = "Window, no sink, and LRU (within 2%)" if (lru_is_window and policy == "window") else name
+        ax.annotate(text, (rows[-1]["budget"], ys[-1]), xytext=(9, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
+    ax.set_yscale("log")
+    _budget_axis(ax, budgets)
+    ax.set_xlim(min(budgets) / 1.4, max(budgets) * 3.2)
+    ax.set_ylim(bottom=floor / 3)
+    ax.set_xlabel("GPU KV budget (share of the sequence's KV)")
+    ax.set_ylabel("Mean KL from the full cache, nats (log)")
+    title(fig, t, "Teacher-forced divergence from the full cache", "Mean over documents of per-position KL; the full cache and the 100% block pool are exactly zero, so they cannot appear on a log axis")
+    fig.subplots_adjust(left=0.09, right=0.97, top=0.84, bottom=0.13)
+    save(fig, "p2_kl", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
     p1 = json.loads(p1_path.read_text(encoding="utf-8")) if p1_path.exists() else None
+    p2_path = RESULTS_DIR / "phase2" / "analysis" / "metrics.json"
+    p2 = json.loads(p2_path.read_text(encoding="utf-8")) if p2_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
     lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
@@ -407,6 +552,10 @@ def main() -> None:
             fig_p1_window(p1, t)
         if lr is not None:
             fig_p1_regimes(lr, t)
+        if p2 is not None:
+            fig_p2_pareto(p2, t)
+            fig_p2_depth(p2, t)
+            fig_p2_kl(p2, t)
     print("figures written to", FIG_DIR)
 
 
