@@ -8,7 +8,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-1%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-2%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -26,10 +26,32 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 1 (trustworthy baseline) complete.** The full-GPU KV reference runs to
-> 65,536 tokens, with a verified attention kernel, a per-layer timing split and a quality
-> harness whose noise floor was measured, found wrong, and fixed. No offloading policy exists yet.
-> Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md).
+> **Status: Phase 2 (blocks and GPU-only policies) complete.** A fixed-budget, block-granular
+> GPU KV pool now runs the first eviction rungs of the ladder, swept from 75% down to 6.25% of
+> the sequence's KV at 32,768 tokens. Nothing is offloaded yet: an evicted block is gone.
+> Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
+> [Phase 2](docs/phases/PHASE_2.md).
+
+## Phase 2 in brief
+
+| | |
+|---|---|
+| Full cache, needle-in-a-haystack at 32,768 tokens | **88.9%** over 45 prompts (3 needle kinds × 5 depths × 3 samples) |
+| Best GPU-only policy below full residency | **window + sink**, 63% of that accuracy at a 75% budget |
+| Budgets retaining ≥ 99% of it | **none**, for any of the three policies |
+| Dropping the attention sink | top-1 agreement with the full cache falls to 12.5%–17.2%, against 80.9%–93.6% with it |
+| Block LRU vs the same window without a sink | identical on **225 of 225** scored prompts: in a GPU-only cache, a block LRU evicts before it can observe a use |
+| Decode cost of eviction | 1.05–1.07× the full cache per token; watching attention for LRU costs 4.9–5.9 ms/token more |
+| 100% block pool vs the full cache | bit-identical distributions, 1.05× per-token time |
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p2_pareto-dark.png">
+  <img alt="NIAH accuracy and decode tokens per second versus GPU KV budget for window plus sink, window without sink, and LRU" src="docs/figures/p2_pareto-light.png">
+</picture>
+
+The interesting result is the shape, not the level: **where the needle sits decides whether it
+survives**, because a window with budget *f* keeps the last *f* of the prompt and nothing else.
+Rungs 4 and 5 (attention-score eviction and query-aware selection) exist to break that dependence.
 
 ## Phase 1 in brief
 
@@ -119,11 +141,12 @@ flowchart LR
 It integrates with Hugging Face Transformers through one `Cache` subclass and one attention
 override for one model class. Nothing else in Transformers is patched.
 
-## Policy ladder (planned)
+## Policy ladder
 
-1. Full GPU KV (reference) → 2. Sliding window + attention sink → 3. LRU blocks → 4. H2O-style
-attention-score eviction → 5. Quest-style query-aware selection → 6. + CPU tier, synchronous
-fetch → 7. + layer-ahead async prefetch → 8. + int8 warm/cold tiers → 9. + exact CPU merge.
+1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
+4. H2O-style attention-score eviction → 5. Quest-style query-aware selection → 6. + CPU tier,
+synchronous fetch → 7. + layer-ahead async prefetch → 8. + int8 warm/cold tiers →
+9. + exact CPU merge. Measured rungs are ticked.
 
 Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and the same
 quality metrics: teacher-forced KL, top-1 agreement, and depth-swept needle-in-a-haystack,
@@ -141,7 +164,8 @@ all with confidence intervals.
 | [`docs/RELATED_WORK.md`](docs/RELATED_WORK.md) | Verified survey of 36 systems and papers, and LazyKV's honest delta |
 | [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | Dated findings, including measurement mistakes caught |
 | `scripts/` | Benchmarks, analysis, figures, doc rendering |
-| `lazykv/` | Runtime: preallocated full-GPU cache, verified attention kernels, chunked prefill, profiling, quality metrics |
+| `lazykv/` | Runtime: preallocated full-GPU cache, block pool and residency policies, verified attention kernels, chunked prefill, profiling, quality metrics |
+| `configs/` | One YAML per phase: model revision, block size, context, budget sweep, prompts |
 | `harness/` | Stats, telemetry, GPU memory guard, host scheduling, metrics I/O, template renderer |
 | [`docs/phases/`](docs/phases) | Gate report per phase |
 | `results/` | Raw `metrics.json` and telemetry for every reported run |
@@ -187,6 +211,17 @@ few minutes; launch detached and poll the log.
 .venv\Scripts\python.exe scripts\01_latency_regimes.py > logs\latency_regimes.log 2>&1
 .venv\Scripts\python.exe scripts\01_affinity.py > logs\affinity.log 2>&1
 .venv\Scripts\python.exe scripts\analyze_phase1.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
+## Reproduce Phase 2
+
+```powershell
+# quality (NIAH + teacher-forced) then three independent speed runs; each is long, so detach
+.venv\Scripts\python.exe scripts\02_policy_quality.py > logs\policy_quality.log 2>&1
+.venv\Scripts\python.exe scripts\02_budget_speed.py --run-id 1 > logs\budget_speed_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\analyze_phase2.py
 .venv\Scripts\python.exe scripts\make_figures.py
 .venv\Scripts\python.exe scripts\render_docs.py
 ```

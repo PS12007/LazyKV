@@ -7,6 +7,52 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-15: Phase 2, blocks and GPU-only policies
+
+### What the budget sweep says about the design
+
+At 32,768 tokens the full cache answers
+88.9% of 45 needle prompts.
+**No GPU-only eviction policy retains ≥ 99% of that at any budget below 100%.** The best,
+window + sink, keeps 63% of it at a
+75% budget, and accuracy falls with the
+budget because a window keeps the last *f* of the prompt: a needle earlier than that is evicted at the
+prefill→decode boundary, before any query exists. That is the mechanism Phase 3's query-aware
+selection has to break, and it is why selection acts per step rather than at a boundary.
+
+Two things are now measured rather than assumed:
+
+- **The attention sink is not optional.** Without it, teacher-forced top-1 agreement with the full
+  cache is 12.5%–17.2%
+  at every budget, and mean KL is 4.2–4.8 nats.
+  With it, the same windows keep 80.9%–93.6%
+  and 1.6e-02–1.7e-01 nats.
+- **Block-level LRU has no room to act in a GPU-only cache.** It scored identically to a no-sink
+  window on all 225 prompt × budget pairs. Recency at the
+  boundary is insertion order, and what it evicts there is gone before a use could be observed. The
+  policy was written knowing this; the measurement is reported rather than the policy retuned.
+
+The latency picture matches Phase 1's host-bound decode: eviction costs
+1.05–1.07×
+the full cache's per-token time, while *observing* attention for LRU costs another
+4.9–5.9 ms
+per token. Any Phase 3+ policy that inspects attention pays that kind of price in kernel launches.
+
+### Measurement incidents (kept because they would have become findings)
+
+1. **The LRU observer was copying the cache.** Its first implementation cast every resident key to
+   float32 and broadcast a matmul over the query-group axis, so its cost grew with the budget and
+   would have been reported as "LRU is expensive at large budgets". The fix keeps the group axis in
+   the matrix rows and upcasts only the scores. The whole sweep was rerun from one commit; the
+   pre-fix results are kept in `results/phase2/*_observer_fp32/` and are used in no table.
+2. **A pool that ended mid-bucket.** The bucketed cuDNN decode pads its view to the next bucket
+   boundary inside existing storage. A pool sized exactly to its budget ended short of that boundary,
+   so every step rebuilt a plan. Pool storage now rounds up to a bucket, and a test guards it.
+3. **A chat template that stamps today's date.** It changes prompt tokens, and therefore prompt
+   lengths, from day to day. It is pinned.
+
+---
+
 ## 2026-09-14: Phase 1, trustworthy baseline
 
 ### What the baseline says about the design
