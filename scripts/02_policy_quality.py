@@ -1,4 +1,6 @@
-"""Phase 2 gate, quality half: NIAH accuracy and teacher-forced divergence per policy and budget.
+"""Budget sweep, quality half: NIAH accuracy and teacher-forced divergence per policy and budget.
+
+Phase 2 gate by default; `--config configs/phase3.yaml` runs the Phase 3 ladder rungs (h2o, quest).
 
 For each prompt: one exact prefill into a FullGPUCache, then every condition (shuffled) decodes
 from a cache derived from that prefill. Scored on lazykv.quality.QUALITY_STRATEGY (Phase 1: the
@@ -29,23 +31,13 @@ from harness.corpus import load_tokens  # noqa: E402
 from harness.gpu_memory import cap_allocator_to_dedicated, process_gpu_memory  # noqa: E402
 from harness.results import REPO_ROOT, RESULTS_DIR, write_metrics  # noqa: E402
 from lazykv.attention import set_strategy_for_test  # noqa: E402
-from lazykv.blocks import BlockPoolCache  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
-from lazykv.generate import greedy_decode, load, prefill, teacher_forced_decode  # noqa: E402
+from lazykv.generate import PrefillResult, greedy_decode, load, prefill, teacher_forced_decode  # noqa: E402
 from lazykv.niah import build_prompt, score  # noqa: E402
 from lazykv.quality import QUALITY_STRATEGY, compare_stream  # noqa: E402
-from lazykv.sweep import build_cache, conditions, load_config  # noqa: E402
+from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_scorer, results_subdir  # noqa: E402
 
 log = logging.getLogger("policy_quality")
-
-
-def cache_facts(cache: Any, total_tokens: int) -> dict[str, Any]:
-    st = cache.stats()
-    facts: dict[str, Any] = {"gpu_resident_kv_bytes": st.gpu_resident_kv_bytes}
-    if isinstance(cache, BlockPoolCache):
-        facts.update(cache.counters())
-        facts["n_slots"] = cache.pool_layers[0].n_slots
-    return facts
 
 
 def main() -> None:
@@ -70,6 +62,16 @@ def main() -> None:
     max_new = max(cfg["niah"]["max_new_tokens"].values())
     full = FullGPUCache(lm.num_layers, -(-(ctx + max(max_new, cfg["teacher_forced"]["continuation"]) + 16) // 1024) * 1024)
     eot = lm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
+    scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
+    prefill_wall_s: list[float] = []
+
+    def run_prefill(ids: torch.Tensor) -> PrefillResult:
+        full.truncate(0)
+        if scorer is not None:
+            scorer.reset()
+        pre = prefill(lm.model, full, ids, chunk, observer=scorer)
+        prefill_wall_s.append(pre.wall_s)
+        return pre
 
     # ---- NIAH ------------------------------------------------------------------------------
     book = load_tokens(cfg["niah"]["book"], lm.tokenizer)
@@ -80,13 +82,12 @@ def main() -> None:
         for depth in cfg["niah"]["depths"]:
             for sample in range(samples):
                 prompt = build_prompt(lm.tokenizer, book, ctx, kind, depth, sample, seed=cfg["niah"]["seed"])
-                full.truncate(0)
-                pre = prefill(lm.model, full, prompt.input_ids, chunk)
+                pre = run_prefill(prompt.input_ids)
                 total = prompt.length + n_new
                 order = conds[:]
                 rng.shuffle(order)
                 for cond in order:
-                    built = build_cache(full, cond, total, bs)
+                    built = build_cache(full, cond, total, bs, scorer)
                     dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
                     text = lm.tokenizer.decode(toks)
@@ -95,9 +96,9 @@ def main() -> None:
                         "policy": cond.policy, "budget": cond.budget, "score": score(prompt, text),
                         "answer": text.strip()[:120], "values": list(prompt.values),
                         "target_needle_pos": prompt.needle_token_positions[0],
-                        **cache_facts(built.cache, total),
+                        **cache_facts(built),
                     })
-                    if built.cache is full:
+                    if built.shares_full:
                         full.truncate(prompt.length)
                     del built
                 this = {f"{r['policy']}@{r['budget']:g}": r["score"] for r in niah_rows[-len(conds):]}
@@ -111,25 +112,24 @@ def main() -> None:
         # BOS, then a stretch of the book: the same shape as the Phase 1 quality reference.
         ids = torch.cat([text_ids[:1], text_ids[1 + offset : offset + ctx + tf["continuation"]]])
         context, cont = ids[:ctx], ids[ctx : ctx + tf["continuation"]]
-        full.truncate(0)
-        pre = prefill(lm.model, full, context, chunk)
+        pre = run_prefill(context)
         total = ctx + tf["continuation"]
         reference = torch.stack([row.cpu() for row in teacher_forced_decode(lm.model, full, pre.last_logits, cont)])
         full.truncate(ctx)
         order = conds[:]
         rng.shuffle(order)
         for cond in order:
-            built = build_cache(full, cond, total, bs)
+            built = build_cache(full, cond, total, bs, scorer)
             div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont))
-            tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built.cache, total)})
-            if built.cache is full:
+            tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
+            if built.shares_full:
                 full.truncate(ctx)
             del built
             log.info("teacher-forced offset %d %s: top1 %.3f, KL %.2e", offset, cond.label, tf_rows[-1]["top1_agreement"], tf_rows[-1]["mean_kl"])
         del reference
 
     write_metrics(
-        RESULTS_DIR / "phase2" / args.out,
+        RESULTS_DIR / results_subdir(cfg) / args.out,
         {
             "config": {**cfg, "context": ctx, "niah": {**cfg["niah"], "samples": samples}},
             "attention_strategy": QUALITY_STRATEGY,
@@ -138,6 +138,9 @@ def main() -> None:
             "niah": niah_rows,
             "teacher_forced": tf_rows,
             "wall_s": time.perf_counter() - t_start,
+            # Per prompt, including the h2o scorer when one runs. Quality kernel: not a speed result.
+            "prefill_wall_s": prefill_wall_s,
+            "prefill_scorer": None if scorer is None else {"stride": scorer.stride, "query_batch": scorer.query_batch},
             "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": process_gpu_memory().shared_bytes},
         },
     )

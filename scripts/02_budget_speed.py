@@ -1,4 +1,8 @@
-"""Phase 2 gate, speed half: decode latency per policy and budget at 32K.
+"""Budget sweep, speed half: decode latency per policy and budget at 32K.
+
+Phase 2 gate by default; `--config configs/phase3.yaml` runs the Phase 3 ladder rungs (h2o, quest).
+H2O needs attention mass from the prefill, so when an h2o condition is present each repeat times
+the prefill twice, plain and scored, and decodes from the scored one (its KV is identical).
 
 Fast kernel (cudnn_bucketed), Windows power throttling opted out (Phase 1). Each repeat
 prefills once, then runs every condition in shuffled order from that prefill. Phase 1
@@ -35,7 +39,8 @@ from harness.telemetry import TelemetryLogger  # noqa: E402
 from lazykv.blocks import BlockPoolCache  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
 from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
-from lazykv.sweep import build_cache, conditions, load_config  # noqa: E402
+from lazykv.selection import QuestView  # noqa: E402
+from lazykv.sweep import build_cache, conditions, load_config, make_scorer, results_subdir  # noqa: E402
 
 log = logging.getLogger("budget_speed")
 FAST_STRATEGY = "cudnn_bucketed"
@@ -69,17 +74,23 @@ def main() -> None:
     tokens = load_tokens(sp["book"], lm.tokenizer)
     total = ctx + n_decode + 1
     full = FullGPUCache(lm.num_layers, -(-(total + 16) // 1024) * 1024)
-    out_dir = RESULTS_DIR / "phase2" / args.out / f"run_{args.run_id}"
+    out_dir = RESULTS_DIR / results_subdir(cfg) / args.out / f"run_{args.run_id}"
+    scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
     rng = random.Random(1000 + args.run_id)
 
     # Warmup: plans for prefill and for every condition's decode shape, outside the timed repeats.
     pre = prefill(lm.model, full, tokens[:ctx], chunk)
+    if scorer is not None:
+        full.truncate(0)
+        pre = prefill(lm.model, full, tokens[:ctx], chunk, observer=scorer)
     for cond in conds:
-        built = build_cache(full, cond, total, bs)
+        built = build_cache(full, cond, total, bs, scorer)
         greedy_decode(lm.model, built.cache, pre.last_logits, 4)
-        if built.cache is full:
+        if built.shares_full:
             full.truncate(ctx)
         del built
+
+    prefills: list[dict[str, Any]] = []
 
     rows: list[dict[str, Any]] = []
     with TelemetryLogger(out_dir / "telemetry.csv") as tel:
@@ -87,13 +98,21 @@ def main() -> None:
             full.truncate(0)
             tel.mark(f"rep{rep}_prefill")
             pre = prefill(lm.model, full, tokens[:ctx], chunk)
+            timing: dict[str, Any] = {"repeat": rep, "plain_wall_s": pre.wall_s}
+            if scorer is not None:
+                full.truncate(0)
+                scorer.reset()
+                tel.mark(f"rep{rep}_prefill_scored")
+                pre = prefill(lm.model, full, tokens[:ctx], chunk, observer=scorer)
+                timing["scored_wall_s"] = pre.wall_s
+            prefills.append(timing)
             order = conds[:]
             rng.shuffle(order)
             for cond in order:
                 tel.mark(f"rep{rep}_{cond.label}_start")
                 torch.cuda.reset_peak_memory_stats()
                 retries_before = allocator_counters()
-                built = build_cache(full, cond, total, bs)
+                built = build_cache(full, cond, total, bs, scorer)
                 before = built.cache.counters() if isinstance(built.cache, BlockPoolCache) else None
                 dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
                 wall = dec.wall_s[sp["warmup_steps"] :]
@@ -102,6 +121,7 @@ def main() -> None:
                     "policy": cond.policy,
                     "budget": cond.budget,
                     "n_slots": built.n_slots,
+                    "k_blocks": built.k_blocks,
                     "boundary_build_s": built.build_s,
                     "decode_wall_s": summarize(wall).to_dict(),
                     "decode_wall_p10_s": pct(wall, 0.10),
@@ -118,13 +138,17 @@ def main() -> None:
                     row["manager_observe_s_per_token"] = after["host_observe_s"] / n_decode
                     row["evictions"] = after["evictions"]
                     row["boundary_evicted_blocks"] = after["boundary_evicted_blocks"]
+                if isinstance(built.cache, QuestView):
+                    # Selection runs inside the attention call: host time to bound, rank, gather and mask.
+                    row["manager_host_s_per_token"] = built.cache.counters.host_select_s / n_decode
+                    row["attended_tokens_selecting_layers"] = built.cache.attended_tokens()
                 mem = process_gpu_memory()
                 spill = None if mem.shared_bytes is None or shared_baseline is None else mem.shared_bytes - shared_baseline
                 row["shared_growth_bytes"] = spill
                 row["spilled_to_shared"] = None if spill is None else spill > SPILL_THRESHOLD_BYTES
                 row["alloc_retries_during"] = allocator_counters()["num_alloc_retries"] - retries_before["num_alloc_retries"]
                 rows.append(row)
-                if built.cache is full:
+                if built.shares_full:
                     full.truncate(ctx)
                 del built
                 tel.mark(f"rep{rep}_{cond.label}_end")
@@ -141,6 +165,8 @@ def main() -> None:
             "kv_bytes_per_token": lm.kv_bytes_per_token,
             "conditions": [c.label for c in conds],
             "prefill_wall_s": pre.wall_s,
+            "prefills": prefills,
+            "prefill_scorer": None if scorer is None else {"stride": scorer.stride, "query_batch": scorer.query_batch},
             "results": rows,
             "telemetry": {**tel.summary(), "marks": tel.marks, "csv": "telemetry.csv"},
             "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "spill_threshold_bytes": SPILL_THRESHOLD_BYTES},

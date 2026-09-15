@@ -51,6 +51,19 @@ def needs_scorer(conds: list[Condition]) -> bool:
     return any(c.policy == "h2o" for c in conds)
 
 
+def make_scorer(cfg: dict[str, Any], conds: list[Condition], num_layers: int, max_len: int) -> PrefillScorer | None:
+    """The prefill scorer h2o conditions need, or None. Config `h2o: {stride, query_batch}`."""
+    if not needs_scorer(conds):
+        return None
+    h = cfg.get("h2o", {})
+    return PrefillScorer(num_layers, max_len, torch.device("cuda"), stride=h.get("stride", 32), query_batch=h.get("query_batch", 4))
+
+
+def results_subdir(cfg: dict[str, Any]) -> str:
+    """Which results/<phase>/ a sweep config writes to (configs predating the key are Phase 2)."""
+    return str(cfg.get("phase", "phase2"))
+
+
 @dataclass
 class Built:
     cache: Cache
@@ -91,3 +104,21 @@ def build_cache(full: FullGPUCache, cond: Condition, total_tokens: int, block_si
     cache = BlockPoolCache.from_full(full, n_slots, block_size, factory)
     torch.cuda.synchronize()
     return Built(cache, time.perf_counter() - t0, n_slots)
+
+
+def cache_facts(built: Built) -> dict[str, Any]:
+    """Residency and manager counters a sweep row records for any condition's cache."""
+    cache = built.cache
+    facts: dict[str, Any] = {"gpu_resident_kv_bytes": cache.stats().gpu_resident_kv_bytes}
+    if isinstance(cache, BlockPoolCache):
+        facts.update(cache.counters())
+        facts["n_slots"] = cache.pool_layers[0].n_slots
+        # Whether a policy that does not force the sink kept it anyway (h2o), per layer.
+        facts["layers_with_block0_resident"] = sum(1 for l in cache.pool_layers if 0 in l.slot_blocks)
+    elif isinstance(cache, QuestView):
+        facts["host_select_s"] = cache.counters.host_select_s
+        facts["selections"] = cache.counters.selections
+        facts["k_blocks"] = cache.k_blocks
+        facts["attended_tokens_selecting_layers"] = cache.attended_tokens()
+        facts["dense_layers"] = cache.dense_layers
+    return facts

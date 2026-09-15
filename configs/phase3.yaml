@@ -1,0 +1,43 @@
+# Phase 3 gate: attention-score eviction (rung 4) and query-aware selection (rung 5) on the
+# Phase 2 sweep. Everything except `phase`, `policies` and `h2o` is Phase 2's, so the two phases
+# are measured on identical prompts, budgets and decode lengths.
+phase: phase3
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+# window_sink is Phase 2's best policy, re-measured in the same run so rungs 4-5 are compared
+# against it without crossing runs. h2o evicts (GPU-only); quest keeps every block resident and
+# varies the attended budget instead.
+policies: [window_sink, h2o, quest]
+
+# Prefill attention mass for h2o: every 32nd prompt query, 4 sampled queries per matmul
+# (bounds the transient score tensor at 32K to a few hundred MiB).
+h2o:
+  stride: 32
+  query_batch: 4
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
