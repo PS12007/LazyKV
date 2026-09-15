@@ -8,6 +8,7 @@ not move the headline number.
 from __future__ import annotations
 
 import math
+import random
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 
@@ -116,3 +117,17 @@ def overlap_fraction(t_compute: float, t_copy: float, t_both: float) -> float:
     if shorter <= 0:
         raise ValueError("durations must be positive")
     return (t_compute + t_copy - t_both) / shorter
+
+
+def bootstrap_mean_ci(values: list[float], iters: int = 2000, seed: int = 0) -> tuple[float, float]:
+    """Percentile bootstrap 95% CI of the mean.
+
+    Resamples are independent draws, so correlated samples (positions in one document, prompts
+    sharing a haystack book) make this understate uncertainty; callers report it as such.
+    """
+    if not values:
+        return (math.nan, math.nan)
+    rng = random.Random(seed)
+    n = len(values)
+    means = sorted(sum(values[rng.randrange(n)] for _ in range(n)) / n for _ in range(iters))
+    return means[int(0.025 * iters)], means[int(0.975 * iters) - 1]

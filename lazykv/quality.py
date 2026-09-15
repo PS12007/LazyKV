@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import math
-import random
 from collections.abc import Iterable
 from dataclasses import asdict, dataclass
 
 import torch
+
+from harness.stats import bootstrap_mean_ci
 
 # Quality is scored on the memory-efficient SDPA kernel, not the fastest one.
 # Phase 1 measured cuDNN's single-query decode returning one of two bit patterns for
@@ -41,17 +41,6 @@ def per_position_kl(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> torch.Ten
     return (ref.exp() * (ref - pol)).sum(dim=-1).clamp_min(0.0)
 
 
-def _bootstrap_ci(values: list[float], iters: int = 2000, seed: int = 0) -> tuple[float, float]:
-    """Percentile bootstrap CI of the mean. Positions are not independent (same document),
-    so this understates uncertainty; it is reported as a lower bound on spread."""
-    if not values:
-        return (math.nan, math.nan)
-    rng = random.Random(seed)
-    n = len(values)
-    means = sorted(sum(values[rng.randrange(n)] for _ in range(n)) / n for _ in range(iters))
-    return means[int(0.025 * iters)], means[int(0.975 * iters) - 1]
-
-
 def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) -> Divergence:
     """Same result as `compare`, but consumes policy rows one at a time on their device.
 
@@ -78,8 +67,8 @@ def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) 
         top1_agreement=sum(agree) / n,
         mean_kl=sum(kl) / n,
         max_kl=max(kl),
-        kl_ci95=_bootstrap_ci(kl),
-        top1_ci95=_bootstrap_ci(agree),
+        kl_ci95=bootstrap_mean_ci(kl),
+        top1_ci95=bootstrap_mean_ci(agree),
         exact_match=exact,
     )
 
@@ -94,7 +83,7 @@ def compare(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> Divergence:
         top1_agreement=sum(agree) / len(agree),
         mean_kl=sum(kl) / len(kl),
         max_kl=max(kl),
-        kl_ci95=_bootstrap_ci(kl),
-        top1_ci95=_bootstrap_ci(agree),
+        kl_ci95=bootstrap_mean_ci(kl),
+        top1_ci95=bootstrap_mean_ci(agree),
         exact_match=bool(torch.equal(ref_logp, pol_logp)),
     )
