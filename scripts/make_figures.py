@@ -1,7 +1,8 @@
-"""Phase 0 and Phase 1 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Phase 0-3 figures, rendered in light and dark variants for the README's <picture> tags.
 
-Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json
-and results/phase1/latency_regimes/metrics.json. Writes docs/figures/*.png.
+Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json,
+results/phase1/latency_regimes/metrics.json, and results/phase{2,3}/analysis/metrics.json.
+Writes docs/figures/*.png.
 Palette: validated categorical slots (fixed order), recessive hairline grid, 2px lines.
 """
 
@@ -473,21 +474,27 @@ def fig_p2_pareto(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p2_pareto", t)
 
 
-def fig_p2_depth(a: dict[str, Any], t: Theme) -> None:
+def fig_p2_depth(
+    a: dict[str, Any],
+    t: Theme,
+    policies: tuple[tuple[str, str], ...] = P2_POLICIES,
+    name: str = "p2_depth",
+    heading: str = "Where the needle is decides whether it survives",
+) -> None:
     """Accuracy by needle depth: evicting policies only find needles their window still holds."""
-    fig, axes = plt.subplots(1, len(P2_POLICIES), figsize=(9.6, 3.9), dpi=160, sharey=True)
+    fig, axes = plt.subplots(1, len(policies), figsize=(9.6, 3.9), dpi=160, sharey=True)
     fig.patch.set_facecolor(t.surface)
-    budgets = sorted({n["budget"] for n in a["niah"] if n["policy"] in dict(P2_POLICIES)})
+    budgets = sorted({n["budget"] for n in a["niah"] if n["policy"] in dict(policies)})
     ramp = BUDGET_RAMP[t.name]
     full = next(n for n in a["niah"] if n["label"] == "full@1")
     depths = [float(d) for d in full["by_depth"]]
-    for ax, (policy, name) in zip(axes, P2_POLICIES):
+    for ax, (policy, pretty) in zip(axes, policies):
         style_axes(ax, t)
         ax.plot([100 * d for d in depths], [100 * full["by_depth"][f"{d:g}"] for d in depths], color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
         for budget, color in zip(budgets, ramp):
             row = next(n for n in a["niah"] if n["policy"] == policy and n["budget"] == budget)
             ax.plot([100 * d for d in depths], [100 * row["by_depth"][f"{d:g}"] for d in depths], color=color, linewidth=2, marker="o", markersize=4, markeredgecolor=t.surface, markeredgewidth=1, label=f"{100 * budget:g}%")
-        ax.set_title(name, color=t.ink, fontsize=10, loc="left")
+        ax.set_title(pretty, color=t.ink, fontsize=10, loc="left")
         ax.set_xticks([100 * d for d in depths])
         ax.set_xlabel("Needle depth in the prompt, %")
         ax.set_ylim(-4, 104)
@@ -500,26 +507,26 @@ def fig_p2_depth(a: dict[str, Any], t: Theme) -> None:
     leg = fig.legend(handles, [f"budget {l}" if l != "full cache" else l for l in labels], loc="lower center", ncol=len(labels), frameon=False, fontsize=8.5)
     for text in leg.get_texts():
         text.set_color(t.ink2)
-    title(fig, t, "Where the needle is decides whether it survives", "Accuracy by needle depth, one line per budget; darker is a larger budget")
+    title(fig, t, heading, "Accuracy by needle depth, one line per budget; darker is a larger budget")
     fig.subplots_adjust(left=0.07, right=0.98, top=0.8, bottom=0.26, wspace=0.12)
-    save(fig, "p2_depth", t)
+    save(fig, name, t)
 
 
-def fig_p2_kl(a: dict[str, Any], t: Theme) -> None:
+def fig_p2_kl(a: dict[str, Any], t: Theme, policies: tuple[tuple[str, str], ...] = P2_POLICIES, name: str = "p2_kl") -> None:
     fig, ax = new_fig(t, 9.0, 4.2)
-    budgets = sorted({r["budget"] for r in a["teacher_forced"] if r["policy"] in dict(P2_POLICIES)})
+    budgets = sorted({r["budget"] for r in a["teacher_forced"] if r["policy"] in dict(policies)})
     floor = min((r["mean_kl"] for r in a["teacher_forced"] if r["mean_kl"] > 0), default=1e-6)
-    tf_rows = {pol: sorted((r for r in a["teacher_forced"] if r["policy"] == pol), key=lambda r: r["budget"]) for pol, _ in P2_POLICIES}
+    tf_rows = {pol: sorted((r for r in a["teacher_forced"] if r["policy"] == pol), key=lambda r: r["budget"]) for pol, _ in policies}
     # KL of two no-sink policies can differ in the last digits; "overlap" here means visually indistinguishable.
-    lru_is_window = _same_series(tf_rows["lru"], tf_rows["window"], "mean_kl", rel=0.02)
-    for (policy, name), color in zip(P2_POLICIES, t.series):
+    lru_is_window = "lru" in tf_rows and "window" in tf_rows and _same_series(tf_rows["lru"], tf_rows["window"], "mean_kl", rel=0.02)
+    for (policy, pretty), color in zip(policies, t.series):
         rows = tf_rows[policy]
         ys = [r["mean_kl"] for r in rows]
         wide = policy == "window" and lru_is_window
-        ax.plot([r["budget"] for r in rows], ys, color=color, linewidth=5 if wide else 2, marker="o", markersize=8 if wide else 5, markeredgecolor=t.surface, markeredgewidth=1.2, label=name, zorder=1 if wide else 2)
+        ax.plot([r["budget"] for r in rows], ys, color=color, linewidth=5 if wide else 2, marker="o", markersize=8 if wide else 5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty, zorder=1 if wide else 2)
         if lru_is_window and policy == "lru":
             continue
-        text = "Window, no sink, and LRU (within 2%)" if (lru_is_window and policy == "window") else name
+        text = "Window, no sink, and LRU (within 2%)" if (lru_is_window and policy == "window") else pretty
         ax.annotate(text, (rows[-1]["budget"], ys[-1]), xytext=(9, 0), textcoords="offset points", color=t.ink2, fontsize=8.5, va="center")
     ax.set_yscale("log")
     _budget_axis(ax, budgets)
@@ -529,7 +536,74 @@ def fig_p2_kl(a: dict[str, Any], t: Theme) -> None:
     ax.set_ylabel("Mean KL from the full cache, nats (log)")
     title(fig, t, "Teacher-forced divergence from the full cache", "Mean over documents of per-position KL; the full cache and the 100% block pool are exactly zero, so they cannot appear on a log axis")
     fig.subplots_adjust(left=0.09, right=0.97, top=0.84, bottom=0.13)
-    save(fig, "p2_kl", t)
+    save(fig, name, t)
+
+
+P3_POLICIES = (("window_sink", "Window + sink (rung 2)"), ("h2o", "H2O-style (rung 4)"), ("quest", "Quest-style (rung 5)"))
+
+
+def fig_p3_pareto(a: dict[str, Any], t: Theme) -> None:
+    """Accuracy against the budget each policy varies, against resident GPU KV, and decode speed.
+
+    Separate panels, never a dual axis. The middle panel is the brief's x-axis (GPU KV bytes
+    resident): without a CPU tier, Quest-style selection attends to less but frees nothing.
+    """
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.5), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    niah = {n["label"]: n for n in a["niah"]}
+    # No policy has a point at 100% here (the full cache is the dashed reference), so the
+    # axis stops at the largest swept budget instead of crowding a 100% tick against 75%.
+    budgets = sorted({n["budget"] for n in a["niah"] if n["policy"] in dict(P3_POLICIES)})
+    full = niah["full@1"]
+    full_gib = full["gpu_resident_kv_bytes_median"] / 2**30
+    rows = {pol: sorted((n for n in a["niah"] if n["policy"] == pol), key=lambda n: n["budget"]) for pol, _ in P3_POLICIES}
+
+    for panel, ax in enumerate(axes[:2]):
+        style_axes(ax, t)
+        xfull = 1.0 if panel == 0 else full_gib
+        ax.axhline(100 * full["accuracy"], color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        ax.annotate("full cache", (xfull, 100 * full["accuracy"]), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+        for (policy, pretty), color in zip(P3_POLICIES, t.series):
+            r = rows[policy]
+            xs = [n["budget"] for n in r] if panel == 0 else [n["gpu_resident_kv_bytes_median"] / 2**30 for n in r]
+            ys = [100 * n["accuracy"] for n in r]
+            lo = [100 * (n["accuracy"] - n["accuracy_ci95"][0]) for n in r]
+            hi = [100 * (n["accuracy_ci95"][1] - n["accuracy"]) for n in r]
+            ax.errorbar(xs, ys, yerr=[lo, hi], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, capsize=0, elinewidth=1, label=pretty if panel == 0 else None, alpha=0.9)
+        ax.set_ylim(-3, 103)
+    _budget_axis(axes[0], budgets)
+    axes[0].set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
+    axes[0].set_xlabel("Budget: resident (evicting) or attended (Quest)")
+    axes[1].set_title("NIAH accuracy, % (same data)", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_xlabel("GPU-resident KV at the answer, GiB")
+    axes[1].set_xlim(0, full_gib * 1.12)
+    quest_gib = rows["quest"][0]["gpu_resident_kv_bytes_median"] / 2**30
+    axes[1].annotate("Quest attends to less\nbut frees nothing", (quest_gib, 50), xytext=(-12, 0), textcoords="offset points", ha="right", va="center", color=t.ink2, fontsize=8.5)
+
+    ax = axes[2]
+    style_axes(ax, t)
+    if a["speed"]:
+        speed = {s["label"]: s for s in a["speed"]}
+        fs = speed["full@1"]["tokens_per_s"]["median"]
+        ax.axhline(fs, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        ax.annotate("full cache", (1.0, fs), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+        tops = [fs]
+        for (policy, _), color in zip(P3_POLICIES, t.series):
+            r = sorted((s for s in a["speed"] if s["policy"] == policy), key=lambda s: s["budget"])
+            ys = [s["tokens_per_s"]["median"] for s in r]
+            tops += ys
+            ax.plot([s["budget"] for s in r], ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+        ax.set_ylim(0, max(tops) * 1.18)
+    _budget_axis(ax, budgets)
+    ax.set_title("Decode tokens/s (fast kernel)", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("Budget: resident (evicting) or attended (Quest)")
+
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(1.75, -0.2), ncol=3, frameon=False, fontsize=9)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, f"Eviction versus query-aware selection at {a['context']:,} tokens", f"{a['niah_prompts_per_condition']} NIAH prompts per point (95% bootstrap CI); speed is the median of {a['speed_runs']} independent run{'s' if a['speed_runs'] != 1 else ''}")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.26, wspace=0.22)
+    save(fig, "p3_pareto", t)
 
 
 def main() -> None:
@@ -538,6 +612,8 @@ def main() -> None:
     p1 = json.loads(p1_path.read_text(encoding="utf-8")) if p1_path.exists() else None
     p2_path = RESULTS_DIR / "phase2" / "analysis" / "metrics.json"
     p2 = json.loads(p2_path.read_text(encoding="utf-8")) if p2_path.exists() else None
+    p3_path = RESULTS_DIR / "phase3" / "analysis" / "metrics.json"
+    p3 = json.loads(p3_path.read_text(encoding="utf-8")) if p3_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
     lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
@@ -556,6 +632,10 @@ def main() -> None:
             fig_p2_pareto(p2, t)
             fig_p2_depth(p2, t)
             fig_p2_kl(p2, t)
+        if p3 is not None:
+            fig_p3_pareto(p3, t)
+            fig_p2_depth(p3, t, P3_POLICIES, "p3_depth", "Needle depth under eviction and under selection")
+            fig_p2_kl(p3, t, P3_POLICIES, "p3_kl")
     print("figures written to", FIG_DIR)
 
 
