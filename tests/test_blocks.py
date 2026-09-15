@@ -86,7 +86,7 @@ def test_full_budget_pool_matches_full_cache(tiny) -> None:  # noqa: ANN001
     ids = torch.randint(0, cfg.vocab_size, (1, 140), device="cuda")
     ctx, cont = ids[:, :101], ids[:, 101:]  # 101 is not a block multiple, so the tail is exercised
     full, pre = _prefill(model, cfg, ctx)
-    pool = BlockPoolCache.from_full(full, slots_for_budget(1.0, 140, BS), BS, Policy)
+    pool = BlockPoolCache.from_full(full, slots_for_budget(1.0, 140, BS), BS, lambda _: Policy())
     ref = torch.stack(list(teacher_forced_decode(model, full, pre.last_logits, cont)))
     got = torch.stack(list(teacher_forced_decode(model, pool, pre.last_logits, cont)))
     assert (got - ref).abs().max().item() < 5e-2
@@ -110,7 +110,7 @@ def test_evicting_pool_keeps_named_blocks_at_logical_positions(tiny, policy_name
     ref_keys = full.layers[0].keys[:, :, :199].clone()
     full.truncate(100)
     n_slots = 5
-    pool = BlockPoolCache.from_full(full, n_slots, BS, lambda: make_policy(policy_name))
+    pool = BlockPoolCache.from_full(full, n_slots, BS, lambda _: make_policy(policy_name))
     rows = list(teacher_forced_decode(model, pool, pre.last_logits, cont))  # 99 decode steps: many evictions
     assert len(rows) == 100
     layer = pool.pool_layers[0]
@@ -141,7 +141,7 @@ def test_window_sink_first_decode_step_matches_explicit_reference(tiny) -> None:
     cfg, model = tiny
     ids = torch.randint(0, cfg.vocab_size, (1, 101), device="cuda")
     full, pre = _prefill(model, cfg, ids[:, :100])
-    pool = BlockPoolCache.from_full(full, 4, BS, WindowSink)
+    pool = BlockPoolCache.from_full(full, 4, BS, lambda _: WindowSink())
     keep = pool.pool_layers[0].slot_blocks
     positions = [p for b in keep for p in range(b * BS, (b + 1) * BS)] + list(range(12 * BS, 100))
     idx = torch.tensor(positions, device="cuda")
@@ -175,6 +175,66 @@ def test_pool_storage_is_bucket_aligned(tiny) -> None:  # noqa: ANN001
 
     cfg, model = tiny
     full, _ = _prefill(model, cfg, torch.randint(0, cfg.vocab_size, (1, 100), device="cuda"))
-    pool = BlockPoolCache.from_full(full, 3, BS, WindowSink)
+    pool = BlockPoolCache.from_full(full, 3, BS, lambda _: WindowSink())
     _, bucket = current_strategy()
     assert pool.pool_layers[0].keys.shape[2] % bucket == 0
+
+
+@cuda
+def test_h2o_boundary_keeps_heavy_and_recent_and_never_evicts_recent() -> None:
+    from lazykv.policies import H2O
+
+    bs = 4
+    # 10 prompt blocks; blocks 2 and 5 carry the most mass, block 0 the least.
+    per_block = torch.tensor([0.0, 1, 9, 2, 3, 8, 1, 1, 1, 1], device="cuda")
+    token_mass = per_block.repeat_interleave(bs) / bs
+    p = H2O(token_mass=torch.cat([token_mass, torch.full((2,), 0.5, device="cuda")]), block_size=bs)
+    keep = p.initial_blocks(10, 4)
+    assert keep == [2, 5, 8, 9]  # two recent, two heaviest among the older blocks
+    p.start(keep, torch.device("cuda"))
+    # Block 10 is being sealed: the window is {9, 10}, so 9 is protected and 8 (mass 1) goes.
+    assert keep[p.victim(keep)] == 8
+    # Decode attention on block 8 lifts it above block 5, which becomes the lightest outside the window.
+    probs = torch.zeros(1, 1, 1, 4 * bs + 2, device="cuda")
+    probs[..., 2 * bs] = 20.0  # slot 2 holds block 8
+    p.observed(probs, n_used=4, block_size=bs, step=0)
+    assert keep[p.victim(keep)] == 5
+    p.sealed(2, 10, step=1)  # tail mass (0.5 * 2) moves into slot 2
+    assert p._mass is not None and abs(float(p._mass[2]) - 1.0) < 1e-6
+
+
+@cuda
+def test_h2o_pool_keeps_named_blocks_and_its_boundary_matches_exact_mass(tiny) -> None:  # noqa: ANN001
+    from lazykv.blocks import BlockPoolCache
+    from lazykv.cache import FullGPUCache
+    from lazykv.generate import prefill, teacher_forced_decode
+    from lazykv.policies import H2O
+    from lazykv.scoring import PrefillScorer
+
+    cfg, model = tiny
+    ids = torch.randint(0, cfg.vocab_size, (1, 200), device="cuda")
+    ref = FullGPUCache(cfg.num_hidden_layers, 512)
+    prefill(model, ref, ids[:, :199], chunk_size=32)
+    ref_keys = ref.layers[0].keys[:, :, :199].clone()
+
+    full = FullGPUCache(cfg.num_hidden_layers, 512)
+    scorer = PrefillScorer(cfg.num_hidden_layers, 512, torch.device("cuda"), stride=1)
+    pre = prefill(model, full, ids[:, :100], chunk_size=32, observer=scorer)
+    assert scorer.sampled_queries == [100] * cfg.num_hidden_layers
+    n_slots = 5
+    pool = BlockPoolCache.from_full(full, n_slots, BS, lambda i: H2O(token_mass=scorer.full_sum_estimate(i, 100), block_size=BS))
+    for i, layer in enumerate(pool.pool_layers):
+        mass = scorer.mass[i][: 12 * BS].view(12, BS).sum(-1)
+        n_recent = round(0.5 * n_slots)
+        heavy = mass[: 12 - n_recent].topk(n_slots - n_recent).indices.tolist()
+        assert layer.slot_blocks == sorted(heavy + list(range(12 - n_recent, 12)))
+    rows = list(teacher_forced_decode(model, pool, pre.last_logits, ids[:, 100:]))
+    assert len(rows) == 100
+    layer = pool.pool_layers[0]
+    assert layer.counters.evictions > 0 and pool.counters()["host_observe_s"] > 0
+    for slot, block in enumerate(layer.slot_blocks):
+        got = layer.keys[:, :, slot * BS : (slot + 1) * BS]
+        want = ref_keys[:, :, block * BS : (block + 1) * BS]
+        assert torch.allclose(got.float(), want.float(), rtol=1e-2, atol=1e-2), (slot, block)
+    newest = max(layer.slot_blocks)
+    assert newest == layer.next_block_id - 1  # the recent window survived every eviction

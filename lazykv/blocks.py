@@ -152,7 +152,7 @@ class BlockPoolLayer(CacheLayerMixin):
         self.policy.sealed(slot, block_id, self.step)
 
     def observe(self, query: torch.Tensor, key: torch.Tensor) -> None:
-        """Per-slot use for this decode step: some query head gives the block above-uniform attention."""
+        """Hand the policy this decode step's attention over the resident KV (slots, then tail)."""
         if query.shape[-2] != 1 or self.n_used == 0:
             return
         t0 = time.perf_counter()
@@ -169,11 +169,9 @@ class BlockPoolLayer(CacheLayerMixin):
         # tensor is upcast for a stable softmax.
         q = query.view(1, n_kv, groups, d)
         scores = (q @ key.transpose(-1, -2)).float() / math.sqrt(d)  # [1, kv, g, live]
-        probs = torch.softmax(scores, dim=-1)[..., : self.n_used * bs]
-        mass = probs.reshape(1, n_kv, groups, self.n_used, bs).sum(-1)  # [1, kv, g, n_used]
-        blocks_resident = self.n_used + (1 if live > self.n_used * bs else 0)
-        used = (mass.amax(dim=(0, 1, 2)) > 1.0 / blocks_resident)
-        self.policy.used(used, self.step)
+        probs = torch.softmax(scores, dim=-1)  # [1, kv, g, live]
+        # Each policy reduces the probabilities its own way (LRU: a per-slot use flag; H2O: summed mass).
+        self.policy.observed(probs, self.n_used, bs, self.step)
         self.step += 1
         self.counters.host_observe_s += time.perf_counter() - t0
 
@@ -203,10 +201,11 @@ class BlockPoolCache(Cache):
         self.pool_layers = layers
 
     @classmethod
-    def from_full(cls, full: FullGPUCache, n_slots: int, block_size: int, policy_factory: Callable[[], Policy]) -> BlockPoolCache:
+    def from_full(cls, full: FullGPUCache, n_slots: int, block_size: int, policy_factory: Callable[[int], Policy]) -> BlockPoolCache:
+        """`policy_factory(layer_idx)`: per-layer policies, since scored policies rank each layer's blocks separately."""
         layers = []
-        for src in full.layers:
-            layer = BlockPoolLayer(n_slots, block_size, policy_factory())
+        for layer_idx, src in enumerate(full.layers):
+            layer = BlockPoolLayer(n_slots, block_size, policy_factory(layer_idx))
             length = src.get_seq_length()
             layer.load(src.keys[:, :, :length], src.values[:, :, :length])
             layers.append(layer)

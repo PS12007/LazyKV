@@ -55,6 +55,18 @@ class PrefillScorer:
             acc[:kv_len] += torch.softmax(scores, dim=-1).sum(dim=(0, 1, 2))
         self.sampled_queries[layer_idx] += rows.numel()
 
+    def reset(self) -> None:
+        for m in self.mass:
+            m.zero_()
+        self.sampled_queries = [0] * len(self.mass)
+
+    def full_sum_estimate(self, layer_idx: int, length: int) -> torch.Tensor:
+        """Mass per prompt position scaled by the stride: an estimate of H2O's sum over every query.
+
+        Scaling matters only because decode adds unscaled per-step mass to the same totals.
+        """
+        return self.mass[layer_idx][:length] * self.stride
+
     def block_scores(self, layer_idx: int, n_blocks: int, block_size: int) -> torch.Tensor:
         """Mass per full prompt block, [n_blocks] on the GPU."""
         return self.mass[layer_idx][: n_blocks * block_size].view(n_blocks, block_size).sum(-1)
