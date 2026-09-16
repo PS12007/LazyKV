@@ -8,7 +8,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-2%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-3%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -26,32 +26,51 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 2 (blocks and GPU-only policies) complete.** A fixed-budget, block-granular
-> GPU KV pool now runs the first eviction rungs of the ladder, swept from 75% down to 6.25% of
-> the sequence's KV at 32,768 tokens. Nothing is offloaded yet: an evicted block is gone.
+> **Status: Phase 3 (attention-score eviction and query-aware selection) complete.** Five rungs of
+> the policy ladder are now measured on the same sweep, at 32,768 tokens,
+> with the same prompts and the same quality metrics. Nothing is offloaded yet.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
-> [Phase 2](docs/phases/PHASE_2.md).
+> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md).
 
-## Phase 2 in brief
+## Where the ladder stands
+
+Needle-in-a-haystack accuracy at 32,768 tokens, as a share of what the full
+cache answers (88.9% over
+45 prompts), at the budget each policy does best on:
+
+| Rung | Policy | Best retention measured | GPU KV it frees |
+|---|---|---|---|
+| 2 | Sliding window + attention sink | 62.5% at a 75% budget | yes, the budget |
+| 3 | Block LRU | 29.4% at a 75% budget (Phase 2) | yes, the budget |
+| 4 | H2O-style attention-score eviction | 92.5% at a 75% budget | yes, the budget |
+| 5 | Quest-style query-aware selection | 98.8% at a 75% attended budget | **none yet**: it attends to less, and frees nothing until the Phase 4 CPU tier |
+
+**No rung yet meets the brief's headline target** of ≥ 99% retention below a 100% budget; query-aware
+selection comes closest and misses it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_pareto-dark.png">
+  <img alt="NIAH accuracy against attended or resident budget, against GPU-resident KV bytes, and decode tokens per second, for window plus sink, H2O-style eviction and Quest-style selection" src="docs/figures/p3_pareto-light.png">
+</picture>
+
+The three policies fail in different places, and needle depth is what separates them: a window keeps
+the end of the prompt, accumulated attention mass keeps the beginning and the end, and query-aware
+selection keeps whatever the current query points at.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_depth-dark.png">
+  <img alt="NIAH accuracy by needle depth for each policy, one line per budget" src="docs/figures/p3_depth-light.png">
+</picture>
+
+Other measured facts from these two phases:
 
 | | |
 |---|---|
-| Full cache, needle-in-a-haystack at 32,768 tokens | **88.9%** over 45 prompts (3 needle kinds × 5 depths × 3 samples) |
-| Best GPU-only policy below full residency | **window + sink**, 63% of that accuracy at a 75% budget |
-| Budgets retaining ≥ 99% of it | **none**, for any of the three policies |
-| Dropping the attention sink | top-1 agreement with the full cache falls to 12.5%–17.2%, against 80.9%–93.6% with it |
-| Block LRU vs the same window without a sink | identical on **225 of 225** scored prompts: in a GPU-only cache, a block LRU evicts before it can observe a use |
-| Decode cost of eviction | 1.05–1.07× the full cache per token; watching attention for LRU costs 4.9–5.9 ms/token more |
-| 100% block pool vs the full cache | bit-identical distributions, 1.05× per-token time |
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p2_pareto-dark.png">
-  <img alt="NIAH accuracy and decode tokens per second versus GPU KV budget for window plus sink, window without sink, and LRU" src="docs/figures/p2_pareto-light.png">
-</picture>
-
-The interesting result is the shape, not the level: **where the needle sits decides whether it
-survives**, because a window with budget *f* keeps the last *f* of the prompt and nothing else.
-Rungs 4 and 5 (attention-score eviction and query-aware selection) exist to break that dependence.
+| Dropping the attention sink (Phase 2) | top-1 agreement with the full cache falls to 12.5%–17.2%, against 80.9%–93.6% with it |
+| Block LRU vs the same window without a sink (Phase 2) | identical on **225 of 225** scored prompts: a block LRU evicts before it can observe a use |
+| H2O and the sink | it has no sink rule, yet block 0 stayed resident in all 16 layers at every budget |
+| Host cost per decode token | window 1.0–1.0 ms, H2O 4.7–5.9 ms, Quest 5.6–6.6 ms; scoring the prompt for H2O adds 1.19× to prefill |
+| Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
 
 ## Phase 1 in brief
 
@@ -144,7 +163,7 @@ override for one model class. Nothing else in Transformers is patched.
 ## Policy ladder
 
 1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
-4. H2O-style attention-score eviction → 5. Quest-style query-aware selection → 6. + CPU tier,
+4. H2O-style attention-score eviction ✅ → 5. Quest-style query-aware selection ✅ → 6. + CPU tier,
 synchronous fetch → 7. + layer-ahead async prefetch → 8. + int8 warm/cold tiers →
 9. + exact CPU merge. Measured rungs are ticked.
 
@@ -222,6 +241,18 @@ few minutes; launch detached and poll the log.
 .venv\Scripts\python.exe scripts\02_policy_quality.py > logs\policy_quality.log 2>&1
 .venv\Scripts\python.exe scripts\02_budget_speed.py --run-id 1 > logs\budget_speed_run_1.log 2>&1   # also 2, 3
 .venv\Scripts\python.exe scripts\analyze_phase2.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
+## Reproduce Phase 3
+
+Same scripts as Phase 2, with the Phase 3 config (adds H2O-style eviction and Quest-style selection):
+
+```powershell
+.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase3.yaml > logs\p3_policy_quality.log 2>&1
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase3.yaml --run-id 1 > logs\p3_budget_speed_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\analyze_phase3.py
 .venv\Scripts\python.exe scripts\make_figures.py
 .venv\Scripts\python.exe scripts\render_docs.py
 ```

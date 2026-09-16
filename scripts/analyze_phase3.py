@@ -150,6 +150,8 @@ def main() -> None:
     last_depth = f"{max(depths):g}"
     summary: dict[str, Any] = {
         "accuracy": {pol: {f"{b:g}": nb[pol][b]["accuracy"] for b in budgets} for pol in policies},
+        # Same numbers keyed without a decimal point, because the doc renderer's lookup splits on ".".
+        "accuracy_at": {pol: {f"b{round(100 * b)}": nb[pol][b]["accuracy"] for b in budgets} for pol in policies},
         "tf_top1": {pol: span([tb[pol][b]["top1_agreement"] for b in budgets]) for pol in policies},
         "tf_kl": {pol: span([tb[pol][b]["mean_kl"] for b in budgets]) for pol in policies},
         "tf_kl_by_budget": {pol: {f"{b:g}": tb[pol][b]["mean_kl"] for b in budgets} for pol in policies},

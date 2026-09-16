@@ -7,6 +7,64 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-15: Phase 3, attention-score eviction and query-aware selection
+
+### What the two new rungs say about the design
+
+Phase 2 ended with a mechanical failure mode: a window keeps the end of the prompt, so a needle
+anywhere else is gone. Both Phase 3 rungs break that dependence, and they break it differently.
+
+- **Rung 5 (Quest-style selection)** retains 98.8%
+  of the full cache's NIAH accuracy at a 75%
+  attended budget and  74.4% at 25%, against
+   21.7% for window + sink at 25%. Paired over the
+  same prompts it is +20.6 pp to
+  +52.8 pp ahead of window + sink.
+- **Rung 4 (H2O-style eviction)** retains 92.5%
+  at 75% and is
+  +14.4 pp to +30.6 pp
+  ahead of window + sink. Its weakness is positional: accumulated attention favours early keys, which every
+  later query can see, so it keeps the start and the recent window and drops the middle
+  (4%–76%
+  at interior depths, against 78%–89%
+  at the start).
+
+**Still nothing meets the brief's ≥ 99% retention target below a 100% budget**, and rung 5's near miss is
+the interesting part: the accuracy is nearly there while the *memory* is not saved at all. Rung 5 keeps
+every block resident (100% of the sequence) and varies
+only what it attends to, so on this rung the budget axis and the memory axis are different things. That is
+exactly the gap Phase 4's CPU tier has to close: selection decides *which* blocks matter, and offload is
+what turns that decision into free VRAM.
+
+An unplanned result worth keeping: **H2O keeps the attention sink without being told to.** Block 0 stayed
+resident in all 16 layers at every budget, with no sink rule in the policy.
+Phase 2 had to hard-code it.
+
+### Cost
+
+Query-aware selection costs 5.6–6.6 ms
+of host time per token and H2O 4.7–5.9 ms,
+against 1.0–1.0 ms
+for a plain window; scoring the prompt for H2O adds 1.19× to prefill.
+Rung 5 also gathers its attended set in every selecting layer at every step, because a sparse kernel is out
+of scope, so its latency here is an upper bound on what the method costs.
+
+### Measurement incidents (kept because they would have become findings)
+
+1. **The full-cache reference is not a stable ruler.** Its per-repeat medians span
+   18.37 ms–31.45 ms
+   in Phase 3 and 18.10 ms–27.39 ms
+   in Phase 2, while every policy condition shared by the two phases reproduces much more tightly. Ratios
+   against the full cache inherit that spread; absolute per-token times are what compares across phases.
+   Cause not yet identified.
+2. **Cross-phase check added rather than assumed.** Phase 3 re-measured every Phase 2 condition it compares
+   against, in the same run. Quality reproduced exactly:
+   0 of
+   315 prompt × condition pairs scored
+   differently, and teacher-forced KL differed by 0.0e+00 nats.
+
+---
+
 ## 2026-09-15: Phase 2, blocks and GPU-only policies
 
 ### What the budget sweep says about the design

@@ -1,13 +1,15 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-16T00:19:45+00:00",
-    "git_commit": "be4b108fe2a0274665d66921c8851de66dab61e2",
+    "generated_at_utc": "2026-09-16T00:23:34+00:00",
+    "git_commit": "2b8007c3ce8b14f5fee94aad0c8639b9a5a19311",
     "git_dirty": true,
     "git_dirty_files": [
-      "arness/render.py",
-      "scripts/analyze_phase3.py",
-      "scripts/render_docs.py"
+      "EADME.md",
+      "docs/RESEARCH_LOG.md",
+      "docs/templates/README.md.tmpl",
+      "docs/templates/RESEARCH_LOG.md.tmpl",
+      "scripts/analyze_phase3.py"
     ],
     "argv": [
       "scripts/analyze_phase3.py"
@@ -2072,6 +2074,29 @@
         "0.25": 0.7444444444444445,
         "0.5": 0.8444444444444444,
         "0.75": 0.8777777777777778
+      }
+    },
+    "accuracy_at": {
+      "window_sink": {
+        "b6": 0.17777777777777778,
+        "b12": 0.19444444444444445,
+        "b25": 0.21666666666666667,
+        "b50": 0.4166666666666667,
+        "b75": 0.5555555555555556
+      },
+      "h2o": {
+        "b6": 0.32222222222222224,
+        "b12": 0.3611111111111111,
+        "b25": 0.5222222222222223,
+        "b50": 0.6111111111111112,
+        "b75": 0.8222222222222222
+      },
+      "quest": {
+        "b6": 0.38333333333333336,
+        "b12": 0.6444444444444445,
+        "b25": 0.7444444444444445,
+        "b50": 0.8444444444444444,
+        "b75": 0.8777777777777778
       }
     },
     "tf_top1": {
