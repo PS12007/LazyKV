@@ -1,0 +1,162 @@
+# Phase 3 gate report: attention-score eviction and query-aware selection
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Phase 3 added the two policies that decide *which* blocks matter rather than *where* they sit:
+rung 4 ranks blocks by the attention they received during the prompt (H2O-style), and rung 5
+scores every block against the current query at every decode step and attends to the top ones
+(Quest-style). Both were swept at {{ phase3.analysis.context | int }} tokens against the full
+cache and against Phase 2's best policy, window + sink, re-measured in the same run.
+
+Rung 5 evicts nothing: every block stays resident and the budget is what it *attends to*. Until
+the CPU tier arrives in Phase 4, it buys accuracy, not memory. The report keeps those two axes
+separate everywhere.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: the Quest bound dominates every dot product in its block; the gathered set is sink + top-K + current block with the unfilled tail masked, and its attention output matches an explicit reference on both the fast and the quality kernel; a budget that covers every block falls back to dense and is bit-identical; stride-1 prefill scoring equals exact attention column sums across chunks; H2O keeps heavy and recent blocks, never evicts inside its recent window (verified by mutation), and carries the tail's mass into the block it seals. All Phase 0-2 tests still pass.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase3.yaml` and `scripts/02_budget_speed.py --config configs/phase3.yaml` ({{ phase3.analysis.speed_runs }} independent runs), launched detached from a clean tree. Provenance below.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was built
+
+| Piece | Where | Design choice and why |
+|---|---|---|
+| Rung 4: H2O-style eviction | `lazykv/policies.py` (`H2O`) | Heavy hitters by accumulated attention mass plus a recent window, half the slots each (H2O's equal split). The sink is **not** forced: whether accumulated mass keeps it is a measurement, reported below. |
+| Prefill attention mass | `lazykv/scoring.py` | H2O sums the prompt's whole attention matrix. At {{ phase3.analysis.context | int }} tokens that matrix cannot be materialized, and the exact prefill uses fused kernels that never produce it. Every {{ phase3.analysis.prefill_scorer.stride }}th prompt query is scored instead, causally masked, and scaled by the stride. A stride-1 test checks the estimator against exact column sums. |
+| Rung 5: Quest-style selection | `lazykv/selection.py` (`QuestView`) | Per-block key element-wise min/max; each step bounds q·k per block and attends the top-K per KV head, plus the sink and the block being filled. The first {{ phase3.analysis.quest.dense_layers }} layers stay dense, as in Quest. |
+| Selector hook | `lazykv/attention.py` | The selector hands attention a constant-shape gathered KV and an additive mask. Constant shape keeps the cuDNN plan cached (Phase 1), so this path needs no bucketing. |
+| Attention observation | `lazykv/blocks.py` | The pool now hands each policy the step's attention probabilities and lets it reduce them (LRU: a per-slot use flag, with the same operations as Phase 2; H2O: summed mass). |
+
+Budgets, block size ({{ phase3.analysis.block_size }} tokens), prompts, needle set and decode
+lengths are Phase 2's, so the two phases are directly comparable.
+
+## Deviations from the published methods
+
+| Paper | Here | Why |
+|---|---|---|
+| H2O scores every prompt query | A systematic sample: every {{ phase3.analysis.prefill_scorer.stride }}th | The full attention matrix is unaffordable at this context; the sample is scaled back up, and a ranking is unchanged by a constant factor |
+| H2O keeps scores per head, per token | Summed over heads, per block | The pool's slot table is shared by a layer's heads |
+| Quest uses 16-token pages | {{ phase3.analysis.block_size }}-token blocks | Rungs differ in policy, not block size; the block-size sweep is Phase 4 |
+| Quest uses a sparse attention kernel | Gather + masked dense attention | Custom kernels are out of scope (brief §B9). Rung 5's latency here is an upper bound on what a sparse kernel would pay |
+
+## Headline findings
+
+1. **Query-aware selection is worth far more than any eviction rule, and still misses the target.**
+   Attending only to the blocks the current query scores highest, under a
+   {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }} attended budget, retains
+   {{ phase3.analysis.headline.quest.best_retention_below_full | pct }} of the full cache's NIAH accuracy,
+   against {{ phase3.analysis.headline.window_sink.best_retention_below_full | pct }} for window + sink at the same
+   budget. It is the closest any rung has come to the brief's ≥ 99% target and it does not reach it:
+   **no policy yet meets the headline target at any budget below 100%.**
+2. **Both new rungs beat Phase 2's best policy at every budget, measured pairwise.** Every condition
+   answers the same prompts from the same prefill, so the comparison is a paired difference. Quest-style
+   selection is {{ phase3.analysis.summary.paired_span.quest.min | pp }} to
+   {{ phase3.analysis.summary.paired_span.quest.max | pp }} ahead of window + sink across the budgets, and
+   H2O-style eviction {{ phase3.analysis.summary.paired_span.h2o.min | pp }} to
+   {{ phase3.analysis.summary.paired_span.h2o.max | pp }} ahead, with 95% intervals that exclude zero at
+   every budget for both (table in §1).
+3. **The three policies fail in different places, and depth shows it.** Averaged over the interior needle
+   depths, window + sink scores {{ phase3.analysis.summary.at_mid_depths.window_sink.min | pct0 }}–{{ phase3.analysis.summary.at_mid_depths.window_sink.max | pct0 }},
+   H2O {{ phase3.analysis.summary.at_mid_depths.h2o.min | pct0 }}–{{ phase3.analysis.summary.at_mid_depths.h2o.max | pct0 }},
+   and Quest {{ phase3.analysis.summary.at_mid_depths.quest.min | pct0 }}–{{ phase3.analysis.summary.at_mid_depths.quest.max | pct0 }}.
+   At the *start* of the prompt the order reverses: H2O scores
+   {{ phase3.analysis.summary.at_depth0.h2o.min | pct0 }}–{{ phase3.analysis.summary.at_depth0.h2o.max | pct0 }}
+   there against Quest's {{ phase3.analysis.summary.at_depth0.quest.min | pct0 }}–{{ phase3.analysis.summary.at_depth0.quest.max | pct0 }}
+   and the window's {{ phase3.analysis.summary.at_depth0.window_sink.min | pct0 }}–{{ phase3.analysis.summary.at_depth0.window_sink.max | pct0 }}.
+   Accumulated attention is biased toward early positions, because an early key is visible to every later
+   query, so H2O keeps the beginning and the recent window and loses the middle. Selection keeps whatever
+   the current query points at, wherever it is, and only fails when the budget is too small to hold it.
+4. **H2O keeps the attention sink without being told to.** The policy has no sink rule; block 0 stayed
+   resident in all {{ phase3.analysis.h2o.layers }} layers at every budget. Phase 2 had to hard-code the sink
+   to keep a window usable; an attention-mass ranking discovers it.
+5. **An attended budget is not a memory budget.** Rung 5 evicts nothing: its GPU-resident KV is
+   {{ phase3.analysis.quest.resident_fraction.min | pct0 }} of the sequence at every budget, and it pays a gather
+   of the attended set in every selecting layer at every step. What Phase 3 measures is how much accuracy a
+   query-aware *choice* retains; turning that choice into memory savings is Phase 4's CPU tier.
+6. **Both rungs cost host time, as Phase 1 predicted for a host-bound decode.** H2O's manager costs
+   {{ phase3.analysis.summary.manager_ms_per_token.h2o.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.h2o.max | .1f }} ms
+   per token and Quest's selector {{ phase3.analysis.summary.manager_ms_per_token.quest.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.quest.max | .1f }} ms,
+   against {{ phase3.analysis.summary.manager_ms_per_token.window_sink.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.window_sink.max | .1f }} ms
+   for a plain window. Scoring the prompt for H2O also adds
+   {{ phase3.analysis.summary.prefill_scored_over_plain | .2f }}× to prefill
+   ({{ phase3.analysis.summary.prefill_plain_s | .2f }} s → {{ phase3.analysis.summary.prefill_scored_s | .2f }} s).
+7. **Negative result on the reference, not on the policies: the full cache's own latency is unstable.**
+   Per-repeat medians for the full cache span
+   {{ phase3.analysis.cross_phase.full_repeat_medians.phase3.min | ms }}–{{ phase3.analysis.cross_phase.full_repeat_medians.phase3.max | ms }}
+   in this phase and {{ phase3.analysis.cross_phase.full_repeat_medians.phase2.min | ms }}–{{ phase3.analysis.cross_phase.full_repeat_medians.phase2.max | ms }}
+   in Phase 2, while every *policy* condition shared by the two phases reproduces within a few percent
+   (§6). The ÷ full column therefore carries that spread, and absolute per-token times are the quantity to
+   compare across phases. The cause is not yet identified; it is logged rather than smoothed over.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p3_pareto-dark.png">
+  <img alt="NIAH accuracy against attended or resident budget, against GPU-resident KV bytes, and decode tokens per second, for window plus sink, H2O-style eviction and Quest-style selection" src="../figures/p3_pareto-light.png">
+</picture>
+
+## 1. NIAH retrieval
+
+{{ phase3.analysis.niah_prompts_per_condition }} prompts per condition at
+{{ phase3.analysis.prompt_len_median | int }} tokens: every combination of
+{{ phase3.analysis.summary.niah_kinds }} needle kinds, {{ phase3.analysis.summary.niah_depths }} depths and
+{{ phase3.analysis.summary.niah_samples }} samples, scored on the repeatable quality kernel. The full cache scores
+{{ phase3.analysis.full_niah_accuracy | pct }} [{{ phase3.analysis.full_niah_accuracy_ci95.0 | pct0 }}, {{ phase3.analysis.full_niah_accuracy_ci95.1 | pct0 }}].
+"Resident at answer" is what the policy keeps in VRAM; for rung 5 that is everything, and its
+budget appears in the attended column instead.
+
+{{> p3_niah }}
+
+Every condition decodes the same prompts from the same prefill, so policies are compared pairwise,
+against window + sink at the same budget, rather than by overlapping intervals:
+
+{{> p3_paired }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p3_depth-dark.png">
+  <img alt="NIAH accuracy by needle depth for each policy, one line per budget" src="../figures/p3_depth-light.png">
+</picture>
+
+## 2. Teacher-forced divergence
+
+{{ phase3.analysis.summary.teacher_forced_documents }} passages of {{ phase3.analysis.context | int }} tokens from a
+second book, {{ phase3.analysis.summary.teacher_forced_positions }} continuation positions each, compared with the
+full cache's distributions from the same prefill.
+
+{{> p3_teacher_forced }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p3_kl-dark.png">
+  <img alt="Mean KL divergence from the full cache versus budget, log scale" src="../figures/p3_kl-light.png">
+</picture>
+
+## 3. What H2O's ranking actually kept
+
+{{> p3_h2o }}
+
+## 4. Speed
+
+Fast kernel, power throttling opted out, {{ phase3.analysis.speed_runs }} independent runs.
+Conditions that spilled into shared system memory: {{ phase3.analysis.summary.conditions_with_spill }}.
+
+{{> p3_speed }}
+
+## 5. The smallest budget that keeps accuracy (brief §B8)
+
+{{> p3_headline }}
+
+## 6. Reproducibility against Phase 2
+
+Phase 3 re-measured the full cache, the 100% block pool and window + sink at every budget. Quality is
+deterministic on the repeatable kernel, so these should be identical, and they are: of
+{{ phase3.analysis.cross_phase.niah_prompt_conditions_compared }} shared NIAH prompt × condition pairs,
+{{ phase3.analysis.cross_phase.niah_scored_differently }} scored differently, and the largest teacher-forced
+difference across {{ phase3.analysis.cross_phase.tf_conditions_compared }} shared conditions is
+{{ phase3.analysis.cross_phase.tf_max_abs_kl_diff | .1e }} nats of KL. Speed is not deterministic; the table
+below is the check on it.
+
+{{> p3_cross_speed }}
+
+## Run provenance
+
+{{> p3_provenance }}
