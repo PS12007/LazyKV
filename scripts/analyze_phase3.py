@@ -82,7 +82,10 @@ def main() -> None:
             "layers": n_layers,
             "block0_resident_layers_min_by_budget": {f"{b:g}": min(r["layers_with_block0_resident"] for r in h2o_rows if r["budget"] == b) for b in budgets},
             "boundary_evicted_blocks_median_by_budget": {f"{b:g}": statistics.median(r["boundary_evicted_blocks"] for r in h2o_rows if r["budget"] == b) for b in budgets},
-            "decode_evictions_median_by_budget": {f"{b:g}": statistics.median(r["evictions"] for r in h2o_rows if r["budget"] == b) for b in budgets},
+            # NIAH answers are short, so decode evictions are counted in the speed runs, which decode 133 tokens.
+            "decode_evictions_median_by_budget": {
+                f"{b:g}": statistics.median([r["evictions"] for run in runs for r in run["results"] if r["policy"] == "h2o" and r["budget"] == b] or [0]) for b in budgets
+            },
         }
 
     # ---- Quest: attended budget vs resident memory ----------------------------------------------
@@ -118,6 +121,28 @@ def main() -> None:
             "tf_max_abs_top1_diff": max((abs(a["top1_agreement"] - b["top1_agreement"]) for a, b in tf_shared), default=None),
             "phase2_commit": p2["provenance"].get("git_commit"),
         }
+        # Speed: conditions measured in both phases should reproduce. Where they do not, the
+        # phase's "x full" ratios inherit that noise, so the check is computed, not eyeballed.
+        p2_runs = [json.loads(f.read_text(encoding="utf-8")) for f in sorted((RESULTS_DIR / "phase2" / "budget_speed").glob("run_*/metrics.json"))]
+        if runs and p2_runs:
+            shared = sorted({(r["policy"], r["budget"]) for r in runs[0]["results"]} & {(r["policy"], r["budget"]) for r in p2_runs[0]["results"]}, key=lambda c: (c[0], -c[1]))
+            rows = []
+            for pol, b in shared:
+                a2 = across(per_run(p2_runs, pol, b, "decode_wall_s.median"))
+                a3 = across(per_run(runs, pol, b, "decode_wall_s.median"))
+                rows.append({
+                    "label": label(pol, b),
+                    "phase2_decode_s": a2,
+                    "phase3_decode_s": a3,
+                    "ratio": a3["median"] / a2["median"] if a2.get("median") else None,
+                })
+            cross["speed"] = rows
+            cross["speed_max_abs_log_ratio_label"] = max(rows, key=lambda r: abs((r["ratio"] or 1) - 1))["label"]
+            # Per-repeat medians of the full cache: its spread is what the ratios are divided by.
+            cross["full_repeat_medians"] = {
+                "phase2": span([r["decode_wall_s"]["median"] for run in p2_runs for r in run["results"] if r["policy"] == "full"]),
+                "phase3": span([r["decode_wall_s"]["median"] for run in runs for r in run["results"] if r["policy"] == "full"]),
+            }
 
     # ---- summary spans the write-up quotes ------------------------------------------------------------
     nb = {pol: cond_rows(niah, pol) for pol in policies}
@@ -131,6 +156,10 @@ def main() -> None:
         "tf_top1_by_budget": {pol: {f"{b:g}": tb[pol][b]["top1_agreement"] for b in budgets} for pol in policies},
         "at_depth0": {pol: span([nb[pol][b]["by_depth"]["0"] for b in budgets]) for pol in policies},
         "at_last_depth": {pol: span([nb[pol][b]["by_depth"][last_depth] for b in budgets]) for pol in policies},
+        # Interior depths: where a policy that keeps only the ends of the prompt loses the needle.
+        "at_mid_depths": {
+            pol: span([statistics.mean(nb[pol][b]["by_depth"][f"{d:g}"] for d in depths[1:-1]) for b in budgets]) for pol in policies
+        },
         "full_by_kind": next(n["by_kind"] for n in niah if n["policy"] == "full"),
         "niah_kinds": len(cfg["niah"]["kinds"]),
         "niah_depths": len(depths),
@@ -138,6 +167,10 @@ def main() -> None:
         "teacher_forced_documents": len(cfg["teacher_forced"]["offsets"]),
         "teacher_forced_positions": cfg["teacher_forced"]["continuation"],
         "block_size": bs,
+    }
+    summary["paired_span"] = {pol: span([r["accuracy_minus_reference"] for r in rows]) for pol, rows in paired.items()}
+    summary["paired_ci_excludes_zero"] = {
+        pol: all(r["ci95"][0] > 0 for r in rows) for pol, rows in paired.items()
     }
     if speed:
         sp = {s["label"]: s for s in speed}

@@ -56,6 +56,8 @@ def _named_formatters() -> dict[str, Callable[[Any], str]]:
         "pct": lambda v: f"{100 * v:.1f}%",
         "pct0": lambda v: f"{100 * v:.0f}%",
         "x": lambda v: f"{v:.1f}×",
+        # Percentage points, signed: a difference between two accuracies, never a ratio.
+        "pp": lambda v: f"{100 * v:+.1f} pp",
         "ms": lambda v: f"{1e3 * v:.2f} ms",
         "us": lambda v: f"{1e6 * v:.1f} µs",
         "gbps": lambda v: f"{v / 1e9:.2f} GB/s",

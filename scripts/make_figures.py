@@ -586,7 +586,8 @@ def fig_p3_pareto(a: dict[str, Any], t: Theme) -> None:
         speed = {s["label"]: s for s in a["speed"]}
         fs = speed["full@1"]["tokens_per_s"]["median"]
         ax.axhline(fs, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
-        ax.annotate("full cache", (1.0, fs), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+        # Below the line: policies can be faster than the full cache here, so a label above it collides.
+        ax.annotate("full cache", (max(budgets), fs), xytext=(-4, -6), textcoords="offset points", ha="right", va="top", color=t.ink2, fontsize=8.5)
         tops = [fs]
         for (policy, _), color in zip(P3_POLICIES, t.series):
             r = sorted((s for s in a["speed"] if s["policy"] == policy), key=lambda s: s["budget"])

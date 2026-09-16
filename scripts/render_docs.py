@@ -759,7 +759,8 @@ def _sweep_niah(ctx: Mapping[str, Any], phase: str) -> str:
                 _pct_budget(r["budget"]),
                 f"{100 * r['resident_fraction_median']:.1f}%",
                 f"{100 * r['accuracy']:.1f}% [{100 * r['accuracy_ci95'][0]:.0f}, {100 * r['accuracy_ci95'][1]:.0f}]",
-                f"{100 * r['retention']:.0f}%" if r["retention"] is not None else NOT_MEASURED,
+                # One decimal: the gate is a 99% threshold, and 98.8% must not round to it.
+                f"{100 * r['retention']:.1f}%" if r["retention"] is not None else NOT_MEASURED,
             ]
             + [f"{100 * r['by_kind'][k]:.0f}%" for k in kinds]
             + [f"{100 * r['by_depth'][d]:.0f}%" for d in depths]
@@ -830,7 +831,7 @@ def _sweep_headline(ctx: Mapping[str, Any], phase: str) -> str:
                 POLICY_NAMES.get(policy, policy),
                 _pct_budget(v["min_budget_meeting_target"]) if v["min_budget_meeting_target"] is not None else "**none below 100%**",
                 f"{v['tokens_per_s_at_that_budget']:.1f}" if v["tokens_per_s_at_that_budget"] is not None else "–",
-                f"{100 * v['best_retention_below_full']:.0f}% at {_pct_budget(v['best_retention_budget'])}" if v["best_retention_below_full"] is not None else NOT_MEASURED,
+                f"{100 * v['best_retention_below_full']:.1f}% at {_pct_budget(v['best_retention_budget'])}" if v["best_retention_below_full"] is not None else NOT_MEASURED,
             ]
         )
     return table(["Policy", "Smallest budget retaining ≥ 99% of full-cache NIAH accuracy", "Tokens/s there", "Best retention measured"], rows, ["---", "---:", "---:", "---:"])
@@ -900,6 +901,24 @@ def block_p3_paired(ctx: Mapping[str, Any]) -> str:
             cells.append(f"{100 * r['accuracy_minus_reference']:+.1f} pp [{100 * lo:+.0f}, {100 * hi:+.0f}] ({r['prompts_better']}↑ {r['prompts_worse']}↓)")
         rows.append([f"{POLICY_NAMES.get(policy, policy)} − {POLICY_NAMES.get(str(ref), str(ref))}"] + cells)
     return table(["Accuracy difference [95% CI] (prompts better↑ worse↓)"] + [f"budget {_pct_budget(b)}" for b in budgets], rows, ["---"] + ["---:"] * len(budgets))
+
+
+def block_p3_cross_speed(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase3.analysis.cross_phase.speed")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    ms_ = lambda v: f"{v * 1e3:.2f} ms"  # noqa: E731
+    rows = [
+        [
+            POLICY_NAMES.get(r["label"].split("@")[0], r["label"]),
+            _pct_budget(float(r["label"].split("@")[1])),
+            rng(r["phase2_decode_s"], ms_),
+            rng(r["phase3_decode_s"], ms_),
+            f"{r['ratio']:.3f}×" if r["ratio"] is not None else NOT_MEASURED,
+        ]
+        for r in rows_in
+    ]
+    return table(["Condition measured in both phases", "Budget", "Phase 2 decode / token", "Phase 3 decode / token", "Phase 3 ÷ Phase 2"], rows, ["---", "---:", "---:", "---:", "---:"])
 
 
 def block_p3_h2o(ctx: Mapping[str, Any]) -> str:
