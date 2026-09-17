@@ -33,6 +33,7 @@ OUTPUTS = {
     "PHASE_1.md.tmpl": "docs/phases/PHASE_1.md",
     "PHASE_2.md.tmpl": "docs/phases/PHASE_2.md",
     "PHASE_3.md.tmpl": "docs/phases/PHASE_3.md",
+    "PHASE_4.md.tmpl": "docs/phases/PHASE_4.md",
 }
 
 GENERATED_BANNER = (
@@ -734,6 +735,8 @@ POLICY_NAMES = {
     "lru": "LRU (rung 3)",
     "h2o": "H2O-style (rung 4)",
     "quest": "Quest-style (rung 5)",
+    "tiered_sync": "CPU tier, sync fetch (rung 6)",
+    "tiered_prefetch": "CPU tier + prefetch (rung 7)",
 }
 
 
@@ -932,6 +935,148 @@ def block_p3_h2o(ctx: Mapping[str, Any]) -> str:
         ["Decode-time evictions, all layers (median)"] + [f"{h['decode_evictions_median_by_budget'][b]:,.0f}" for b in budgets],
     ]
     return table(["H2O-style, NIAH prompts"] + [f"budget {float(b) * 100:g}%" for b in budgets], rows, ["---"] + ["---:"] * len(budgets))
+
+
+def block_p4_niah(ctx: Mapping[str, Any]) -> str:
+    return _sweep_niah(ctx, "phase4")
+
+
+def block_p4_teacher_forced(ctx: Mapping[str, Any]) -> str:
+    return _sweep_teacher_forced(ctx, "phase4")
+
+
+def block_p4_speed(ctx: Mapping[str, Any]) -> str:
+    return _sweep_speed(ctx, "phase4")
+
+
+def block_p4_headline(ctx: Mapping[str, Any]) -> str:
+    return _sweep_headline(ctx, "phase4")
+
+
+def block_p4_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase4.analysis.sources")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row("Policy quality (NIAH + teacher-forced)", src["policy_quality"])]
+    rows += [_provenance_row(f"Budget speed, 2x slots, run {i}", p) for i, p in enumerate(src["budget_speed"], 1)]
+    spare0 = lookup(ctx, "phase4.analysis.spare0.sources")
+    if isinstance(spare0, list):
+        rows += [_provenance_row(f"Budget speed, VRAM = attended, run {i}", p) for i, p in enumerate(spare0, 1)]
+    return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+def block_p4_identity(ctx: Mapping[str, Any]) -> str:
+    ident = lookup(ctx, "phase4.analysis.identity_vs_quest")
+    if not isinstance(ident, Mapping) or not ident:
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            POLICY_NAMES.get(pol, pol),
+            f"{v['niah_answers_differing']} of {v['niah_prompt_conditions']}",
+            f"{v['tf_max_abs_kl_diff']:.1e}" if v["tf_max_abs_kl_diff"] is not None else NOT_MEASURED,
+            f"{100 * v['tf_max_abs_top1_diff']:.2f} pp" if v["tf_max_abs_top1_diff"] is not None else NOT_MEASURED,
+        ]
+        for pol, v in ident.items()
+    ]
+    return table(["Policy", "NIAH answers differing from rung 5 (prompt × budget)", "Largest teacher-forced KL difference", "Largest top-1 difference"], rows, ["---", "---:", "---:", "---:"])
+
+
+def _tier_rows(speed: list[Mapping[str, Any]], tier: Mapping[str, Any], variant: str) -> list[list[str]]:
+    by = {r["label"]: r for r in speed}
+    rows = []
+    for pol, per_budget in tier.items():
+        for b_key, t in sorted(per_budget.items(), key=lambda kv: -float(kv[0])):
+            if not t:
+                continue
+            sp = by.get(f"{pol}@{b_key}")
+            q = by.get(f"quest@{b_key}")
+            over = sp["decode_wall_median_s"]["median"] / q["decode_wall_median_s"]["median"] if sp and q else None
+            pre = "–"
+            if pol == "tiered_prefetch":
+                pre = f"{100 * t['prefetch_precision']:.0f}% / {100 * t['prefetch_coverage']:.0f}%"
+            rows.append([
+                POLICY_NAMES.get(pol, pol),
+                variant,
+                _pct_budget(float(b_key)),
+                f"{t['k_blocks']} / {t['n_slots']}",
+                rng(sp["gpu_resident_kv_bytes"], _mib, show_range=False) if sp else NOT_MEASURED,
+                rng(sp["decode_wall_median_s"], lambda v: f"{v * 1e3:.1f} ms") if sp else NOT_MEASURED,
+                f"{over:.2f}×" if over is not None else NOT_MEASURED,
+                f"{100 * t['hit_rate']:.1f}%",
+                f"{t['fetched_pairs_per_token']:,.0f}",
+                f"{t['fetch_mib_per_token']:.1f}",
+                f"{t['fetch_transfers_per_token']:.1f}",
+                f"{100 * t['thrash_share_of_fetches']:.0f}%",
+                f"{t['host_rank_ms_per_token']:.1f}" if t.get("host_rank_ms_per_token") is not None else NOT_MEASURED,
+                f"{t['host_select_ms_per_token'] - (t.get('host_rank_ms_per_token') or 0):.1f}",
+                f"{t['host_prefetch_ms_per_token']:.1f}" if pol == "tiered_prefetch" else "–",
+                pre,
+            ])
+    return rows
+
+
+def block_p4_tier(ctx: Mapping[str, Any]) -> str:
+    a = lookup(ctx, "phase4.analysis")
+    if not isinstance(a, Mapping) or not a.get("tier"):
+        return f"_{NOT_MEASURED}_"
+    rows = _tier_rows(a["speed"], a["tier"], "2× slots")
+    if a.get("spare0", {}).get("tier"):
+        rows += _tier_rows(a["spare0"]["speed"], a["spare0"]["tier"], "= attended")
+    header = [
+        "Policy", "VRAM slots", "Budget", "K / slots per head", "Resident KV", "Decode / token (range over runs)", "÷ rung 5",
+        "Hit rate", "Pairs fetched / token", "MiB fetched / token", "H2D transfers / token", "Thrash", "Rank + sync, ms",
+        "Other select, ms", "Prefetch host, ms", "Prefetch precision / coverage",
+    ]
+    return table(header, rows, ["---", "---", "---:"] + ["---:"] * 13)
+
+
+def block_p4_overlap(ctx: Mapping[str, Any]) -> str:
+    rows = []
+    for variant, key in (("2× slots", "phase4.analysis.prefetch_overlap"), ("= attended", "phase4.analysis.spare0.prefetch_overlap")):
+        o = lookup(ctx, key)
+        if not isinstance(o, Mapping):
+            continue
+        for b, v in o.items():
+            rows.append([
+                variant, _pct_budget(float(b)), f"{v['prefetches']:,}",
+                f"{100 * v['overlap_fraction_median']:.0f}% (p10 {100 * v['overlap_fraction_p10']:.0f}%)",
+                f"{100 * v['fully_hidden_share']:.1f}%",
+                f"{v['copy_ms_median']:.2f} ms (p90 {v['copy_ms_p90']:.2f})",
+                f"{v['window_ms_median']:.2f} ms",
+                f"{100 * v['stalled_share']:.1f}%",
+                f"{v['stall_ms_p90']:.2f} ms",
+            ])
+    if not rows:
+        return f"_{NOT_MEASURED}_"
+    return table(["VRAM slots", "Budget", "Prefetches timed", "Copy inside the window (median)", "Copies fully inside", "Copy duration", "Window (launch → target layer)", "Target layer waited", "Wait p90"], rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"])
+
+
+def block_p4_probe(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase4.analysis.probe")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in rows_in:
+        rows.append([
+            f"`{r['probe']}`",
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            r["fetch"],
+            f"{r['k_blocks']} / {r['n_slots']}",
+            f"{r['decode_wall_median_s'] * 1e3:.1f} ms",
+            f"{r['quest_decode_s'] * 1e3:.1f} ms" if r.get("quest_decode_s") else NOT_MEASURED,
+            f"{r['full_decode_s'] * 1e3:.1f} ms" if r.get("full_decode_s") else NOT_MEASURED,
+            f"{r['fetched_pairs_per_token']:,.0f}",
+            f"{r['fetch_transfers_per_token']:,.0f}",
+            f"{100 * r['thrash_share_of_fetches']:.0f}%",
+            f"{r['host_fetch_ms_per_token']:.1f} ms",
+            f"{100 * r['prefetch_precision']:.0f}%" if r["policy"] == "tiered_prefetch" else "–",
+        ])
+    return table(
+        ["Probe", "Policy", "Budget", "Fetch", "K / slots", "Decode / token", "Rung 5, same run", "Full cache, same run", "Pairs fetched / token", "H2D transfers / token", "Thrash", "Fetch launch host time", "Prefetch precision"],
+        rows,
+        ["---", "---", "---:", "---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"],
+    )
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
