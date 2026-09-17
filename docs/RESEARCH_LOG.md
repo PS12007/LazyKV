@@ -29,24 +29,24 @@ attended budget is now a memory budget.**
 
 The design premise from Phase 0 was that a *small, selected* fetch fits inside the compute window. It
 does, and the instrumentation says so directly: every timed prefetch copy finished inside its window
-(0.38–0.82 ms
+(0.39–0.83 ms
 copies against
-3.64–6.87 ms
+3.70–6.82 ms
 windows), and rung 6 at a 25% budget moves only
 4.6 MiB per token.
 
 And yet rung 6 decodes at 18.6 tokens/s
-against rung 5's 40.4. The cost is **host
+against rung 5's 40.3. The cost is **host
 round trips**: every selecting layer has to bring its top-K block indices back to the CPU before it can
 decide what to fetch, which costs
-5.0–6.9 ms
+5.0–6.8 ms
 per token on its own, in a decode that Phase 1 already showed to be host-bound. The bottleneck this
 project was designed around (PCIe) is not the bottleneck this design hits.
 
 **Rung 7 is a negative result and the reason is the same.** Layer-ahead speculation hides the transfer
 completely and still makes decode slower, because it adds a *second* host round trip per layer and its
 guesses are right only
-30%–39%
+31%–39%
 of the time, so wrong guesses evict blocks the real selection then fetches back. Hiding a transfer that
 was never the bottleneck buys nothing.
 
@@ -64,7 +64,7 @@ attended set. Both choices were wrong, and the counters said so before any tunin
    93% of fetches brought back a
    pair evicted within the previous 16 steps: consecutive tokens select overlapping but different sets,
    and with no spare slots every difference is an eviction. Doubling the slots cut on-demand fetches to
-   3–380
+   3–347
    pairs per token.
 
 Both probes are kept in `results/phase4/probe_*` and reported in the gate doc, because the discarded

@@ -44,27 +44,39 @@ re-measured inside this run.
    and the largest teacher-forced KL difference against rung 5 was
    **{{ phase4.analysis.summary.identity_max_kl_diff | .1e }} nats**. The accuracy column of §1 is
    rung 5's column, re-measured.
-2. **The attended budget is now a memory budget.** At a 25% attended budget, rung 6 holds
-   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b25 | int }} MiB of KV in VRAM
-   against rung 5's {{ phase4.analysis.summary.resident_mib_at.quest.b25 | int }} MiB for the same
-   answers, and at 6.25% it holds
-   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b6 | int }} MiB. What is left is
-   dominated by the {{ phase4.analysis.summary.dense_layers }} dense layers that Quest's method
-   keeps fully resident, which the budget never touches.
+2. **The attended budget is now a memory budget.** With VRAM sized to the attended set, rung 6 holds
+   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b25 | int }} MiB at a 25% budget and
+   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b6 | int }} MiB at 6.25%, against rung
+   5's {{ phase4.analysis.summary.resident_mib_at.quest.b25 | int }} MiB for the same answers. What
+   remains is dominated by the {{ phase4.analysis.summary.dense_layers }} dense layers Quest's method
+   keeps fully resident, which no budget touches, plus the block metadata and staging buffers the tier
+   itself needs. **The 2× slot variant only saves VRAM at budgets of 25% and below**
+   ({{ phase4.analysis.summary.vram_saving_vs_quest_at.tiered_sync.b25 | pct0 }} at 25%,
+   {{ phase4.analysis.summary.vram_saving_vs_quest_at.tiered_sync.b6 | pct0 }} at 6.25%): above that
+   its slot count is capped at the number of blocks, every block stays resident, and it costs *more*
+   VRAM than rung 5 (negative savings in §3).
 3. **The price is latency, and it is large.** Rung 6 decodes at
    {{ phase4.analysis.summary.tokens_per_s_at.tiered_sync.b25 | .1f }} tokens/s at a 25% budget
    against rung 5's {{ phase4.analysis.summary.tokens_per_s_at.quest.b25 | .1f }} and the full
    cache's {{ phase4.analysis.summary.tokens_per_s_full | .1f }}. Every selecting layer must bring
    its top-K indices to the host before it can decide what to fetch, and that host round trip, not
    the PCIe transfer, is the dominant new cost (§3).
-4. **Selection churns, and spare VRAM absorbs it.** With VRAM holding exactly the attended set,
+4. **Ten times fewer fetches, almost the same latency.** Doubling the slots at a 25% budget cuts
+   on-demand fetches from
+   {{ phase4.analysis.summary.spare0.fetched_pairs_at.tiered_sync.b25 | int }} pairs per token
+   to {{ phase4.analysis.summary.fetched_pairs_at.tiered_sync.b25 | int }}, and decode speed
+   moves from {{ phase4.analysis.summary.spare0.tokens_per_s_at.tiered_sync.b25 | .1f }} to
+   {{ phase4.analysis.summary.tokens_per_s_at.tiered_sync.b25 | .1f }} tokens/s. An order of magnitude
+   less traffic is worth a few percent of latency, which is the clearest single statement that the
+   transfers are not what this design pays for.
+5. **Selection churns, and spare VRAM absorbs the churn.** With VRAM holding exactly the attended set,
    {{ phase4.analysis.summary.spare0.fetched_pairs_per_token.tiered_sync.max | int }} (head, block)
    pairs per token have to be re-fetched at the worst budget, and
    {{ phase4.analysis.summary.spare0.thrash_share.tiered_sync.max | pct0 }} of those fetches are
    blocks evicted within the previous 16 steps. Doubling the slots cuts fetches to
    {{ phase4.analysis.summary.fetched_pairs_per_token.tiered_sync.min | int }}–{{ phase4.analysis.summary.fetched_pairs_per_token.tiered_sync.max | int }}
    per token and thrash to {{ phase4.analysis.summary.thrash_share.tiered_sync.min | pct0 }}–{{ phase4.analysis.summary.thrash_share.tiered_sync.max | pct0 }}.
-5. **Negative result: layer-ahead prefetch never stalls and still loses.** Every prefetch copy
+6. **Negative result: layer-ahead prefetch never stalls and still loses.** Every prefetch copy
    finished inside the window it was launched into
    ({{ phase4.analysis.summary.overlap_fraction_median.min | pct0 }}–{{ phase4.analysis.summary.overlap_fraction_median.max | pct0 }}
    of the copy inside the window, copies of
@@ -77,7 +89,7 @@ re-measured inside this run.
    {{ phase4.analysis.summary.prefetch_precision.min | pct0 }}–{{ phase4.analysis.summary.prefetch_precision.max | pct0 }}:
    the wrong guesses evict blocks the real selection then has to fetch back. **On a host-bound
    decode, hiding a transfer that was never the bottleneck buys nothing.**
-6. **The bottleneck moved from PCIe to the host, and the numbers say so.** At a 25% budget rung 6
+7. **The bottleneck moved from PCIe to the host, and the numbers say so.** At a 25% budget rung 6
    moves {{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token in
    {{ phase4.analysis.summary.fetch_transfers_at.tiered_sync.b25 | .0f }} transfers, which at
    the Phase 0 pinned-H2D asymptote is under a millisecond of link time, while ranking and its host
@@ -98,6 +110,12 @@ at {{ phase4.analysis.context | int }} tokens, scored on the repeatable quality 
 
 {{> p4_niah }}
 
+"Resident at answer" is everything the tier keeps in VRAM for decode — slot pools, the per-block key
+min/max metadata, and the pinned-gather staging buffers — as a share of the sequence's KV bytes. It
+exceeds 100% for rungs 6 and 7 at the largest budgets, where 2× slots is capped at the block count so
+every block is resident *and* the metadata and staging are paid on top. The memory case for the tier
+is the 25%-and-below rows, and the `= attended` rows of §3.
+
 Rungs 6 and 7 are rung 5's selection over a CPU tier, so their rows should be identical to rung 5's,
 not similar to them. Measured:
 
@@ -114,6 +132,12 @@ that bring back a pair evicted within the previous 16 steps. The two VRAM-slot v
 same sweep run twice: slots for exactly the attended set, and slots for twice it.
 
 {{> p4_tier }}
+
+The boundary cost the tier adds once per prompt is the prefill→decode D2H copy:
+{{ phase4.analysis.summary.boundary_d2h_mib.min | int }} MiB in
+{{ phase4.analysis.summary.boundary_d2h_s.min | ms }}–{{ phase4.analysis.summary.boundary_d2h_s.max | ms }},
+against a prefill of several seconds. Host RAM held for the pools is
+{{ phase4.analysis.summary.host_pinned_mib | int }} MiB pinned.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_fetch-dark.png">
@@ -147,10 +171,23 @@ and because the first two rows are the honest starting point.
 `probe_per_pair_transfers` and `probe_runs_spare0` are the same configuration measured twice, which
 is the only repeatability estimate these single-repeat probes have.
 
-## 7. Headline number (brief §B8)
+## 7. What this says about Phase 5, and one question for the owner
+
+Rung 8 (int8 warm/cold tiers) attacks **bytes moved**, and §3 says bytes moved are not what costs
+time on this machine: {{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token
+is well inside the link's budget, while the per-layer host round trip that decides *what* to move
+costs {{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.min | .1f }}–{{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.max | .1f }} ms.
+The honest expectation is therefore that rung 8 will not improve latency here, and the experiment
+should be framed as a capacity result.
+
+The lever that would matter is taking the residency decision off the host critical path, which is a
+redesign rather than a rung on the ladder (CLAUDE.md rule 8: that decision belongs to the owner, not
+to this phase).
+
+## 8. Headline number (brief §B8)
 
 {{> p4_headline }}
 
-## 8. Provenance
+## 9. Provenance
 
 {{> p4_provenance }}

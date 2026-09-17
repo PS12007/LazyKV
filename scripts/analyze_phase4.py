@@ -273,6 +273,7 @@ def main() -> None:
         "identity_max_kl_diff": max((v["tf_max_abs_kl_diff"] or 0.0) for v in identity(q, policies, budgets).values()),
         "thrash_share": {pol: tspan(rows, pol, "thrash_share_of_fetches") for pol, rows in tiers.items()},
         # Keyed without a decimal point: the doc renderer's lookup splits dotted paths.
+        "fetched_pairs_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetched_pairs_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers.items()},
         "fetch_mib_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetch_mib_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers.items()},
         "fetch_transfers_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetch_transfers_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers.items()},
         "rank_ms_per_token": {pol: tspan(rows, pol, "host_rank_ms_per_token") for pol, rows in tiers.items()},
@@ -298,10 +299,12 @@ def main() -> None:
         summary["spare0"] = {
             "fetched_pairs_per_token": {pol: span([v["fetched_pairs_per_token"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
             "thrash_share": {pol: span([v["thrash_share_of_fetches"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+            "fetched_pairs_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetched_pairs_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers0.items()},
             "hit_rate_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["hit_rate"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers0.items()},
             "resident_mib_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / MIB for b in budgets} for pol in tiers0},
             "tokens_per_s_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["tokens_per_s"]["median"] for b in budgets} for pol in tiers0},
             "hit_rate": {pol: span([v["hit_rate"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+            "vram_saving_vs_quest_at": {pol: {f"b{round(100 * b)}": 1 - {s["label"]: s for s in speed0}[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / sp[label("quest", b)]["gpu_resident_kv_bytes"]["median"] for b in budgets} for pol in tiers0},
         }
     ov = overlap_summary(runs)
     if ov:

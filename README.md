@@ -60,7 +60,7 @@ The tier's cost is latency, and the reason is not the link. At a 25% budget rung
 4.6 MiB per token in
 14 transfers — well under a
 millisecond of PCIe time — while bringing each layer's top-K indices back to the host costs
-5.0–6.9 ms.
+5.0–6.8 ms.
 Layer-ahead prefetch hides its copies completely
 (100% of each copy inside the window it
 was launched into) and still loses, because on a host-bound decode the transfer was never what cost
@@ -90,7 +90,7 @@ Other measured facts from these two phases:
 | Host cost per decode token | window 1.0–1.0 ms, H2O 4.7–5.9 ms, Quest 5.6–6.6 ms; scoring the prompt for H2O adds 1.19× to prefill |
 | Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
 | The CPU tier against the selection it implements (Phase 4) | 0 of 225 answers differ from rung 5, and the largest teacher-forced KL difference is 0.0e+00 nats |
-| Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,403 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 58% |
+| Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,692 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 59% |
 
 ## Phase 1 in brief
 
