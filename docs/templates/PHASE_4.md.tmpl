@@ -159,7 +159,21 @@ stream's interval from the launch until the target layer began selecting.
 
 {{> p4_overlap }}
 
-## 6. The design probe that chose this configuration
+## 6. Block size
+
+Block size is swept once, at one budget, for rung 5 and rung 6, because it is two things at once: the
+granularity of the selection (a smaller block means the top-K covers less irrelevant KV) and the size
+of a transfer (a smaller block sits further below the PCIe efficiency knee Phase 0 measured). Rung 5
+isolates the first effect, rung 6 pays both.
+
+{{> p4_blocksize }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_blocksize-dark.png">
+  <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
+</picture>
+
+## 7. The design probe that chose this configuration
 
 The first implementation sent one transfer per fetched pair and gave VRAM exactly the attended set.
 It was slow, and the counters said why, so four configurations were measured at one repeat each
@@ -171,7 +185,7 @@ and because the first two rows are the honest starting point.
 `probe_per_pair_transfers` and `probe_runs_spare0` are the same configuration measured twice, which
 is the only repeatability estimate these single-repeat probes have.
 
-## 7. What this says about Phase 5, and one question for the owner
+## 8. What this says about Phase 5, and one question for the owner
 
 Rung 8 (int8 warm/cold tiers) attacks **bytes moved**, and §3 says bytes moved are not what costs
 time on this machine: {{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token
@@ -184,10 +198,10 @@ The lever that would matter is taking the residency decision off the host critic
 redesign rather than a rung on the ladder (CLAUDE.md rule 8: that decision belongs to the owner, not
 to this phase).
 
-## 8. Headline number (brief §B8)
+## 9. Headline number (brief §B8)
 
 {{> p4_headline }}
 
-## 9. Provenance
+## 10. Provenance
 
 {{> p4_provenance }}

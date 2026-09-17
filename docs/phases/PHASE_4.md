@@ -249,7 +249,24 @@ stream's interval from the launch until the target layer began selecting.
 | = attended | 12.5% | 5,586 | 100% (p10 100%) | 99.9% | 1.08 ms (p90 1.32) | 6.96 ms | 0.0% | 0.00 ms |
 | = attended | 6.25% | 5,586 | 100% (p10 100%) | 99.9% | 0.90 ms (p90 1.15) | 6.81 ms | 0.0% | 0.00 ms |
 
-## 6. The design probe that chose this configuration
+## 6. Block size
+
+Block size is swept once, at one budget, for rung 5 and rung 6, because it is two things at once: the
+granularity of the selection (a smaller block means the top-K covers less irrelevant KV) and the size
+of a transfer (a smaller block sits further below the PCIe efficiency knee Phase 0 measured). Rung 5
+isolates the first effect, rung 6 pays both.
+
+| Block size | Policy | K blocks | Decode / token | Tokens/s | Manager host / token | NIAH accuracy | Retention | Mean KL | Pairs fetched / token | MiB fetched / token | Mean transfer, KiB | Thrash |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 16 | Quest-style (rung 5) | – | 28.3 ms | 35.3 | 7.1 ms | not measured | not measured | not measured | – | – | – | – |
+| 16 | CPU tier, sync fetch (rung 6) | 512 | 57.7 ms | 17.3 | 25.8 ms | not measured | not measured | not measured | 1,588 | 6.2 | 454 | 42% |
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_blocksize-dark.png">
+  <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
+</picture>
+
+## 7. The design probe that chose this configuration
 
 The first implementation sent one transfer per fetched pair and gave VRAM exactly the attended set.
 It was slow, and the counters said why, so four configurations were measured at one repeat each
@@ -282,7 +299,7 @@ and because the first two rows are the honest starting point.
 `probe_per_pair_transfers` and `probe_runs_spare0` are the same configuration measured twice, which
 is the only repeatability estimate these single-repeat probes have.
 
-## 7. What this says about Phase 5, and one question for the owner
+## 8. What this says about Phase 5, and one question for the owner
 
 Rung 8 (int8 warm/cold tiers) attacks **bytes moved**, and §3 says bytes moved are not what costs
 time on this machine: 4.6 MiB per token
@@ -295,7 +312,7 @@ The lever that would matter is taking the residency decision off the host critic
 redesign rather than a rung on the ladder (CLAUDE.md rule 8: that decision belongs to the owner, not
 to this phase).
 
-## 8. Headline number (brief §B8)
+## 9. Headline number (brief §B8)
 
 | Policy | Smallest budget retaining ≥ 99% of full-cache NIAH accuracy | Tokens/s there | Best retention measured |
 | --- | ---: | ---: | ---: |
@@ -303,7 +320,7 @@ to this phase).
 | CPU tier, sync fetch (rung 6) | **none below 100%** | – | 98.8% at 75% |
 | CPU tier + prefetch (rung 7) | **none below 100%** | – | 98.8% at 75% |
 
-## 9. Provenance
+## 10. Provenance
 
 | Experiment | Finished (UTC) | Commit | Uncommitted tracked changes |
 | --- | --- | --- | --- |
