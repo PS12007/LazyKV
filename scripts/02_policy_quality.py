@@ -67,6 +67,7 @@ def main() -> None:
     eot = lm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
     host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
+    tier_opts = cfg.get("tier", {})
     prefill_wall_s: list[float] = []
 
     def run_prefill(ids: torch.Tensor) -> PrefillResult:
@@ -91,7 +92,7 @@ def main() -> None:
                 order = conds[:]
                 rng.shuffle(order)
                 for cond in order:
-                    built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
+                    built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
                     dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
                     built.close()
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
@@ -124,7 +125,7 @@ def main() -> None:
         order = conds[:]
         rng.shuffle(order)
         for cond in order:
-            built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
+            built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
             div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont))
             built.close()
             tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})

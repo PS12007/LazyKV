@@ -79,6 +79,30 @@ class TierCounters:
 
 
 @dataclass
+class _Stage:
+    """Staging buffers for the "gather" fetch: host-side gather into pinned memory, one H2D, device scatter.
+
+    One set per stream, shared by every layer: the compute stream fetches for one layer at a time, and
+    the copy stream is synchronized before its buffers are rewritten.
+    """
+
+    buf_host: torch.Tensor  # [cap, 2, bs, d], pinned
+    buf_dev: torch.Tensor
+    src_host: torch.Tensor  # [cap] int64: flat host-pool indices
+    dst_host: torch.Tensor  # [cap] int64, pinned: flat slot-pool indices
+    dst_dev: torch.Tensor
+
+    @classmethod
+    def allocate(cls, cap: int, bs: int, d: int, dtype: torch.dtype, device: torch.device) -> _Stage:
+        buf = torch.empty((cap, 2, bs, d), dtype=dtype, pin_memory=True)
+        dst = torch.empty((cap,), dtype=torch.int64, pin_memory=True)
+        return cls(buf, torch.empty_like(buf, device=device), torch.empty((cap,), dtype=torch.int64), dst, torch.empty_like(dst, device=device))
+
+    def gpu_bytes(self) -> int:
+        return self.buf_dev.numel() * self.buf_dev.element_size() + self.dst_dev.numel() * 8
+
+
+@dataclass
 class _Timed:
     """CUDA events for one prefetch, resolved after decode (instrumented runs only)."""
 
@@ -92,7 +116,7 @@ class _Timed:
 class TieredLayer:
     """One selecting layer: GPU slot pool, pinned host pool, block metadata and the residency table."""
 
-    def __init__(self, keys: torch.Tensor, values: torch.Tensor, k_blocks: int, block_size: int, capacity_tokens: int, host: torch.Tensor | None = None) -> None:
+    def __init__(self, keys: torch.Tensor, values: torch.Tensor, k_blocks: int, block_size: int, capacity_tokens: int, host: torch.Tensor | None = None, n_slots: int | None = None) -> None:
         _, h, length, d = keys.shape
         bs = block_size
         n_blocks, tail = divmod(length, bs)
@@ -100,13 +124,16 @@ class TieredLayer:
             # Rung 5 attends densely when the budget covers every block. The tier has no dense copy
             # to fall back to, so it refuses budgets that would need one.
             raise ValueError(f"budget of {k_blocks} blocks covers all {n_blocks - 1} candidate blocks; the tier needs selection")
-        self.h, self.d, self.bs, self.k = h, d, bs, k_blocks
+        n_slots = k_blocks if n_slots is None else n_slots
+        if n_slots < k_blocks:
+            raise ValueError(f"{n_slots} slots cannot hold a selection of {k_blocks} blocks")
+        self.h, self.d, self.bs, self.k, self.n_slots = h, d, bs, k_blocks, n_slots
         self.cap_blocks = -(-capacity_tokens // bs)
         dev, dt = keys.device, keys.dtype
-        self.tail_slot = k_blocks + 1
+        self.tail_slot = n_slots + 1
         # Zeroed: the current block's unfilled region is gathered and masked, and masking cannot
         # neutralize NaN/inf left in recycled allocator memory (Phase 1).
-        self.pool = torch.zeros((k_blocks + 2, h, 2, bs, d), dtype=dt, device=dev)
+        self.pool = torch.zeros((n_slots + 2, h, 2, bs, d), dtype=dt, device=dev)
         self.kmin = torch.empty((1, h, self.cap_blocks, d), dtype=dt, device=dev)
         self.kmax = torch.empty_like(self.kmin)
         shape = (self.cap_blocks, h, 2, bs, d)
@@ -130,21 +157,25 @@ class TieredLayer:
         self.kmin[:, :, :n_blocks] = kb.amin(dim=3)
         self.kmax[:, :, :n_blocks] = kb.amax(dim=3)
         self.pool[0] = blocks[0]
-        # Initial residency: the K most recent candidate blocks, copied device-side. Recency is the
+        # Initial residency: the most recent candidate blocks, copied device-side. Recency is the
         # cheapest guess available at the boundary; the first decode step's misses are the cost of
         # it, and fetched_pairs_per_step shows that cold start separately.
-        recent = np.arange(n_blocks - k_blocks, n_blocks)
-        self.pool[1 : k_blocks + 1] = blocks[n_blocks - k_blocks : n_blocks]
+        seed = min(n_slots, n_blocks - 1)
+        recent = np.arange(n_blocks - seed, n_blocks)
+        self.pool[1 : seed + 1] = blocks[n_blocks - seed : n_blocks]
         if tail:
             self.pool[self.tail_slot, :, 0, :tail] = keys[0, :, n_blocks * bs : length]
             self.pool[self.tail_slot, :, 1, :tail] = values[0, :, n_blocks * bs : length]
         self.n_sealed, self.fill, self.length = n_blocks, tail, length
 
-        # Residency table on the host: slot numbers are pool indices 1..K.
-        self.slot_block = np.tile(recent, (h, 1))  # [h, K]
+        # Residency table on the host: slot numbers are pool indices 1..n_slots; -1 is empty.
+        self.slot_block = np.full((h, n_slots), -1, dtype=np.int64)
+        self.slot_block[:, :seed] = recent
         self.block_slot = np.full((h, self.cap_blocks), -1, dtype=np.int64)
-        self.block_slot[:, recent] = np.arange(1, k_blocks + 1)
-        self.last_used = np.full((h, k_blocks), -1, dtype=np.int64)
+        self.block_slot[:, recent] = np.arange(1, seed + 1)
+        # Empty slots (-2) are taken before any occupied one.
+        self.last_used = np.full((h, n_slots), -2, dtype=np.int64)
+        self.last_used[:, :seed] = -1
         self.evicted_at = np.full((h, self.cap_blocks), NEVER, dtype=np.int64)
         self.heads = np.arange(h)
         # Pairs a prefetch brought in and the real selection has not yet been checked against.
@@ -197,12 +228,17 @@ class TieredLayer:
         top = top_blocks(query, self.kmin[:, :, 1:n_full], self.kmax[:, :, 1:n_full], self.k) + 1
         return top[0].cpu().numpy()
 
-    def admit(self, chosen: np.ndarray, step: int, counters: TierCounters, stream: torch.cuda.Stream | None) -> tuple[np.ndarray, np.ndarray, int]:
+    def admit(self, chosen: np.ndarray, step: int, counters: TierCounters, stream: torch.cuda.Stream | None, stage: _Stage | None = None) -> tuple[np.ndarray, np.ndarray, int]:
         """Make every (head, block) in `chosen` [h, K] resident, launching copies on `stream`.
 
-        Returns the fetched pairs (heads, blocks) and the number of transfers launched. Victims are
-        the least recently used slots outside `chosen`; with K slots and K choices that is exactly
-        the set of slots `chosen` does not name.
+        Returns the fetched pairs (heads, blocks) and the number of H2D transfers launched. Victims
+        are the least recently used slots outside `chosen`; with K slots and K choices that is
+        exactly the set of slots `chosen` does not name.
+
+        Without `stage`, pairs go straight from the host pool to their slots, one transfer per run of
+        pairs consecutive in both pools. With `stage`, they are gathered on the host into pinned
+        staging memory and sent as one transfer, then scattered on the device: one PCIe copy instead
+        of many, at the price of a host memcpy and a staging buffer in VRAM.
         """
         slots = np.take_along_axis(self.block_slot, chosen, axis=1)  # [h, K]
         miss = slots < 0
@@ -213,26 +249,45 @@ class TieredLayer:
         dst = np.empty_like(mb)
         for j in np.unique(mh):
             want = mb[mh == j]
-            keep = np.zeros(self.k, dtype=bool)
+            keep = np.zeros(self.n_slots, dtype=bool)
             keep[slots[j][~miss[j]] - 1] = True
             free = np.flatnonzero(~keep)
             victims = free[np.argsort(self.last_used[j, free], kind="stable")[: want.size]]
             old = self.slot_block[j, victims]
+            old = old[old >= 0]
             self.block_slot[j, old] = -1
             self.evicted_at[j, old] = step
             self.slot_block[j, victims] = want
             self.block_slot[j, want] = victims + 1
             self.last_used[j, victims] = step
             dst[mh == j] = victims + 1
-        # One transfer per run of pairs consecutive in both pools (flat index block*h+head, slot*h+head).
+        # Flat indices: block*h+head in the host pool, slot*h+head in the slot pool. Sorted by source,
+        # so runs are found and a host-side gather walks the pool forward.
         src_flat, dst_flat = mb * self.h + mh, dst * self.h + mh
         order = np.argsort(src_flat, kind="stable")
         src_flat, dst_flat = src_flat[order], dst_flat[order]
+        host_flat = self.host.view(-1, 2, self.bs, self.d)
+        pool_flat = self.pool.view(-1, 2, self.bs, self.d)
+        if stage is not None:
+            cap = stage.buf_host.shape[0]
+            chunks = 0
+            with torch.cuda.stream(stream):
+                for c0 in range(0, src_flat.size, cap):
+                    if chunks:
+                        # The previous chunk's non_blocking copy reads the same pinned buffer.
+                        torch.cuda.current_stream().synchronize()
+                    m = min(cap, src_flat.size - c0)
+                    stage.src_host.numpy()[:m] = src_flat[c0 : c0 + m]
+                    torch.index_select(host_flat, 0, stage.src_host[:m], out=stage.buf_host[:m])
+                    stage.dst_host.numpy()[:m] = dst_flat[c0 : c0 + m]
+                    stage.buf_dev[:m].copy_(stage.buf_host[:m], non_blocking=True)
+                    stage.dst_dev[:m].copy_(stage.dst_host[:m], non_blocking=True)
+                    pool_flat.index_copy_(0, stage.dst_dev[:m], stage.buf_dev[:m])
+                    chunks += 1
+            return mh, mb, chunks
         breaks = np.flatnonzero((np.diff(src_flat) != 1) | (np.diff(dst_flat) != 1)) + 1
         starts = np.concatenate(([0], breaks))
         ends = np.concatenate((breaks, [src_flat.size]))
-        host_flat = self.host.view(-1, 2, self.bs, self.d)
-        pool_flat = self.pool.view(-1, 2, self.bs, self.d)
         # stream=None is the current (compute) stream: torch.cuda.stream(None) is a no-op.
         with torch.cuda.stream(stream):
             for s, e in zip(starts.tolist(), ends.tolist()):
@@ -272,6 +327,10 @@ class TieredLayer:
     def host_bytes(self) -> int:
         return self.n_sealed * self.h * self.pair_bytes
 
+    def not_resident_bytes(self) -> int:
+        """Sealed candidate pairs that VRAM does not hold (the sink is always resident)."""
+        return ((self.n_sealed - 1) * self.h - int((self.slot_block >= 0).sum())) * self.pair_bytes
+
 
 class TieredCache(Cache):
     """Decode-time cache: dense layers share the prefilled FullGPUCache, selecting layers are tiered.
@@ -293,23 +352,41 @@ class TieredCache(Cache):
         host_pools: list[torch.Tensor] | None = None,
         thrash_window: int = 16,
         instrument: bool = False,
+        n_slots: int | None = None,
+        fetch: str = "runs",
     ) -> None:
         super().__init__(layers=full.layers)
         if prefetch and model is None:
             raise ValueError("prefetch needs the model, to speculate the next layer's query")
+        if fetch not in ("runs", "gather"):
+            raise ValueError(f"unknown fetch mode {fetch!r}")
         self.full, self.k_blocks, self.block_size, self.dense_layers = full, k_blocks, block_size, dense_layers
         self.prefetch, self.thrash_window, self.instrument = prefetch, thrash_window, instrument
         self.policy_name = "tiered_prefetch" if prefetch else "tiered_sync"
+        self.fetch = fetch
         self.counters = TierCounters()
         self.tiers: dict[int, TieredLayer] = {}
         for i in range(dense_layers, len(full.layers)):
             src = full.layers[i]
             n = src.get_seq_length()
             host = None if host_pools is None else host_pools[i - dense_layers]
-            layer = TieredLayer(src.keys[:, :, :n], src.values[:, :, :n], k_blocks, block_size, capacity_tokens, host)
+            layer = TieredLayer(src.keys[:, :, :n], src.values[:, :, :n], k_blocks, block_size, capacity_tokens, host, n_slots)
             self.counters.boundary_d2h_s += layer.boundary_d2h_s
             self.counters.boundary_d2h_bytes += layer.boundary_d2h_bytes
             self.tiers[i] = layer
+        self.n_slots = next(iter(self.tiers.values())).n_slots
+        self._stages: list[_Stage] = []
+        self._stage_compute: _Stage | None = None
+        self._stage_copy: _Stage | None = None
+        if fetch == "gather":
+            # Sized for the worst case, every slot of every head missing in one layer (the first step).
+            t = next(iter(self.tiers.values()))
+            cap = t.n_slots * t.h
+            self._stage_compute = _Stage.allocate(cap, block_size, t.d, t.pool.dtype, t.pool.device)
+            self._stages.append(self._stage_compute)
+            if prefetch:
+                self._stage_copy = _Stage.allocate(cap, block_size, t.d, t.pool.dtype, t.pool.device)
+                self._stages.append(self._stage_copy)
         self._mask_cache: dict[str, Any] = {}
         self._step = 0
         self._step_fetched = 0
@@ -390,7 +467,7 @@ class TieredCache(Cache):
             c.prefetch_used_pairs += int((chosen[ph] == pb[:, None]).any(axis=1).sum())
             tier.pending_prefetch = None
         t1 = time.perf_counter()
-        mh, mb, transfers = tier.admit(chosen, self._step, c, stream=None)
+        mh, mb, transfers = tier.admit(chosen, self._step, c, stream=None, stage=self._stage_compute)
         c.host_fetch_s += time.perf_counter() - t1
         if mh.size:
             c.fetched_pairs += mh.size
@@ -425,10 +502,18 @@ class TieredCache(Cache):
             guess = tier.rank(q)
             stream = self.copy_stream
             assert stream is not None
+            if self._stage_copy is not None:
+                # The previous prefetch's non_blocking copies read the same pinned staging buffer.
+                stream.synchronize()
+            # Window start on the compute stream, before any copy is launched, so the copy interval
+            # can be placed inside the window the compute stream spends reaching the target layer.
+            ws = torch.cuda.Event(enable_timing=True) if self.instrument else None
+            if ws is not None:
+                ws.record()
             start = torch.cuda.Event(enable_timing=self.instrument)
             with torch.cuda.stream(stream):
                 start.record()
-            mh, mb, transfers = tier.admit(guess, self._step, self.counters, stream=stream)
+            mh, mb, transfers = tier.admit(guess, self._step, self.counters, stream=stream, stage=self._stage_copy)
             done = torch.cuda.Event(enable_timing=self.instrument)
             with torch.cuda.stream(stream):
                 done.record()
@@ -438,9 +523,8 @@ class TieredCache(Cache):
             c.prefetch_transfers += transfers
             c.prefetch_bytes += mh.size * tier.pair_bytes
             tier.pending_prefetch = (mh, mb) if mh.size else None
-            if self.instrument and mh.size:
-                ws, we = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-                ws.record()
+            if ws is not None and mh.size:
+                we = torch.cuda.Event(enable_timing=True)
                 self._window[target] = (ws, we, done)
                 self._timed.append(_Timed(target, start, done, ws, we))
             c.host_prefetch_s += time.perf_counter() - t0
@@ -484,15 +568,15 @@ class TieredCache(Cache):
 
     def stats(self) -> CacheStats:
         dense = sum(self.full.layers[i].resident_bytes() for i in range(self.dense_layers))
-        gpu = dense + sum(t.gpu_bytes() + t.metadata_bytes() for t in self.tiers.values())
+        # Everything the tier holds in VRAM for decode: slot pools, block metadata, staging buffers.
+        gpu = dense + sum(t.gpu_bytes() + t.metadata_bytes() for t in self.tiers.values()) + sum(s.gpu_bytes() for s in self._stages)
         # Host copies of blocks that are also resident are not "offloaded" bytes; count only what
         # VRAM does not hold, so gpu / (gpu + host) is the residency fraction.
-        per_pair = next(iter(self.tiers.values())).pair_bytes
-        not_resident = sum((t.n_sealed - 1 - t.k) * t.h * per_pair for t in self.tiers.values())
+        not_resident = sum(t.not_resident_bytes() for t in self.tiers.values())
         return CacheStats(seq_len=self.get_seq_length(self.dense_layers), gpu_resident_kv_bytes=gpu, host_kv_bytes=not_resident, gpu_allocated_kv_bytes=gpu)
 
     def host_pinned_bytes(self) -> int:
-        return sum(t.host.numel() * t.host.element_size() for t in self.tiers.values())
+        return sum(t.host.numel() * t.host.element_size() for t in self.tiers.values()) + sum(s.buf_host.numel() * s.buf_host.element_size() for s in self._stages)
 
 
 def allocate_host_pools(n_layers: int, heads: int, head_dim: int, block_size: int, capacity_tokens: int, dtype: torch.dtype = torch.bfloat16) -> list[torch.Tensor]:

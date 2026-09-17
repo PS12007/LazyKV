@@ -74,13 +74,16 @@ def main() -> None:
     set_power_throttling(opt_out=True)
     lm = load(cfg["model"]["repo"], cfg["model"]["revision"], strategy=FAST_STRATEGY)
     memory_cap = cap_allocator_to_dedicated()
-    shared_baseline = process_gpu_memory().shared_bytes
     tokens = load_tokens(sp["book"], lm.tokenizer)
     total = ctx + n_decode + 1
     full = FullGPUCache(lm.num_layers, -(-(total + 16) // 1024) * 1024)
     out_dir = RESULTS_DIR / results_subdir(cfg) / args.out / f"run_{args.run_id}"
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
     host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
+    # After pinning: WDDM reports pinned host memory as the process's shared GPU memory, and the
+    # first Phase 4 probe flagged every condition as spilled because the baseline preceded it.
+    shared_baseline = process_gpu_memory().shared_bytes
+    tier_opts = cfg.get("tier", {})
     rng = random.Random(1000 + args.run_id)
 
     # Warmup: plans for prefill and for every condition's decode shape, outside the timed repeats.
@@ -89,7 +92,7 @@ def main() -> None:
         full.truncate(0)
         pre = prefill(lm.model, full, tokens[:ctx], chunk, observer=scorer)
     for cond in conds:
-        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
         greedy_decode(lm.model, built.cache, pre.last_logits, 4)
         built.close()
         if built.shares_full:
@@ -118,7 +121,7 @@ def main() -> None:
                 tel.mark(f"rep{rep}_{cond.label}_start")
                 torch.cuda.reset_peak_memory_stats()
                 retries_before = allocator_counters()
-                built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
+                built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
                 before = built.cache.counters() if isinstance(built.cache, BlockPoolCache) else None
                 dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
                 built.close()
@@ -173,7 +176,7 @@ def main() -> None:
     # and on the compute stream around it, one decode per prefetching condition.
     overlap_rows: list[dict[str, Any]] = []
     for cond in [c for c in conds if c.policy == "tiered_prefetch"]:
-        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, instrument=True)
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, instrument=True, tier=tier_opts)
         greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
         assert isinstance(built.cache, TieredCache)
         overlap_rows.append({"policy": cond.policy, "budget": cond.budget, "warmup_steps": sp["warmup_steps"], **built.cache.overlap()})

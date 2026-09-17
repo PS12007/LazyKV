@@ -103,11 +103,14 @@ def build_cache(
     model: Any = None,
     host_pools: list[torch.Tensor] | None = None,
     instrument: bool = False,
+    tier: dict[str, Any] | None = None,
 ) -> Built:
     """The cache a condition decodes from. The full cache is returned as is; callers truncate it back afterwards.
 
     `scorer` must have observed this prompt's prefill when the condition is h2o. Tiered conditions
     need `host_pools` (see make_host_pools) and, for prefetch, the `model`; callers must `close()` them.
+    `tier` is the config's `tier:` section: `fetch` ("runs" or "gather") and `spare`, extra slots as a
+    multiple of the selected blocks K (0 means VRAM holds exactly the attended set).
     """
     if cond.policy == "full":
         return Built(full, 0.0, None)
@@ -117,9 +120,14 @@ def build_cache(
     t0 = time.perf_counter()
     if cond.policy in TIERED:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
-        tier = TieredCache(full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch", host_pools=host_pools, instrument=instrument)
+        opts = tier or {}
+        n_slots = k + round(float(opts.get("spare", 0.0)) * k)
+        cache = TieredCache(
+            full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch",
+            host_pools=host_pools, instrument=instrument, n_slots=n_slots, fetch=opts.get("fetch", "runs"),
+        )
         torch.cuda.synchronize()
-        return Built(tier, time.perf_counter() - t0, None, k)
+        return Built(cache, time.perf_counter() - t0, n_slots, k)
     if cond.policy in SELECTORS:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
         view = QuestView(full, k, block_size)
@@ -158,6 +166,8 @@ def cache_facts(built: Built) -> dict[str, Any]:
         facts.update({k: v for k, v in c.items() if k != "fetched_pairs_per_step"})
         facts["fetched_pairs_per_step"] = c["fetched_pairs_per_step"]
         facts["k_blocks"] = cache.k_blocks
+        facts["n_slots"] = cache.n_slots
+        facts["fetch"] = cache.fetch
         facts["attended_tokens_selecting_layers"] = (cache.k_blocks + 2) * cache.block_size
         facts["dense_layers"] = cache.dense_layers
         facts["host_kv_bytes"] = cache.stats().host_kv_bytes

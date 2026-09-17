@@ -42,17 +42,20 @@ def _prefilled(model, cfg, n: int = PROMPT, extra: int = 40):  # noqa: ANN001, A
 def _check_residency(cache) -> None:  # noqa: ANN001
     for tier in cache.tiers.values():
         for j in range(tier.h):
-            for s in range(tier.k):
+            for s in range(tier.n_slots):
                 b = int(tier.slot_block[j, s])
+                if b < 0:
+                    continue
                 assert tier.block_slot[j, b] == s + 1
                 assert torch.equal(tier.pool[s + 1, j].cpu(), tier.host[b, j])
-        assert (tier.block_slot >= 0).sum() == tier.h * tier.k
+        assert (tier.block_slot >= 0).sum() == (tier.slot_block >= 0).sum()
 
 
 @cuda
 @pytest.mark.parametrize("strategy", ["cudnn_bucketed", "efficient"])
 @pytest.mark.parametrize("prefetch", [False, True])
-def test_tier_is_bit_identical_to_rung5(tiny, strategy: str, prefetch: bool) -> None:  # noqa: ANN001
+@pytest.mark.parametrize(("fetch", "spare"), [("runs", 0), ("gather", 0), ("gather", 2)])
+def test_tier_is_bit_identical_to_rung5(tiny, strategy: str, prefetch: bool, fetch: str, spare: int) -> None:  # noqa: ANN001
     """Same selection, same gather order, same kernel: the tier may move bytes, never change them."""
     from lazykv.attention import set_strategy_for_test
     from lazykv.generate import teacher_forced_decode
@@ -68,7 +71,7 @@ def test_tier_is_bit_identical_to_rung5(tiny, strategy: str, prefetch: bool) -> 
         ref = torch.stack(list(teacher_forced_decode(model, quest, pre.last_logits, cont)))
         assert quest.counters.selections > 0
         full.truncate(PROMPT)
-        tier = TieredCache(full, K, BS, capacity_tokens=512, model=model, prefetch=prefetch, dense_layers=1)
+        tier = TieredCache(full, K, BS, capacity_tokens=512, model=model, prefetch=prefetch, dense_layers=1, n_slots=K + spare, fetch=fetch)
         got = torch.stack(list(teacher_forced_decode(model, tier, pre.last_logits, cont)))
         tier.close()
         assert torch.equal(got, ref)
@@ -77,6 +80,8 @@ def test_tier_is_bit_identical_to_rung5(tiny, strategy: str, prefetch: bool) -> 
         assert c.seals == ((PROMPT + 39) // BS - PROMPT // BS) * 3  # 3 tiered layers
         assert c.hit_pairs + c.fetched_pairs == c.selected_pairs
         assert c.fetched_pairs > 0  # the recency seed cannot be right for a random model
+        if fetch == "gather":
+            assert c.fetch_transfers <= c.selections  # at most one transfer per selecting layer step
         if prefetch:
             assert c.prefetched_pairs > 0
         _check_residency(tier)
@@ -153,3 +158,28 @@ def test_budget_that_covers_every_block_is_refused(tiny) -> None:  # noqa: ANN00
     _, full, _ = _prefilled(model, cfg)
     with pytest.raises(ValueError):
         TieredCache(full, 11, BS, capacity_tokens=512, dense_layers=1)
+
+
+@cuda
+def test_spare_slots_evict_least_recently_used_and_fill_empty_slots_first(tiny) -> None:  # noqa: ANN001
+    from lazykv.tiered import TierCounters, TieredCache
+
+    cfg, model = tiny
+    _, full, _ = _prefilled(model, cfg, n=40)  # 5 blocks: 4 candidates, seeded into 4 of 6 slots
+    cache = TieredCache(full, 2, BS, capacity_tokens=512, dense_layers=1, n_slots=6)
+    tier = cache.tiers[1]
+    assert (tier.slot_block[:, :4] == np.array([1, 2, 3, 4])).all() and (tier.slot_block[:, 4:] == -1).all()
+    counters = TierCounters()
+    # Nothing to fetch: every candidate is resident.
+    assert tier.admit(np.array([[1, 4], [2, 3]]), step=1, counters=counters, stream=None)[0].size == 0
+    tier.last_used[:, :4] = [[5, 1, 7, 3], [5, 1, 7, 3]]
+    tier.block_slot[:, 4] = -1  # pretend block 4 was evicted, so it must be fetched again
+    tier.slot_block[:, 3] = -1
+    tier.last_used[:, 3] = -2
+    mh, mb, _ = tier.admit(np.array([[4, 1], [4, 1]]), step=9, counters=counters, stream=None, stage=None)
+    torch.cuda.synchronize()
+    assert sorted(mb.tolist()) == [4, 4]
+    # The empty slot (pool index 4) is taken before any occupied one.
+    assert (tier.block_slot[:, 4] == 4).all()
+    _check_residency(cache)
+    cache.close()
