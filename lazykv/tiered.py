@@ -55,6 +55,7 @@ class TierCounters:
     """Host time and transfer activity of the tier (brief §B6: cache behaviour, PCIe, overhead)."""
 
     host_select_s: float = 0.0  # bound, rank, host sync, residency bookkeeping, gather launch
+    host_rank_s: float = 0.0  # of which: bound + top-K launch and the host sync that brings the indices back
     host_fetch_s: float = 0.0  # launching on-demand H2D copies (rung 6 path, and rung 7 misses)
     host_prefetch_s: float = 0.0  # speculating a query, ranking, and launching copies on the copy stream
     host_seal_s: float = 0.0
@@ -354,6 +355,7 @@ class TieredCache(Cache):
         instrument: bool = False,
         n_slots: int | None = None,
         fetch: str = "runs",
+        stages: tuple[_Stage, _Stage] | None = None,
     ) -> None:
         super().__init__(layers=full.layers)
         if prefetch and model is None:
@@ -379,13 +381,15 @@ class TieredCache(Cache):
         self._stage_compute: _Stage | None = None
         self._stage_copy: _Stage | None = None
         if fetch == "gather":
-            # Sized for the worst case, every slot of every head missing in one layer (the first step).
+            # Sized for the worst case, every slot of every head missing in one layer (the first
+            # step); a smaller preallocated stage still works, in chunks.
             t = next(iter(self.tiers.values()))
-            cap = t.n_slots * t.h
-            self._stage_compute = _Stage.allocate(cap, block_size, t.d, t.pool.dtype, t.pool.device)
+            if stages is None:
+                stages = (_Stage.allocate(t.n_slots * t.h, block_size, t.d, t.pool.dtype, t.pool.device), _Stage.allocate(t.n_slots * t.h, block_size, t.d, t.pool.dtype, t.pool.device))
+            self._stage_compute = stages[0]
             self._stages.append(self._stage_compute)
             if prefetch:
-                self._stage_copy = _Stage.allocate(cap, block_size, t.d, t.pool.dtype, t.pool.device)
+                self._stage_copy = stages[1]
                 self._stages.append(self._stage_copy)
         self._mask_cache: dict[str, Any] = {}
         self._step = 0
@@ -459,7 +463,9 @@ class TieredCache(Cache):
         if ev is not None:
             # The gather below reads slots the copy stream may still be writing.
             torch.cuda.current_stream().wait_event(ev)
+        tr = time.perf_counter()
         chosen = tier.rank(query)
+        c.host_rank_s += time.perf_counter() - tr
         c.selections += 1
         c.selected_pairs += chosen.size
         if tier.pending_prefetch is not None:
@@ -577,6 +583,17 @@ class TieredCache(Cache):
 
     def host_pinned_bytes(self) -> int:
         return sum(t.host.numel() * t.host.element_size() for t in self.tiers.values()) + sum(s.buf_host.numel() * s.buf_host.element_size() for s in self._stages)
+
+
+def allocate_stages(cap_pairs: int, heads: int, head_dim: int, block_size: int, dtype: torch.dtype = torch.bfloat16) -> tuple[_Stage, _Stage]:
+    """Gather-mode staging buffers (compute stream, copy stream), allocated once per process like the host pools.
+
+    Allocating them per condition would put pinning inside the boundary time, and WDDM reports pinned
+    host memory as shared GPU memory, which a per-condition spill check would then flag.
+    """
+    del heads
+    dev = torch.device("cuda")
+    return _Stage.allocate(cap_pairs, block_size, head_dim, dtype, dev), _Stage.allocate(cap_pairs, block_size, head_dim, dtype, dev)
 
 
 def allocate_host_pools(n_layers: int, heads: int, head_dim: int, block_size: int, capacity_tokens: int, dtype: torch.dtype = torch.bfloat16) -> list[torch.Tensor]:

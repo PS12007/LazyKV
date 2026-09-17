@@ -40,7 +40,7 @@ from lazykv.blocks import BlockPoolCache  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
 from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
 from lazykv.selection import QuestView  # noqa: E402
-from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_pools, make_scorer, results_subdir  # noqa: E402
+from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_memory, make_scorer, results_subdir  # noqa: E402
 from lazykv.tiered import TieredCache  # noqa: E402
 
 log = logging.getLogger("budget_speed")
@@ -91,11 +91,11 @@ def main() -> None:
     full = FullGPUCache(lm.num_layers, -(-(total + 16) // 1024) * 1024)
     out_dir = RESULTS_DIR / results_subdir(cfg) / args.out / f"run_{args.run_id}"
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
-    host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
+    tier_opts = cfg.get("tier", {})
+    host = make_host_memory(conds, lm.model, bs, full.max_len, total, tier_opts)
     # After pinning: WDDM reports pinned host memory as the process's shared GPU memory, and the
     # first Phase 4 probe flagged every condition as spilled because the baseline preceded it.
     shared_baseline = process_gpu_memory().shared_bytes
-    tier_opts = cfg.get("tier", {})
     rng = random.Random(1000 + args.run_id)
 
     # Warmup: plans for prefill and for every condition's decode shape, outside the timed repeats.
@@ -104,7 +104,7 @@ def main() -> None:
         full.truncate(0)
         pre = prefill(lm.model, full, tokens[:ctx], chunk, observer=scorer)
     for cond in conds:
-        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
         greedy_decode(lm.model, built.cache, pre.last_logits, 4)
         built.close()
         if built.shares_full:
@@ -133,7 +133,7 @@ def main() -> None:
                 tel.mark(f"rep{rep}_{cond.label}_start")
                 torch.cuda.reset_peak_memory_stats()
                 retries_before = allocator_counters()
-                built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
+                built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
                 before = built.cache.counters() if isinstance(built.cache, BlockPoolCache) else None
                 dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
                 built.close()
@@ -188,7 +188,7 @@ def main() -> None:
     # and on the compute stream around it, one decode per prefetching condition.
     overlap_rows: list[dict[str, Any]] = []
     for cond in [c for c in conds if c.policy == "tiered_prefetch"]:
-        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, instrument=True, tier=tier_opts)
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host, instrument=True, tier=tier_opts)
         greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
         assert isinstance(built.cache, TieredCache)
         overlap_rows.append({"policy": cond.policy, "budget": cond.budget, "warmup_steps": sp["warmup_steps"], **built.cache.overlap()})

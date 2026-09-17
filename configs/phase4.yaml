@@ -17,6 +17,13 @@ budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
 # speculative prefetch on a copy stream.
 policies: [quest, tiered_sync, tiered_prefetch]
 
+# Chosen from the design probe (results/phase4/probe_*): one host-gathered H2D per layer step, and
+# VRAM slots for 2x the attended set, which cut on-demand fetches about 10x at a 25% budget. The
+# speed sweep is also run with spare: 0 (VRAM holds exactly the attended set).
+tier:
+  fetch: gather
+  spare: 1.0
+
 niah:
   book: moby_dick
   kinds: [single, multikey, multivalue]

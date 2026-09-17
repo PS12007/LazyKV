@@ -35,7 +35,7 @@ from lazykv.cache import FullGPUCache  # noqa: E402
 from lazykv.generate import PrefillResult, greedy_decode, load, prefill, teacher_forced_decode  # noqa: E402
 from lazykv.niah import build_prompt, score  # noqa: E402
 from lazykv.quality import QUALITY_STRATEGY, compare_stream  # noqa: E402
-from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_pools, make_scorer, results_subdir  # noqa: E402
+from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_memory, make_scorer, results_subdir  # noqa: E402
 
 log = logging.getLogger("policy_quality")
 
@@ -78,8 +78,9 @@ def main() -> None:
     full = FullGPUCache(lm.num_layers, -(-(ctx + max(max_new, cfg["teacher_forced"]["continuation"]) + 16) // 1024) * 1024)
     eot = lm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
-    host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
     tier_opts = cfg.get("tier", {})
+    # Staging sized for the longest sequence any prompt reaches (budgets scale with it).
+    host = make_host_memory(conds, lm.model, bs, full.max_len, full.max_len, tier_opts)
     prefill_wall_s: list[float] = []
 
     def run_prefill(ids: torch.Tensor) -> PrefillResult:
@@ -104,7 +105,7 @@ def main() -> None:
                 order = conds[:]
                 rng.shuffle(order)
                 for cond in order:
-                    built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
+                    built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
                     dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
                     built.close()
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
@@ -137,7 +138,7 @@ def main() -> None:
         order = conds[:]
         rng.shuffle(order)
         for cond in order:
-            built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, tier=tier_opts)
+            built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
             div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont))
             built.close()
             tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})

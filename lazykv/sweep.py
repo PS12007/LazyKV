@@ -22,7 +22,7 @@ from lazykv.cache import FullGPUCache
 from lazykv.policies import H2O, make_policy
 from lazykv.scoring import PrefillScorer
 from lazykv.selection import QUEST_DENSE_LAYERS, QuestView, blocks_for_budget
-from lazykv.tiered import TieredCache, allocate_host_pools
+from lazykv.tiered import TieredCache, allocate_host_pools, allocate_stages
 
 # Policies whose decode cache is a view over the full cache rather than a block pool.
 SELECTORS = ("quest",)
@@ -62,13 +62,35 @@ def make_scorer(cfg: dict[str, Any], conds: list[Condition], num_layers: int, ma
     return PrefillScorer(num_layers, max_len, torch.device("cuda"), stride=h.get("stride", 32), query_batch=h.get("query_batch", 4))
 
 
-def make_host_pools(conds: list[Condition], model: Any, block_size: int, max_len: int) -> list[torch.Tensor] | None:
-    """Pinned host pools for the tiered conditions, allocated once per process (pinning is slow), or None."""
-    if not any(c.policy in TIERED for c in conds):
+@dataclass
+class HostMemory:
+    """Pinned memory the tiered conditions share: per-layer host pools and gather staging buffers."""
+
+    pools: list[torch.Tensor]
+    stages: Any = None  # (compute, copy) staging, when tier.fetch is "gather"
+
+
+def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_len: int, total_tokens: int, tier: dict[str, Any] | None = None) -> HostMemory | None:
+    """Pinned memory for the tiered conditions, allocated once per process (pinning is slow), or None."""
+    tiered = [c for c in conds if c.policy in TIERED]
+    if not tiered:
         return None
     c = model.config
     head_dim = getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads
-    return allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype)
+    pools = allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype)
+    stages = None
+    if (tier or {}).get("fetch", "runs") == "gather":
+        slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered)
+        stages = allocate_stages(slots * c.num_key_value_heads, c.num_key_value_heads, head_dim, block_size, model.dtype)
+    return HostMemory(pools, stages)
+
+
+def n_slots_for(cond: Condition, total_tokens: int, block_size: int, tier: dict[str, Any] | None) -> int:
+    """Slots per head: K selected blocks plus `spare` x K, capped at the candidate blocks the sequence can ever have
+    (at a 75% budget, 1x spare would otherwise allocate slots for more blocks than exist)."""
+    k = blocks_for_budget(cond.budget, total_tokens, block_size)
+    candidates = total_tokens // block_size - 1
+    return max(k, min(k + round(float((tier or {}).get("spare", 0.0)) * k), candidates))
 
 
 def results_subdir(cfg: dict[str, Any]) -> str:
@@ -101,14 +123,14 @@ def build_cache(
     block_size: int,
     scorer: PrefillScorer | None = None,
     model: Any = None,
-    host_pools: list[torch.Tensor] | None = None,
+    host: HostMemory | None = None,
     instrument: bool = False,
     tier: dict[str, Any] | None = None,
 ) -> Built:
     """The cache a condition decodes from. The full cache is returned as is; callers truncate it back afterwards.
 
     `scorer` must have observed this prompt's prefill when the condition is h2o. Tiered conditions
-    need `host_pools` (see make_host_pools) and, for prefetch, the `model`; callers must `close()` them.
+    need `host` (see make_host_memory) and, for prefetch, the `model`; callers must `close()` them.
     `tier` is the config's `tier:` section: `fetch` ("runs" or "gather") and `spare`, extra slots as a
     multiple of the selected blocks K (0 means VRAM holds exactly the attended set).
     """
@@ -120,11 +142,11 @@ def build_cache(
     t0 = time.perf_counter()
     if cond.policy in TIERED:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
-        opts = tier or {}
-        n_slots = k + round(float(opts.get("spare", 0.0)) * k)
+        n_slots = n_slots_for(cond, total_tokens, block_size, tier)
         cache = TieredCache(
             full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch",
-            host_pools=host_pools, instrument=instrument, n_slots=n_slots, fetch=opts.get("fetch", "runs"),
+            host_pools=None if host is None else host.pools, instrument=instrument, n_slots=n_slots,
+            fetch=(tier or {}).get("fetch", "runs"), stages=None if host is None else host.stages,
         )
         torch.cuda.synchronize()
         return Built(cache, time.perf_counter() - t0, n_slots, k)
