@@ -35,7 +35,7 @@ from lazykv.cache import FullGPUCache  # noqa: E402
 from lazykv.generate import PrefillResult, greedy_decode, load, prefill, teacher_forced_decode  # noqa: E402
 from lazykv.niah import build_prompt, score  # noqa: E402
 from lazykv.quality import QUALITY_STRATEGY, compare_stream  # noqa: E402
-from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_scorer, results_subdir  # noqa: E402
+from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_pools, make_scorer, results_subdir  # noqa: E402
 
 log = logging.getLogger("policy_quality")
 
@@ -44,11 +44,14 @@ def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--config", default=str(REPO_ROOT / "configs" / "phase2.yaml"))
     p.add_argument("--context", type=int, help="override config context (smoke tests)")
+    p.add_argument("--block-size", type=int, help="override config block_size (the Phase 4 block-size sweep)")
     p.add_argument("--samples", type=int, help="override NIAH samples per kind x depth")
     p.add_argument("--out", default="policy_quality")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = load_config(Path(args.config))
+    if args.block_size:
+        cfg["block_size"] = args.block_size
     ctx = args.context or cfg["context"]
     samples = args.samples or cfg["niah"]["samples"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
@@ -63,6 +66,7 @@ def main() -> None:
     full = FullGPUCache(lm.num_layers, -(-(ctx + max(max_new, cfg["teacher_forced"]["continuation"]) + 16) // 1024) * 1024)
     eot = lm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
+    host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
     prefill_wall_s: list[float] = []
 
     def run_prefill(ids: torch.Tensor) -> PrefillResult:
@@ -87,8 +91,9 @@ def main() -> None:
                 order = conds[:]
                 rng.shuffle(order)
                 for cond in order:
-                    built = build_cache(full, cond, total, bs, scorer)
+                    built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
                     dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
+                    built.close()
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
                     text = lm.tokenizer.decode(toks)
                     niah_rows.append({
@@ -119,8 +124,9 @@ def main() -> None:
         order = conds[:]
         rng.shuffle(order)
         for cond in order:
-            built = build_cache(full, cond, total, bs, scorer)
+            built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
             div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont))
+            built.close()
             tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
             if built.shares_full:
                 full.truncate(ctx)

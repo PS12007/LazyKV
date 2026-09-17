@@ -21,10 +21,13 @@ from lazykv.blocks import BlockPoolCache, slots_for_budget
 from lazykv.cache import FullGPUCache
 from lazykv.policies import H2O, make_policy
 from lazykv.scoring import PrefillScorer
-from lazykv.selection import QuestView, blocks_for_budget
+from lazykv.selection import QUEST_DENSE_LAYERS, QuestView, blocks_for_budget
+from lazykv.tiered import TieredCache, allocate_host_pools
 
 # Policies whose decode cache is a view over the full cache rather than a block pool.
 SELECTORS = ("quest",)
+# Rungs 6-7: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
+TIERED = ("tiered_sync", "tiered_prefetch")
 
 
 @dataclass(frozen=True)
@@ -59,6 +62,15 @@ def make_scorer(cfg: dict[str, Any], conds: list[Condition], num_layers: int, ma
     return PrefillScorer(num_layers, max_len, torch.device("cuda"), stride=h.get("stride", 32), query_batch=h.get("query_batch", 4))
 
 
+def make_host_pools(conds: list[Condition], model: Any, block_size: int, max_len: int) -> list[torch.Tensor] | None:
+    """Pinned host pools for the tiered conditions, allocated once per process (pinning is slow), or None."""
+    if not any(c.policy in TIERED for c in conds):
+        return None
+    c = model.config
+    head_dim = getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads
+    return allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype)
+
+
 def results_subdir(cfg: dict[str, Any]) -> str:
     """Which results/<phase>/ a sweep config writes to (configs predating the key are Phase 2)."""
     return str(cfg.get("phase", "phase2"))
@@ -74,13 +86,28 @@ class Built:
     @property
     def shares_full(self) -> bool:
         """Decoding appends to the full cache itself, so the caller must truncate it back afterwards."""
-        return isinstance(self.cache, (FullGPUCache, QuestView))
+        return isinstance(self.cache, (FullGPUCache, QuestView, TieredCache))
+
+    def close(self) -> None:
+        """Release model hooks a cache installed (rung 7). Call before the model decodes anything else."""
+        if isinstance(self.cache, TieredCache):
+            self.cache.close()
 
 
-def build_cache(full: FullGPUCache, cond: Condition, total_tokens: int, block_size: int, scorer: PrefillScorer | None = None) -> Built:
+def build_cache(
+    full: FullGPUCache,
+    cond: Condition,
+    total_tokens: int,
+    block_size: int,
+    scorer: PrefillScorer | None = None,
+    model: Any = None,
+    host_pools: list[torch.Tensor] | None = None,
+    instrument: bool = False,
+) -> Built:
     """The cache a condition decodes from. The full cache is returned as is; callers truncate it back afterwards.
 
-    `scorer` must have observed this prompt's prefill when the condition is h2o.
+    `scorer` must have observed this prompt's prefill when the condition is h2o. Tiered conditions
+    need `host_pools` (see make_host_pools) and, for prefetch, the `model`; callers must `close()` them.
     """
     if cond.policy == "full":
         return Built(full, 0.0, None)
@@ -88,6 +115,11 @@ def build_cache(full: FullGPUCache, cond: Condition, total_tokens: int, block_si
     # time their launch.
     torch.cuda.synchronize()
     t0 = time.perf_counter()
+    if cond.policy in TIERED:
+        k = blocks_for_budget(cond.budget, total_tokens, block_size)
+        tier = TieredCache(full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch", host_pools=host_pools, instrument=instrument)
+        torch.cuda.synchronize()
+        return Built(tier, time.perf_counter() - t0, None, k)
     if cond.policy in SELECTORS:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
         view = QuestView(full, k, block_size)
@@ -121,4 +153,12 @@ def cache_facts(built: Built) -> dict[str, Any]:
         facts["k_blocks"] = cache.k_blocks
         facts["attended_tokens_selecting_layers"] = cache.attended_tokens()
         facts["dense_layers"] = cache.dense_layers
+    elif isinstance(cache, TieredCache):
+        c = cache.counters_dict()
+        facts.update({k: v for k, v in c.items() if k != "fetched_pairs_per_step"})
+        facts["fetched_pairs_per_step"] = c["fetched_pairs_per_step"]
+        facts["k_blocks"] = cache.k_blocks
+        facts["attended_tokens_selecting_layers"] = (cache.k_blocks + 2) * cache.block_size
+        facts["dense_layers"] = cache.dense_layers
+        facts["host_kv_bytes"] = cache.stats().host_kv_bytes
     return facts

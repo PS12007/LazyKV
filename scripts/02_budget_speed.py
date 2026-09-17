@@ -40,7 +40,8 @@ from lazykv.blocks import BlockPoolCache  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
 from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
 from lazykv.selection import QuestView  # noqa: E402
-from lazykv.sweep import build_cache, conditions, load_config, make_scorer, results_subdir  # noqa: E402
+from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_pools, make_scorer, results_subdir  # noqa: E402
+from lazykv.tiered import TieredCache  # noqa: E402
 
 log = logging.getLogger("budget_speed")
 FAST_STRATEGY = "cudnn_bucketed"
@@ -57,10 +58,13 @@ def main() -> None:
     p.add_argument("--config", default=str(REPO_ROOT / "configs" / "phase2.yaml"))
     p.add_argument("--run-id", type=int, default=1)
     p.add_argument("--context", type=int, help="override config context (smoke tests)")
+    p.add_argument("--block-size", type=int, help="override config block_size (the Phase 4 block-size sweep)")
     p.add_argument("--out", default="budget_speed")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = load_config(Path(args.config))
+    if args.block_size:
+        cfg["block_size"] = args.block_size
     sp = cfg["speed"]
     ctx = args.context or cfg["context"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
@@ -76,6 +80,7 @@ def main() -> None:
     full = FullGPUCache(lm.num_layers, -(-(total + 16) // 1024) * 1024)
     out_dir = RESULTS_DIR / results_subdir(cfg) / args.out / f"run_{args.run_id}"
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
+    host_pools = make_host_pools(conds, lm.model, bs, full.max_len)
     rng = random.Random(1000 + args.run_id)
 
     # Warmup: plans for prefill and for every condition's decode shape, outside the timed repeats.
@@ -84,8 +89,9 @@ def main() -> None:
         full.truncate(0)
         pre = prefill(lm.model, full, tokens[:ctx], chunk, observer=scorer)
     for cond in conds:
-        built = build_cache(full, cond, total, bs, scorer)
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
         greedy_decode(lm.model, built.cache, pre.last_logits, 4)
+        built.close()
         if built.shares_full:
             full.truncate(ctx)
         del built
@@ -112,9 +118,10 @@ def main() -> None:
                 tel.mark(f"rep{rep}_{cond.label}_start")
                 torch.cuda.reset_peak_memory_stats()
                 retries_before = allocator_counters()
-                built = build_cache(full, cond, total, bs, scorer)
+                built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools)
                 before = built.cache.counters() if isinstance(built.cache, BlockPoolCache) else None
                 dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
+                built.close()
                 wall = dec.wall_s[sp["warmup_steps"] :]
                 row: dict[str, Any] = {
                     "repeat": rep,
@@ -142,6 +149,12 @@ def main() -> None:
                     # Selection runs inside the attention call: host time to bound, rank, gather and mask.
                     row["manager_host_s_per_token"] = built.cache.counters.host_select_s / n_decode
                     row["attended_tokens_selecting_layers"] = built.cache.attended_tokens()
+                if isinstance(built.cache, TieredCache):
+                    tc = built.cache.counters
+                    # Everything the tier does on the host: select (incl. on-demand fetch launch), prefetch, seal.
+                    row["manager_host_s_per_token"] = (tc.host_select_s + tc.host_prefetch_s + tc.host_seal_s) / n_decode
+                    row["tier"] = cache_facts(built)
+                    row["host_pinned_bytes"] = built.cache.host_pinned_bytes()
                 mem = process_gpu_memory()
                 spill = None if mem.shared_bytes is None or shared_baseline is None else mem.shared_bytes - shared_baseline
                 row["shared_growth_bytes"] = spill
@@ -156,6 +169,18 @@ def main() -> None:
                          rep, cond.label, 1e3 * row["decode_wall_s"]["median"], 1e3 * row["decode_wall_p90_s"],
                          1e3 * row.get("manager_host_s_per_token", 0.0), row["gpu_resident_kv_bytes"] / 2**20, row["spilled_to_shared"])
 
+    # Overlap instrumentation, outside the timed repeats: CUDA timing events on every prefetch copy
+    # and on the compute stream around it, one decode per prefetching condition.
+    overlap_rows: list[dict[str, Any]] = []
+    for cond in [c for c in conds if c.policy == "tiered_prefetch"]:
+        built = build_cache(full, cond, total, bs, scorer, lm.model, host_pools, instrument=True)
+        greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
+        assert isinstance(built.cache, TieredCache)
+        overlap_rows.append({"policy": cond.policy, "budget": cond.budget, "warmup_steps": sp["warmup_steps"], **built.cache.overlap()})
+        built.close()
+        full.truncate(ctx)
+        del built
+
     write_metrics(
         out_dir,
         {
@@ -168,6 +193,7 @@ def main() -> None:
             "prefills": prefills,
             "prefill_scorer": None if scorer is None else {"stride": scorer.stride, "query_batch": scorer.query_batch},
             "results": rows,
+            "prefetch_overlap": overlap_rows,
             "telemetry": {**tel.summary(), "marks": tel.marks, "csv": "telemetry.csv"},
             "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "spill_threshold_bytes": SPILL_THRESHOLD_BYTES},
         },

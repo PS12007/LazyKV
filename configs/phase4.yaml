@@ -1,0 +1,37 @@
+# Phase 4 gate: the CPU tier (rungs 6-7) on the Phase 3 sweep. Everything except `phase` and
+# `policies` is Phase 3's, so rung 5 (quest) is re-measured on identical prompts and budgets and
+# rungs 6-7 are compared with it inside one run.
+phase: phase4
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+# quest: rung 5, everything resident, budget attended. tiered_sync: rung 6, the same selection with
+# only the attended set in VRAM and on-demand fetch. tiered_prefetch: rung 7, plus layer-ahead
+# speculative prefetch on a copy stream.
+policies: [quest, tiered_sync, tiered_prefetch]
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
