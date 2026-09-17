@@ -641,13 +641,21 @@ def fig_p4_tradeoff(a: dict[str, Any], t: Theme) -> None:
         rows = _p4_speed_rows(a, policy, variant)
         if not rows:
             continue
-        xs = [s["gpu_resident_kv_bytes"]["median"] / 2**30 for s in rows]
-        ys = [s["tokens_per_s"]["median"] for s in rows]
+        xs = [r["gpu_resident_kv_bytes"]["median"] / 2**30 for r in rows]
+        ys = [r["tokens_per_s"]["median"] for r in rows]
         tops += ys
+        if policy == "quest":
+            # Every rung 5 budget sits at the same x: it attends to less and frees nothing. A line
+            # through those points would be a vertical stripe, so draw the span it covers.
+            ax.plot([xs[0], xs[0]], [min(ys), max(ys)], color=color, linewidth=2.5, solid_capstyle="butt", label=pretty)
+            ax.scatter(xs, ys, color=color, s=26, edgecolor=t.surface, linewidth=1.2, zorder=4)
+            ax.annotate("every budget,\nsame VRAM", (xs[0], min(ys)), xytext=(-8, -2), textcoords="offset points", ha="right", va="top", color=t.ink2, fontsize=8)
+            continue
         ax.plot(xs, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
-        for s, x, y in zip(rows, xs, ys):
-            if policy != "quest":
-                ax.annotate(f"{100 * s['budget']:g}%", (x, y), xytext=(0, -11), textcoords="offset points", ha="center", color=t.muted, fontsize=7)
+        for r, x, y in zip(rows, xs, ys):
+            # Only the extremes are labelled: adjacent budgets can land within a few MiB of each other.
+            if r["budget"] in (min(q["budget"] for q in rows), max(q["budget"] for q in rows)):
+                ax.annotate(f"{100 * r['budget']:g}%", (x, y), xytext=(0, -12), textcoords="offset points", ha="center", color=t.muted, fontsize=7.5)
     ax.set_xlim(0, full_gib * 1.12)
     ax.set_ylim(0, max(tops) * 1.15)
     ax.set_xlabel("GPU-resident KV during decode, GiB (labels: attended budget)")
@@ -659,30 +667,34 @@ def fig_p4_tradeoff(a: dict[str, Any], t: Theme) -> None:
     budgets = sorted({s["budget"] for s in a["speed"] if s["policy"] == "tiered_sync"}, reverse=True)
     quest = {s["budget"]: s for s in a["speed"] if s["policy"] == "quest"}
     tier = a["tier"].get("tiered_sync", {})
-    parts = (("Rank + sync", "host_rank_ms_per_token"), ("Fetch launch", "host_fetch_ms_per_token"), ("Other select + gather", None), ("Seal", "host_seal_ms_per_token"))
+    parts = (("Rank + host sync", "host_rank_ms_per_token"), ("Fetch launch", "host_fetch_ms_per_token"), ("Other select + gather", None), ("Seal", "host_seal_ms_per_token"))
     ys = list(range(len(budgets)))
-    # Rung 5's decode minus its own selector time: the tier replaces that work, so adding the
-    # tier's host time on top of the full rung 5 latency would count selection twice.
-    left = [(quest[b]["decode_wall_median_s"]["median"] - quest[b]["manager_host_s_per_token"]["median"]) * 1e3 for b in budgets]
-    ax.barh(ys, left, color=t.band, edgecolor=t.axis, linewidth=0.6, label="Rung 5 decode without its selector")
+    # Each bar is the measured rung 6 latency, split into the tier's own host time and everything
+    # else (model forward, attention, and any GPU wait): the segments sum to the measurement by
+    # construction, so nothing is implied that was not timed.
+    walls = [tier.get(f"{b:g}", {}).get("decode_wall_median_s", 0.0) * 1e3 for b in budgets]
     base = [0.0] * len(budgets)
     for (name, key), color in zip(parts, t.series):
         vals = []
-        for i, b in enumerate(budgets):
+        for b in budgets:
             tr = tier.get(f"{b:g}", {})
             if key is None:
                 v = tr.get("host_select_ms_per_token", 0) - (tr.get("host_rank_ms_per_token") or 0) - tr.get("host_fetch_ms_per_token", 0)
             else:
                 v = tr.get(key) or 0.0
             vals.append(max(0.0, v))
-        ax.barh(ys, vals, left=[left[i] + base[i] for i in range(len(budgets))], color=color, height=0.5, label=name)
+        ax.barh(ys, vals, left=list(base), color=color, height=0.62, label=name)
         base = [base[i] + vals[i] for i in range(len(budgets))]
-    walls = [tier.get(f"{b:g}", {}).get("decode_wall_median_s", 0) * 1e3 for b in budgets]
-    ax.scatter(walls, ys, marker="|", s=260, color=t.ink, linewidths=2, zorder=5, label="Rung 6 decode, measured")
+    rest = [max(0.0, walls[i] - base[i]) for i in range(len(budgets))]
+    ax.barh(ys, rest, left=list(base), color=t.band, edgecolor=t.axis, linewidth=0.6, height=0.62, label="Model forward and everything else")
+    for i, b in enumerate(budgets):
+        q = quest.get(b)
+        if q:
+            ax.scatter([q["decode_wall_median_s"]["median"] * 1e3], [i], marker="|", s=300, color=t.ink, linewidths=2, zorder=5, label="Rung 5 decode, same run" if i == 0 else None)
     ax.set_yticks(ys, [f"{100 * b:g}%" for b in budgets])
     ax.invert_yaxis()
-    ax.set_xlabel("ms per token: rung 5 decode + rung 6 tier host time (bar) vs measured (tick)")
-    ax.set_title("Where rung 6's extra time goes (2x slots)", color=t.ink, fontsize=10, loc="left")
+    ax.set_xlabel("ms per decoded token (bar: measured rung 6, split by what was timed)")
+    ax.set_title("Where rung 6's token goes (2x slots)", color=t.ink, fontsize=10, loc="left")
     for axis in axes:
         leg = axis.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=2, frameon=False, fontsize=8)
         for text in leg.get_texts():
