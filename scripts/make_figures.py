@@ -739,6 +739,54 @@ def fig_p4_fetch(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p4_fetch", t)
 
 
+def fig_p4_blocksize(a: dict[str, Any], t: Theme) -> None:
+    """Accuracy and decode speed against block size, at one budget, for rung 5 and rung 6.
+
+    Phase 0 measured the PCIe efficiency knee; this is the other half of the block-size question,
+    because a smaller block is a finer selection granularity *and* a smaller transfer.
+    """
+    rows = (a.get("blocksize") or {}).get("rows") or []
+    if not rows:
+        return
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.2), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    sizes = sorted({r["block_size"] for r in rows})
+    series = (("quest", "Quest-style, all resident (rung 5)"), ("tiered_sync", "CPU tier, sync fetch (rung 6)"))
+    for ax in axes:
+        style_axes(ax, t)
+        ax.set_xscale("log", base=2)
+        ax.set_xticks(sizes, [str(s) for s in sizes])
+        ax.set_xlabel("Block size, tokens")
+    for (policy, pretty), color in zip(series, t.series):
+        r = sorted((x for x in rows if x["policy"] == policy), key=lambda x: x["block_size"])
+        xs = [x["block_size"] for x in r]
+        acc = [(x["block_size"], 100 * x["niah_accuracy"]) for x in r if x["niah_accuracy"] is not None]
+        if acc:
+            axes[0].plot([x for x, _ in acc], [y for _, y in acc], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+        # Labelled on the speed panel, which always has data: the accuracy panel is empty until the
+        # per-block-size quality runs finish.
+        axes[1].plot(xs, [x["tokens_per_s"]["median"] for x in r], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
+        fetched = [(x["block_size"], x["tier"]["fetch_mean_transfer_kib"]) for x in r if x.get("tier")]
+        if fetched:
+            axes[2].plot([x for x, _ in fetched], [y for _, y in fetched], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+    axes[0].set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
+    axes[0].set_ylim(0, 100)
+    axes[1].set_title("Decode tokens/s", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_ylim(bottom=0)
+    axes[2].set_title("Mean H2D transfer, KiB (rung 6)", color=t.ink, fontsize=10, loc="left")
+    knee = (a.get("blocksize") or {}).get("pcie_knee_kib")
+    if knee:
+        axes[2].axhline(knee, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        axes[2].annotate("Phase 0 80% knee", (max(sizes), knee), xytext=(-4, 4), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+    leg = axes[1].legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False, fontsize=9)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    budget = rows[0]["budget"]
+    title(fig, t, f"Block size at a {100 * budget:g}% budget, {a['context']:,} tokens", "Smaller blocks are a finer selection granularity and a smaller transfer; both effects are measured here")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.28, wspace=0.22)
+    save(fig, "p4_blocksize", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -774,6 +822,7 @@ def main() -> None:
         if p4 is not None:
             fig_p4_tradeoff(p4, t)
             fig_p4_fetch(p4, t)
+            fig_p4_blocksize(p4, t)
     print("figures written to", FIG_DIR)
 
 

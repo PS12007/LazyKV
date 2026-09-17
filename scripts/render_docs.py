@@ -1079,6 +1079,36 @@ def block_p4_probe(ctx: Mapping[str, Any]) -> str:
     )
 
 
+def block_p4_blocksize(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase4.analysis.blocksize.rows")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    ms_ = lambda v: f"{v * 1e3:.1f} ms"  # noqa: E731
+    rows = []
+    for r in rows_in:
+        t = r.get("tier") or {}
+        rows.append([
+            f"{r['block_size']}",
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            f"{t.get('k_blocks', '–')}",
+            rng(r["decode_wall_median_s"], ms_, show_range=False),
+            rng(r["tokens_per_s"], lambda v: f"{v:.1f}", show_range=False),
+            rng(r["manager_host_s_per_token"], ms_, show_range=False),
+            f"{100 * r['niah_accuracy']:.1f}%" if r["niah_accuracy"] is not None else NOT_MEASURED,
+            f"{100 * r['niah_retention']:.1f}%" if r["niah_retention"] is not None else NOT_MEASURED,
+            f"{r['tf_mean_kl']:.2e}" if r["tf_mean_kl"] is not None else NOT_MEASURED,
+            f"{t['fetched_pairs_per_token']:,.0f}" if t else "–",
+            f"{t['fetch_mib_per_token']:.1f}" if t else "–",
+            f"{t['fetch_mean_transfer_kib']:.0f}" if t else "–",
+            f"{100 * t['thrash_share_of_fetches']:.0f}%" if t else "–",
+        ])
+    return table(
+        ["Block size", "Policy", "K blocks", "Decode / token", "Tokens/s", "Manager host / token", "NIAH accuracy", "Retention", "Mean KL", "Pairs fetched / token", "MiB fetched / token", "Mean transfer, KiB", "Thrash"],
+        rows,
+        ["---:", "---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"],
+    )
+
+
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
 }

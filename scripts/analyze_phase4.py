@@ -197,7 +197,13 @@ def blocksize_sweep(base: Path) -> dict[str, Any] | None:
                     "tier": tier_rates(runs, policy, b),
                     "provenance": [r["provenance"] for r in runs] + ([q["provenance"]] if q else []),
                 })
-    return {"rows": rows}
+    # The Phase 0 transfer-size knee, so the figure can mark it without a hand-typed number.
+    knee_path = RESULTS_DIR / "phase0" / "analysis" / "metrics.json"
+    knee = None
+    if knee_path.exists():
+        p0 = json.loads(knee_path.read_text(encoding="utf-8"))
+        knee = p0.get("pcie", {}).get("pinned_h2d", {}).get("knee80_bytes", {}).get("median")
+    return {"rows": rows, "pcie_knee_kib": None if knee is None else knee / 1024}
 
 
 def main() -> None:
