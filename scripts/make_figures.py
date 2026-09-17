@@ -1,7 +1,7 @@
-"""Phase 0-3 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Phase 0-4 figures, rendered in light and dark variants for the README's <picture> tags.
 
 Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json,
-results/phase1/latency_regimes/metrics.json, and results/phase{2,3}/analysis/metrics.json.
+results/phase1/latency_regimes/metrics.json, and results/phase{2,3,4}/analysis/metrics.json.
 Writes docs/figures/*.png.
 Palette: validated categorical slots (fixed order), recessive hairline grid, 2px lines.
 """
@@ -607,6 +607,126 @@ def fig_p3_pareto(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p3_pareto", t)
 
 
+P4_SERIES = (
+    ("quest", None, "Quest-style, all resident (rung 5)"),
+    ("tiered_sync", "spare0", "CPU tier, sync fetch, VRAM = attended (rung 6)"),
+    ("tiered_sync", "spare1", "CPU tier, sync fetch, 2x slots (rung 6)"),
+    ("tiered_prefetch", "spare1", "CPU tier + layer-ahead prefetch, 2x slots (rung 7)"),
+)
+
+
+def _p4_speed_rows(a: dict[str, Any], policy: str, variant: str | None) -> list[dict[str, Any]]:
+    src = a["spare0"]["speed"] if variant == "spare0" else a["speed"]
+    return sorted((s for s in src if s["policy"] == policy), key=lambda s: s["budget"])
+
+
+def fig_p4_tradeoff(a: dict[str, Any], t: Theme) -> None:
+    """Decode speed against GPU-resident KV, and the host time behind it.
+
+    Rungs 5-7 attend to identical key sets (bit-identical outputs), so accuracy is one curve and is
+    not repeated here: what the tier changes is memory and latency, so those are the two axes.
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.6), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    full = next(s for s in a["speed"] if s["label"] == "full@1")
+    full_gib = full["gpu_resident_kv_bytes"]["median"] / 2**30
+    fs = full["tokens_per_s"]["median"]
+    colors = (t.muted,) + t.series[:3]
+    ax = axes[0]
+    style_axes(ax, t)
+    ax.axhline(fs, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    ax.annotate("full cache", (full_gib, fs), xytext=(-4, 5), textcoords="offset points", ha="right", color=t.ink2, fontsize=8.5)
+    tops = [fs]
+    for (policy, variant, pretty), color in zip(P4_SERIES, (t.series[3],) + t.series[:3]):
+        rows = _p4_speed_rows(a, policy, variant)
+        if not rows:
+            continue
+        xs = [s["gpu_resident_kv_bytes"]["median"] / 2**30 for s in rows]
+        ys = [s["tokens_per_s"]["median"] for s in rows]
+        tops += ys
+        ax.plot(xs, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
+        for s, x, y in zip(rows, xs, ys):
+            if policy != "quest":
+                ax.annotate(f"{100 * s['budget']:g}%", (x, y), xytext=(0, -11), textcoords="offset points", ha="center", color=t.muted, fontsize=7)
+    ax.set_xlim(0, full_gib * 1.12)
+    ax.set_ylim(0, max(tops) * 1.15)
+    ax.set_xlabel("GPU-resident KV during decode, GiB (labels: attended budget)")
+    ax.set_title("Decode tokens/s", color=t.ink, fontsize=10, loc="left")
+
+    # Right: where a token's time goes, at each budget, for rung 6 with 2x slots.
+    ax = axes[1]
+    style_axes(ax, t)
+    budgets = sorted({s["budget"] for s in a["speed"] if s["policy"] == "tiered_sync"}, reverse=True)
+    quest = {s["budget"]: s for s in a["speed"] if s["policy"] == "quest"}
+    tier = a["tier"].get("tiered_sync", {})
+    parts = (("Rank + sync", "host_rank_ms_per_token"), ("Fetch launch", "host_fetch_ms_per_token"), ("Other select + gather", None), ("Seal", "host_seal_ms_per_token"))
+    ys = list(range(len(budgets)))
+    # Rung 5's decode minus its own selector time: the tier replaces that work, so adding the
+    # tier's host time on top of the full rung 5 latency would count selection twice.
+    left = [(quest[b]["decode_wall_median_s"]["median"] - quest[b]["manager_host_s_per_token"]["median"]) * 1e3 for b in budgets]
+    ax.barh(ys, left, color=t.band, edgecolor=t.axis, linewidth=0.6, label="Rung 5 decode without its selector")
+    base = [0.0] * len(budgets)
+    for (name, key), color in zip(parts, t.series):
+        vals = []
+        for i, b in enumerate(budgets):
+            tr = tier.get(f"{b:g}", {})
+            if key is None:
+                v = tr.get("host_select_ms_per_token", 0) - (tr.get("host_rank_ms_per_token") or 0) - tr.get("host_fetch_ms_per_token", 0)
+            else:
+                v = tr.get(key) or 0.0
+            vals.append(max(0.0, v))
+        ax.barh(ys, vals, left=[left[i] + base[i] for i in range(len(budgets))], color=color, height=0.5, label=name)
+        base = [base[i] + vals[i] for i in range(len(budgets))]
+    walls = [tier.get(f"{b:g}", {}).get("decode_wall_median_s", 0) * 1e3 for b in budgets]
+    ax.scatter(walls, ys, marker="|", s=260, color=t.ink, linewidths=2, zorder=5, label="Rung 6 decode, measured")
+    ax.set_yticks(ys, [f"{100 * b:g}%" for b in budgets])
+    ax.invert_yaxis()
+    ax.set_xlabel("ms per token: rung 5 decode + rung 6 tier host time (bar) vs measured (tick)")
+    ax.set_title("Where rung 6's extra time goes (2x slots)", color=t.ink, fontsize=10, loc="left")
+    for axis in axes:
+        leg = axis.legend(loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=2, frameon=False, fontsize=8)
+        for text in leg.get_texts():
+            text.set_color(t.ink2)
+    title(fig, t, f"What a CPU tier costs under query-aware selection, at {a['context']:,} tokens", f"Median of {a['speed_runs']} independent runs; rungs 5-7 produce identical outputs, so accuracy does not change along these curves")
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.83, bottom=0.33, wspace=0.25)
+    save(fig, "p4_tradeoff", t)
+
+
+def fig_p4_fetch(a: dict[str, Any], t: Theme) -> None:
+    """On-demand fetches per token and the share that are thrash, with and without spare slots."""
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.2), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    variants = (("spare0", a["spare0"]["tier"], "VRAM = attended set"), ("spare1", a["tier"], "2x slots"))
+    for ax in axes:
+        style_axes(ax, t)
+    i = 0
+    for policy, pname in (("tiered_sync", "sync"), ("tiered_prefetch", "prefetch")):
+        for _, src, vname in variants:
+            rows = src.get(policy, {})
+            if not rows:
+                continue
+            bs = sorted(float(b) for b in rows)
+            color = t.series[i % 4]
+            dash = "-" if policy == "tiered_sync" else (0, (4, 2))
+            axes[0].plot(bs, [rows[f"{b:g}"]["fetched_pairs_per_token"] for b in bs], color=color, linewidth=2, linestyle=dash, marker="o", markersize=4, label=f"{pname}, {vname}")
+            axes[1].plot(bs, [100 * rows[f"{b:g}"]["thrash_share_of_fetches"] for b in bs], color=color, linewidth=2, linestyle=dash, marker="o", markersize=4)
+            i += 1
+    _budget_axis(axes[0], sorted(float(b) for b in a["tier"]["tiered_sync"]))
+    _budget_axis(axes[1], sorted(float(b) for b in a["tier"]["tiered_sync"]))
+    axes[0].set_yscale("log")
+    axes[0].set_title("(head, block) pairs fetched on demand per token, all layers", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_title("Share of fetches evicted within the last 16 steps, %", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_ylim(0, 100)
+    for ax in axes:
+        ax.set_xlabel("Attended budget")
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(1.1, -0.2), ncol=4, frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "Selection churn: what VRAM has to bring back every token", f"Median over every repeat of {a['speed_runs']} runs per variant")
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.82, bottom=0.28, wspace=0.2)
+    save(fig, "p4_fetch", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -615,6 +735,8 @@ def main() -> None:
     p2 = json.loads(p2_path.read_text(encoding="utf-8")) if p2_path.exists() else None
     p3_path = RESULTS_DIR / "phase3" / "analysis" / "metrics.json"
     p3 = json.loads(p3_path.read_text(encoding="utf-8")) if p3_path.exists() else None
+    p4_path = RESULTS_DIR / "phase4" / "analysis" / "metrics.json"
+    p4 = json.loads(p4_path.read_text(encoding="utf-8")) if p4_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
     lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
@@ -637,6 +759,9 @@ def main() -> None:
             fig_p3_pareto(p3, t)
             fig_p2_depth(p3, t, P3_POLICIES, "p3_depth", "Needle depth under eviction and under selection")
             fig_p2_kl(p3, t, P3_POLICIES, "p3_kl")
+        if p4 is not None:
+            fig_p4_tradeoff(p4, t)
+            fig_p4_fetch(p4, t)
     print("figures written to", FIG_DIR)
 
 
