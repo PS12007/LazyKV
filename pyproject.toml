@@ -15,6 +15,10 @@ dependencies = [
     "matplotlib==3.11.1",
 ]
 
+[project.urls]
+Repository = "https://github.com/PS12007/LazyKV"
+"Research log" = "https://github.com/PS12007/LazyKV/blob/main/docs/RESEARCH_LOG.md"
+
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
 
