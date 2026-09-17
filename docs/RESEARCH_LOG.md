@@ -7,6 +7,79 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-17: Phase 4, the CPU tier — an exact mechanism whose cost is not the link
+
+### The result that matters
+
+Rungs 6 and 7 implement rung 5's selection over a pinned host tier, so they should produce rung 5's
+outputs exactly, not approximately. They do: across
+225 prompt × budget NIAH cells
+per policy, **0 answers differ** from rung 5,
+and the largest teacher-forced KL difference is
+0.0e+00 nats. The accuracies also reproduce Phase 3's
+rung 5 numbers on the same prompts, which is a cross-phase repeatability check nobody planned.
+
+With that established, the tier is purely a memory/latency mechanism, and the interesting axes are
+those two. At a 25% attended budget rung 6 keeps
+415 MiB of KV in VRAM where rung 5
+keeps 1,028 MiB for the same answers. **Phase 3's
+attended budget is now a memory budget.**
+
+### Where the time actually goes
+
+The design premise from Phase 0 was that a *small, selected* fetch fits inside the compute window. It
+does, and the instrumentation says so directly: every timed prefetch copy finished inside its window
+(0.38–0.82 ms
+copies against
+3.64–6.87 ms
+windows), and rung 6 at a 25% budget moves only
+4.6 MiB per token.
+
+And yet rung 6 decodes at 18.6 tokens/s
+against rung 5's 40.4. The cost is **host
+round trips**: every selecting layer has to bring its top-K block indices back to the CPU before it can
+decide what to fetch, which costs
+5.0–6.9 ms
+per token on its own, in a decode that Phase 1 already showed to be host-bound. The bottleneck this
+project was designed around (PCIe) is not the bottleneck this design hits.
+
+**Rung 7 is a negative result and the reason is the same.** Layer-ahead speculation hides the transfer
+completely and still makes decode slower, because it adds a *second* host round trip per layer and its
+guesses are right only
+30%–39%
+of the time, so wrong guesses evict blocks the real selection then fetches back. Hiding a transfer that
+was never the bottleneck buys nothing.
+
+### Two implementation findings, kept because they were measured
+
+The first implementation sent one transfer per fetched (head, block) pair and sized VRAM to exactly the
+attended set. Both choices were wrong, and the counters said so before any tuning:
+
+1. **Per-pair transfers.** 2,859 H2D copies per
+   token of 16 KiB each, far below the Phase 0 efficiency knee, costing
+   51.6 ms per token just to launch. Gathering on
+   the host into pinned staging and sending one transfer per layer replaced that with
+   14 transfers per token.
+2. **Selection churn.** With VRAM holding exactly the attended set,
+   93% of fetches brought back a
+   pair evicted within the previous 16 steps: consecutive tokens select overlapping but different sets,
+   and with no spare slots every difference is an eviction. Doubling the slots cut on-demand fetches to
+   3–380
+   pairs per token.
+
+Both probes are kept in `results/phase4/probe_*` and reported in the gate doc, because the discarded
+design is the evidence for the chosen one.
+
+### What this implies for Phase 5
+
+Rung 8 (int8 warm/cold tiers) attacks bytes moved. Bytes moved are not what costs time here, so the
+honest expectation is that it will not help latency on this machine, and the experiment should be
+framed as measuring capacity, not speed. The lever that *would* matter is removing per-layer host
+synchronization from the residency decision, which is a redesign, not a rung. That is now the open
+question to put to the owner.
+
+---
+
 ## 2026-09-15: Phase 3, attention-score eviction and query-aware selection
 
 ### What the two new rungs say about the design

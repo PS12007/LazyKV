@@ -284,6 +284,12 @@ def main() -> None:
         "fetched_pairs_per_token": {pol: tspan(rows, pol, "fetched_pairs_per_token") for pol, rows in tiers.items()},
         "prefetch_precision": tspan(tiers.get("tiered_prefetch", {}), "tiered_prefetch", "prefetch_precision"),
         "prefetch_coverage": tspan(tiers.get("tiered_prefetch", {}), "tiered_prefetch", "prefetch_coverage"),
+        # The discarded first design, quoted in the write-up: one transfer per fetched pair.
+        "probe_per_pair": next(
+            ({"transfers_per_token": r["fetch_transfers_per_token"], "host_fetch_ms_per_token": r["host_fetch_ms_per_token"], "decode_ms": 1e3 * r["decode_wall_median_s"], "budget": r["budget"]}
+             for r in probe_table(base) if r["probe"] == "probe_per_pair_transfers" and r["policy"] == "tiered_sync" and r["budget"] == 0.25),
+            None,
+        ),
         "tier_active_budgets": active,
         "tier_inactive_budgets": {pol: [b for b in budgets if b not in active.get(pol, [])] for pol in tiers},
         "dense_layers": next((r["dense_layers"] for r in q["niah"] if r["policy"] in TIERED), None),
