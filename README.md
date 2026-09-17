@@ -8,7 +8,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-3%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-4%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -26,11 +26,11 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 3 (attention-score eviction and query-aware selection) complete.** Five rungs of
-> the policy ladder are now measured on the same sweep, at 32,768 tokens,
-> with the same prompts and the same quality metrics. Nothing is offloaded yet.
+> **Status: Phase 4 (pinned CPU tier, synchronous fetch and layer-ahead prefetch) complete.** Seven
+> rungs of the policy ladder are now measured on the same sweep, at 32,768
+> tokens, with the same prompts and the same quality metrics. KV now actually leaves VRAM.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
-> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md).
+> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) · [Phase 4](docs/phases/PHASE_4.md).
 
 ## Where the ladder stands
 
@@ -43,10 +43,28 @@ cache answers (88.9% over
 | 2 | Sliding window + attention sink | 62.5% at a 75% budget | yes, the budget |
 | 3 | Block LRU | 29.4% at a 75% budget (Phase 2) | yes, the budget |
 | 4 | H2O-style attention-score eviction | 92.5% at a 75% budget | yes, the budget |
-| 5 | Quest-style query-aware selection | 98.8% at a 75% attended budget | **none yet**: it attends to less, and frees nothing until the Phase 4 CPU tier |
+| 5 | Quest-style query-aware selection | 98.8% at a 75% attended budget | none: it attends to less, and frees nothing |
+| 6 | + pinned CPU tier, synchronous fetch | 98.8% at a 75% budget — **rung 5's answers, bit for bit** | yes: 415 MiB resident at a 25% budget, against 1,028 MiB |
+| 7 | + layer-ahead speculative prefetch | same answers again | same, and **slower** than rung 6 |
 
 **No rung yet meets the brief's headline target** of ≥ 99% retention below a 100% budget; query-aware
-selection comes closest and misses it.
+selection comes closest and misses it. What Phase 4 changes is not the accuracy column but the last
+one: rungs 6 and 7 attend to exactly what rung 5 attends to, and keep only that in VRAM.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p4_tradeoff-dark.png">
+  <img alt="Decode tokens per second against GPU-resident KV for rungs 5 to 7, and a breakdown of the tier's host time per token" src="docs/figures/p4_tradeoff-light.png">
+</picture>
+
+The tier's cost is latency, and the reason is not the link. At a 25% budget rung 6 moves
+4.6 MiB per token in
+14 transfers — well under a
+millisecond of PCIe time — while bringing each layer's top-K indices back to the host costs
+5.0–6.9 ms.
+Layer-ahead prefetch hides its copies completely
+(100% of each copy inside the window it
+was launched into) and still loses, because on a host-bound decode the transfer was never what cost
+the time.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_pareto-dark.png">
@@ -71,6 +89,8 @@ Other measured facts from these two phases:
 | H2O and the sink | it has no sink rule, yet block 0 stayed resident in all 16 layers at every budget |
 | Host cost per decode token | window 1.0–1.0 ms, H2O 4.7–5.9 ms, Quest 5.6–6.6 ms; scoring the prompt for H2O adds 1.19× to prefill |
 | Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
+| The CPU tier against the selection it implements (Phase 4) | 0 of 225 answers differ from rung 5, and the largest teacher-forced KL difference is 0.0e+00 nats |
+| Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,403 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 58% |
 
 ## Phase 1 in brief
 
@@ -164,7 +184,7 @@ override for one model class. Nothing else in Transformers is patched.
 
 1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
 4. H2O-style attention-score eviction ✅ → 5. Quest-style query-aware selection ✅ → 6. + CPU tier,
-synchronous fetch → 7. + layer-ahead async prefetch → 8. + int8 warm/cold tiers →
+synchronous fetch ✅ → 7. + layer-ahead async prefetch ✅ → 8. + int8 warm/cold tiers →
 9. + exact CPU merge. Measured rungs are ticked.
 
 Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and the same
@@ -253,6 +273,20 @@ Same scripts as Phase 2, with the Phase 3 config (adds H2O-style eviction and Qu
 .venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase3.yaml > logs\p3_policy_quality.log 2>&1
 .venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase3.yaml --run-id 1 > logs\p3_budget_speed_run_1.log 2>&1   # also 2, 3
 .venv\Scripts\python.exe scripts\analyze_phase3.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
+## Reproduce Phase 4
+
+Same scripts again with the Phase 4 config (adds the CPU tier; `--spare 0` gives VRAM exactly the
+attended set instead of twice it):
+
+```powershell
+.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase4.yaml > logs\p4_policy_quality.log 2>&1
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --run-id 1 > logs\p4_budget_speed_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --spare 0 --out budget_speed_spare0 --run-id 1 > logs\p4_spare0_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\analyze_phase4.py
 .venv\Scripts\python.exe scripts\make_figures.py
 .venv\Scripts\python.exe scripts\render_docs.py
 ```

@@ -6,7 +6,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-3%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-4%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -24,11 +24,11 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 3 (attention-score eviction and query-aware selection) complete.** Five rungs of
-> the policy ladder are now measured on the same sweep, at {{ phase3.analysis.context | int }} tokens,
-> with the same prompts and the same quality metrics. Nothing is offloaded yet.
+> **Status: Phase 4 (pinned CPU tier, synchronous fetch and layer-ahead prefetch) complete.** Seven
+> rungs of the policy ladder are now measured on the same sweep, at {{ phase4.analysis.context | int }}
+> tokens, with the same prompts and the same quality metrics. KV now actually leaves VRAM.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
-> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md).
+> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) · [Phase 4](docs/phases/PHASE_4.md).
 
 ## Where the ladder stands
 
@@ -41,10 +41,28 @@ cache answers ({{ phase3.analysis.full_niah_accuracy | pct }} over
 | 2 | Sliding window + attention sink | {{ phase3.analysis.headline.window_sink.best_retention_below_full | pct }} at a {{ phase3.analysis.headline.window_sink.best_retention_budget | pct0 }} budget | yes, the budget |
 | 3 | Block LRU | {{ phase2.analysis.headline.lru.best_retention_below_full | pct }} at a {{ phase2.analysis.headline.lru.best_retention_budget | pct0 }} budget (Phase 2) | yes, the budget |
 | 4 | H2O-style attention-score eviction | {{ phase3.analysis.headline.h2o.best_retention_below_full | pct }} at a {{ phase3.analysis.headline.h2o.best_retention_budget | pct0 }} budget | yes, the budget |
-| 5 | Quest-style query-aware selection | {{ phase3.analysis.headline.quest.best_retention_below_full | pct }} at a {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }} attended budget | **none yet**: it attends to less, and frees nothing until the Phase 4 CPU tier |
+| 5 | Quest-style query-aware selection | {{ phase3.analysis.headline.quest.best_retention_below_full | pct }} at a {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }} attended budget | none: it attends to less, and frees nothing |
+| 6 | + pinned CPU tier, synchronous fetch | {{ phase4.analysis.headline.tiered_sync.best_retention_below_full | pct }} at a {{ phase4.analysis.headline.tiered_sync.best_retention_budget | pct0 }} budget — **rung 5's answers, bit for bit** | yes: {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b25 | int }} MiB resident at a 25% budget, against {{ phase4.analysis.summary.resident_mib_at.quest.b25 | int }} MiB |
+| 7 | + layer-ahead speculative prefetch | same answers again | same, and **slower** than rung 6 |
 
 **No rung yet meets the brief's headline target** of ≥ 99% retention below a 100% budget; query-aware
-selection comes closest and misses it.
+selection comes closest and misses it. What Phase 4 changes is not the accuracy column but the last
+one: rungs 6 and 7 attend to exactly what rung 5 attends to, and keep only that in VRAM.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p4_tradeoff-dark.png">
+  <img alt="Decode tokens per second against GPU-resident KV for rungs 5 to 7, and a breakdown of the tier's host time per token" src="docs/figures/p4_tradeoff-light.png">
+</picture>
+
+The tier's cost is latency, and the reason is not the link. At a 25% budget rung 6 moves
+{{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token in
+{{ phase4.analysis.summary.fetch_transfers_at.tiered_sync.b25 | .0f }} transfers — well under a
+millisecond of PCIe time — while bringing each layer's top-K indices back to the host costs
+{{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.min | .1f }}–{{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.max | .1f }} ms.
+Layer-ahead prefetch hides its copies completely
+({{ phase4.analysis.summary.overlap_fraction_median.min | pct0 }} of each copy inside the window it
+was launched into) and still loses, because on a host-bound decode the transfer was never what cost
+the time.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_pareto-dark.png">
@@ -69,6 +87,8 @@ Other measured facts from these two phases:
 | H2O and the sink | it has no sink rule, yet block 0 stayed resident in all {{ phase3.analysis.h2o.layers }} layers at every budget |
 | Host cost per decode token | window {{ phase3.analysis.summary.manager_ms_per_token.window_sink.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.window_sink.max | .1f }} ms, H2O {{ phase3.analysis.summary.manager_ms_per_token.h2o.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.h2o.max | .1f }} ms, Quest {{ phase3.analysis.summary.manager_ms_per_token.quest.min | .1f }}–{{ phase3.analysis.summary.manager_ms_per_token.quest.max | .1f }} ms; scoring the prompt for H2O adds {{ phase3.analysis.summary.prefill_scored_over_plain | .2f }}× to prefill |
 | Repeatability across phases | of {{ phase3.analysis.cross_phase.niah_prompt_conditions_compared }} prompt × condition pairs measured in both Phase 2 and Phase 3, {{ phase3.analysis.cross_phase.niah_scored_differently }} scored differently |
+| The CPU tier against the selection it implements (Phase 4) | {{ phase4.analysis.summary.identity_answers_differing | int }} of {{ phase4.analysis.identity_vs_quest.tiered_sync.niah_prompt_conditions }} answers differ from rung 5, and the largest teacher-forced KL difference is {{ phase4.analysis.summary.identity_max_kl_diff | .1e }} nats |
+| Selection churn with VRAM holding exactly the attended set (Phase 4) | up to {{ phase4.analysis.summary.spare0.fetched_pairs_per_token.tiered_sync.max | int }} (head, block) pairs re-fetched per token, {{ phase4.analysis.summary.spare0.thrash_share.tiered_sync.max | pct0 }} of them evicted within the previous 16 steps; doubling the slots cuts that to {{ phase4.analysis.summary.thrash_share.tiered_sync.max | pct0 }} |
 
 ## Phase 1 in brief
 
@@ -162,7 +182,7 @@ override for one model class. Nothing else in Transformers is patched.
 
 1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
 4. H2O-style attention-score eviction ✅ → 5. Quest-style query-aware selection ✅ → 6. + CPU tier,
-synchronous fetch → 7. + layer-ahead async prefetch → 8. + int8 warm/cold tiers →
+synchronous fetch ✅ → 7. + layer-ahead async prefetch ✅ → 8. + int8 warm/cold tiers →
 9. + exact CPU merge. Measured rungs are ticked.
 
 Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and the same
@@ -251,6 +271,20 @@ Same scripts as Phase 2, with the Phase 3 config (adds H2O-style eviction and Qu
 .venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase3.yaml > logs\p3_policy_quality.log 2>&1
 .venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase3.yaml --run-id 1 > logs\p3_budget_speed_run_1.log 2>&1   # also 2, 3
 .venv\Scripts\python.exe scripts\analyze_phase3.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
+## Reproduce Phase 4
+
+Same scripts again with the Phase 4 config (adds the CPU tier; `--spare 0` gives VRAM exactly the
+attended set instead of twice it):
+
+```powershell
+.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase4.yaml > logs\p4_policy_quality.log 2>&1
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --run-id 1 > logs\p4_budget_speed_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --spare 0 --out budget_speed_spare0 --run-id 1 > logs\p4_spare0_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\analyze_phase4.py
 .venv\Scripts\python.exe scripts\make_figures.py
 .venv\Scripts\python.exe scripts\render_docs.py
 ```
