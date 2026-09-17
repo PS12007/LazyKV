@@ -45,6 +45,10 @@ def main() -> None:
     p.add_argument("--config", default=str(REPO_ROOT / "configs" / "phase2.yaml"))
     p.add_argument("--context", type=int, help="override config context (smoke tests)")
     p.add_argument("--block-size", type=int, help="override config block_size (the Phase 4 block-size sweep)")
+    p.add_argument("--fetch", choices=["runs", "gather"], help="override config tier.fetch")
+    p.add_argument("--spare", type=float, help="override config tier.spare")
+    p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
+    p.add_argument("--policies", nargs="+", help="override config policies")
     p.add_argument("--samples", type=int, help="override NIAH samples per kind x depth")
     p.add_argument("--out", default="policy_quality")
     args = p.parse_args()
@@ -52,6 +56,14 @@ def main() -> None:
     cfg = load_config(Path(args.config))
     if args.block_size:
         cfg["block_size"] = args.block_size
+    if args.fetch is not None:
+        cfg.setdefault("tier", {})["fetch"] = args.fetch
+    if args.spare is not None:
+        cfg.setdefault("tier", {})["spare"] = args.spare
+    if args.budgets:
+        cfg["budgets"] = args.budgets
+    if args.policies:
+        cfg["policies"] = args.policies
     ctx = args.context or cfg["context"]
     samples = args.samples or cfg["niah"]["samples"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
