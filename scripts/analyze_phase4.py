@@ -203,7 +203,37 @@ def blocksize_sweep(base: Path) -> dict[str, Any] | None:
     if knee_path.exists():
         p0 = json.loads(knee_path.read_text(encoding="utf-8"))
         knee = p0.get("pcie", {}).get("pinned_h2d", {}).get("knee80_bytes", {}).get("median")
-    return {"rows": rows, "pcie_knee_kib": None if knee is None else knee / 1024}
+    return {"rows": rows, "pcie_knee_kib": None if knee is None else knee / 1024, "ends": blocksize_ends(rows)}
+
+
+def blocksize_ends(rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Smallest and largest swept block size per policy, so the prose can cite the two ends by name."""
+    out: dict[str, Any] = {}
+    sizes = sorted({r["block_size"] for r in rows})
+    if len(sizes) < 2:
+        return out
+    out["min_block"], out["max_block"] = sizes[0], sizes[-1]
+    for pol in sorted({r["policy"] for r in rows}):
+        by_bs = {r["block_size"]: r for r in rows if r["policy"] == pol}
+        lo, hi = by_bs.get(sizes[0]), by_bs.get(sizes[-1])
+        if not lo or not hi:
+            continue
+        e = {
+            "tokens_per_s_lo": lo["tokens_per_s"]["median"],
+            "tokens_per_s_hi": hi["tokens_per_s"]["median"],
+            "speedup": hi["tokens_per_s"]["median"] / lo["tokens_per_s"]["median"],
+            "niah_lo": lo["niah_accuracy"],
+            "niah_hi": hi["niah_accuracy"],
+            "manager_ms_lo": 1e3 * lo["manager_host_s_per_token"]["median"],
+            "manager_ms_hi": 1e3 * hi["manager_host_s_per_token"]["median"],
+        }
+        if lo["niah_accuracy"] is not None and hi["niah_accuracy"] is not None:
+            e["niah_drop_pp"] = hi["niah_accuracy"] - lo["niah_accuracy"]
+        if lo["tier"] and hi["tier"]:
+            e["transfer_kib_lo"] = lo["tier"]["fetch_mean_transfer_kib"]
+            e["transfer_kib_hi"] = hi["tier"]["fetch_mean_transfer_kib"]
+        out[pol] = e
+    return out
 
 
 def main() -> None:

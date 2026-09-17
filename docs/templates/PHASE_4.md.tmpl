@@ -173,6 +173,26 @@ isolates the first effect, rung 6 pays both.
   <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
 </picture>
 
+The sweep buys speed with quality, and it buys the same quality loss for both rungs. Going from
+{{ phase4.analysis.blocksize.ends.min_block }} to {{ phase4.analysis.blocksize.ends.max_block }} tokens
+per block is worth {{ phase4.analysis.blocksize.ends.tiered_sync.speedup | x }} on rung 6
+({{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_lo | .1f }} → {{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_hi | .1f }} tokens/s)
+and costs {{ phase4.analysis.blocksize.ends.tiered_sync.niah_drop_pp | pp }} of NIAH accuracy. Rung 5
+moves by the same {{ phase4.analysis.blocksize.ends.quest.niah_drop_pp | pp }} and gains a near-identical
+{{ phase4.analysis.blocksize.ends.quest.speedup | x }}, so the accuracy is lost to selection granularity,
+not to anything the tier does — §1's exactness holds at every block size swept.
+
+The speed comes from the host, not the link. Rung 6's manager time falls from
+{{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_lo | .1f }} ms to
+{{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_hi | .1f }} ms per token, because a larger block
+means fewer (head, block) pairs to rank and admit per layer. Transfer *efficiency* moves the wrong way
+over the same span: the mean transfer shrinks from {{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_lo | .0f }} KiB
+to {{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_hi | .0f }} KiB, crossing below the Phase 0
+knee at {{ phase4.analysis.blocksize.pcie_knee_kib | .0f }} KiB, because small blocks fetch many more pairs
+and `admit` coalesces long consecutive runs of them into single large copies. Larger blocks are the
+better setting here only because this machine is host-bound; on a system where PCIe were the constraint
+the sweep would read the other way.
+
 ## 7. The design probe that chose this configuration
 
 The first implementation sent one transfer per fetched pair and gave VRAM exactly the attended set.

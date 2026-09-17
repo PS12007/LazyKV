@@ -258,13 +258,37 @@ isolates the first effect, rung 6 pays both.
 
 | Block size | Policy | K blocks | Decode / token | Tokens/s | Manager host / token | NIAH accuracy | Retention | Mean KL | Pairs fetched / token | MiB fetched / token | Mean transfer, KiB | Thrash |
 | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 16 | Quest-style (rung 5) | – | 28.3 ms | 35.3 | 7.1 ms | not measured | not measured | not measured | – | – | – | – |
-| 16 | CPU tier, sync fetch (rung 6) | 512 | 57.7 ms | 17.3 | 25.8 ms | not measured | not measured | not measured | 1,588 | 6.2 | 454 | 42% |
+| 16 | Quest-style (rung 5) | – | 28.3 ms | 35.3 | 7.1 ms | 86.1% | 96.9% | 2.28e-02 | – | – | – | – |
+| 16 | CPU tier, sync fetch (rung 6) | 512 | 57.7 ms | 17.3 | 25.8 ms | 86.1% | 96.9% | 2.28e-02 | 1,588 | 6.2 | 454 | 42% |
+| 32 | Quest-style (rung 5) | – | 25.9 ms | 38.6 | 6.1 ms | 83.9% | 94.4% | 2.82e-02 | – | – | – | – |
+| 32 | CPU tier, sync fetch (rung 6) | 255 | 56.6 ms | 17.7 | 24.5 ms | 83.9% | 94.4% | 2.82e-02 | 628 | 4.9 | 359 | 38% |
+| 64 | Quest-style (rung 5) | – | 25.0 ms | 40.0 | 5.8 ms | 74.4% | 83.8% | 3.57e-02 | – | – | – | – |
+| 64 | CPU tier, sync fetch (rung 6) | 126 | 50.9 ms | 19.6 | 19.8 ms | 74.4% | 83.8% | 3.57e-02 | 204 | 3.2 | 235 | 30% |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_blocksize-dark.png">
   <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
 </picture>
+
+The sweep buys speed with quality, and it buys the same quality loss for both rungs. Going from
+16 to 64 tokens
+per block is worth 1.1× on rung 6
+(17.3 → 19.6 tokens/s)
+and costs -11.7 pp of NIAH accuracy. Rung 5
+moves by the same -11.7 pp and gains a near-identical
+1.1×, so the accuracy is lost to selection granularity,
+not to anything the tier does — §1's exactness holds at every block size swept.
+
+The speed comes from the host, not the link. Rung 6's manager time falls from
+25.8 ms to
+19.8 ms per token, because a larger block
+means fewer (head, block) pairs to rank and admit per layer. Transfer *efficiency* moves the wrong way
+over the same span: the mean transfer shrinks from 454 KiB
+to 235 KiB, crossing below the Phase 0
+knee at 386 KiB, because small blocks fetch many more pairs
+and `admit` coalesces long consecutive runs of them into single large copies. Larger blocks are the
+better setting here only because this machine is host-bound; on a system where PCIe were the constraint
+the sweep would read the other way.
 
 ## 7. The design probe that chose this configuration
 
