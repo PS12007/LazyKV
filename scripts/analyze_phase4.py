@@ -251,7 +251,43 @@ def main() -> None:
         "manager_ms_per_token": {pol: span([sp[label(pol, b)]["manager_host_s_per_token"]["median"] * 1e3 for b in budgets]) for pol in policies if speed},
         "hit_rate": {pol: span([v["hit_rate"] for v in rows.values() if v]) for pol, rows in tiers.items()},
         "fetch_mib_per_token": {pol: span([v["fetch_mib_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        # The gate's claim: the tier turns rung 5's attended budget into VRAM, at identical outputs.
+        "vram_saving_vs_quest_at": {
+            pol: {
+                f"b{round(100 * b)}": 1 - sp[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / sp[label("quest", b)]["gpu_resident_kv_bytes"]["median"]
+                for b in budgets
+            }
+            for pol in tiers
+            if speed
+        },
+        "identity_answers_differing": sum(v["niah_answers_differing"] for v in identity(q, policies, budgets).values()),
+        "identity_max_kl_diff": max((v["tf_max_abs_kl_diff"] or 0.0) for v in identity(q, policies, budgets).values()),
+        "thrash_share": {pol: span([v["thrash_share_of_fetches"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "rank_ms_per_token": {pol: span([v["host_rank_ms_per_token"] for v in rows.values() if v and v.get("host_rank_ms_per_token")]) for pol, rows in tiers.items()},
+        "fetch_ms_per_token": {pol: span([v["host_fetch_ms_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "seal_ms_per_token": {pol: span([v["host_seal_ms_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "boundary_d2h_s": span([v["boundary_d2h_s"] for rows in tiers.values() for v in rows.values() if v]),
+        "boundary_d2h_mib": span([v["boundary_d2h_mib"] for rows in tiers.values() for v in rows.values() if v]),
+        "host_pinned_mib": max((v["host_pinned_mib"] for rows in tiers.values() for v in rows.values() if v), default=None),
+        "fetched_pairs_per_token": {pol: span([v["fetched_pairs_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "prefetch_precision": span([v.get("prefetch_precision") for v in tiers.get("tiered_prefetch", {}).values() if v]),
+        "prefetch_coverage": span([v.get("prefetch_coverage") for v in tiers.get("tiered_prefetch", {}).values() if v]),
+        "dense_layers": next((r["dense_layers"] for r in q["niah"] if r["policy"] in TIERED), None),
     }
+    if tiers0:
+        summary["spare0"] = {
+            "fetched_pairs_per_token": {pol: span([v["fetched_pairs_per_token"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+            "thrash_share": {pol: span([v["thrash_share_of_fetches"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+            "resident_mib_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / MIB for b in budgets} for pol in tiers0},
+            "tokens_per_s_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["tokens_per_s"]["median"] for b in budgets} for pol in tiers0},
+            "hit_rate": {pol: span([v["hit_rate"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+        }
+    ov = overlap_summary(runs)
+    if ov:
+        summary["overlap_fraction_median"] = span([v["overlap_fraction_median"] for v in ov.values()])
+        summary["copy_ms_median"] = span([v["copy_ms_median"] for v in ov.values()])
+        summary["window_ms_median"] = span([v["window_ms_median"] for v in ov.values()])
+        summary["stalled_share"] = span([v["stalled_share"] for v in ov.values()])
     if speed:
         summary["full_resident_mib"] = sp["full@1"]["gpu_resident_kv_bytes"]["median"] / MIB
         summary["tokens_per_s_full"] = sp["full@1"]["tokens_per_s"]["median"]
