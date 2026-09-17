@@ -2,6 +2,8 @@
 
 Reads   results/phase4/policy_quality/metrics.json          (NIAH + teacher-forced, quality kernel)
         results/phase4/budget_speed/run_*/metrics.json       (decode latency and tier counters, fast kernel)
+        results/phase4/budget_speed_spare0/run_*/metrics.json (the same sweep with VRAM holding only the attended set)
+        results/phase4/probe_*/run_1/metrics.json            (single-repeat design probe that chose the tier config)
         results/phase4/blocksize_speed_bs*/run_*/metrics.json (block-size sweep, if present)
         results/phase4/blocksize_quality_bs*/metrics.json     (block-size sweep quality, if present)
 Writes  results/phase4/analysis/metrics.json
@@ -66,6 +68,7 @@ def tier_rates(runs: list[dict[str, Any]], policy: str, budget: float) -> dict[s
     rows = [r for run in runs for r in run["results"] if r["policy"] == policy and r["budget"] == budget and "tier" in r]
     if not rows:
         return {}
+    first = rows[0]["tier"]
     warm = runs[0]["config"]["speed"]["warmup_steps"]
     n_decode = warm + runs[0]["config"]["speed"]["decode_tokens"]
 
@@ -77,6 +80,10 @@ def tier_rates(runs: list[dict[str, Any]], policy: str, budget: float) -> dict[s
     t = lambda r: r["tier"]  # noqa: E731
     out: dict[str, Any] = {
         "k_blocks": rows[0]["k_blocks"],
+        "n_slots": first.get("n_slots", rows[0]["k_blocks"]),
+        "fetch": first.get("fetch", "runs"),
+        "decode_wall_median_s": med(lambda r: r["decode_wall_s"]["median"]),
+        "gpu_resident_kv_bytes": med(lambda r: r["gpu_resident_kv_bytes"]),
         "hit_rate": med(lambda r: t(r)["hit_pairs"] / t(r)["selected_pairs"]),
         "fetched_pairs_per_token": med(lambda r: t(r)["fetched_pairs"] / n_decode),
         "fetched_pairs_per_token_steady_median": statistics.median(steady) if steady else None,
@@ -88,6 +95,7 @@ def tier_rates(runs: list[dict[str, Any]], policy: str, budget: float) -> dict[s
         "thrash_share_of_fetches": med(lambda r: t(r)["thrash_pairs"] / t(r)["fetched_pairs"] if t(r)["fetched_pairs"] else 0.0),
         "selected_pairs_per_token": med(lambda r: t(r)["selected_pairs"] / n_decode),
         "host_select_ms_per_token": med(lambda r: 1e3 * t(r)["host_select_s"] / n_decode),
+        "host_rank_ms_per_token": med(lambda r: 1e3 * t(r)["host_rank_s"] / n_decode) if "host_rank_s" in rows[0]["tier"] else None,
         "host_fetch_ms_per_token": med(lambda r: 1e3 * t(r)["host_fetch_s"] / n_decode),
         "host_prefetch_ms_per_token": med(lambda r: 1e3 * t(r)["host_prefetch_s"] / n_decode),
         "host_seal_ms_per_token": med(lambda r: 1e3 * t(r)["host_seal_s"] / n_decode),
@@ -133,6 +141,30 @@ def overlap_summary(runs: list[dict[str, Any]]) -> dict[str, Any]:
             "stall_ms_p90": pct(acc["stall_ms"], 0.9),
             "stalled_share": sum(1 for x in acc["stall_ms"] if x > 0) / len(fr),
         }
+    return out
+
+
+def probe_table(base: Path) -> list[dict[str, Any]]:
+    """The design probe: one repeat per tier configuration, kept because it chose the gate's configuration."""
+    out = []
+    for d in sorted(base.glob("probe_*")):
+        runs = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(d.glob("run_*/metrics.json"))]
+        if not runs:
+            continue
+        full = [r["decode_wall_s"]["median"] for r in runs[0]["results"] if r["policy"] == "full"]
+        quest = {r["budget"]: r["decode_wall_s"]["median"] for r in runs[0]["results"] if r["policy"] == "quest"}
+        for policy in ("tiered_sync", "tiered_prefetch"):
+            for b in sorted({r["budget"] for r in runs[0]["results"] if r["policy"] == policy}, reverse=True):
+                t = tier_rates(runs, policy, b)
+                out.append({
+                    "probe": d.name,
+                    "policy": policy,
+                    "budget": b,
+                    "full_decode_s": full[0] if full else None,
+                    "quest_decode_s": quest.get(b),
+                    "provenance": runs[0]["provenance"],
+                    **t,
+                })
     return out
 
 
@@ -188,6 +220,9 @@ def main() -> None:
     head = headline(niah, speed, policies)
 
     tiers = {pol: {f"{b:g}": tier_rates(runs, pol, b) for b in budgets} for pol in policies if pol in TIERED}
+    runs0 = [json.loads(f.read_text(encoding="utf-8")) for f in sorted((base / f"{args.speed}_spare0").glob("run_*/metrics.json"))]
+    speed0 = speed_table(runs0) if runs0 else []
+    tiers0 = {pol: {f"{b:g}": tier_rates(runs0, pol, b) for b in budgets} for pol in policies if pol in TIERED} if runs0 else {}
 
     # Paired latency: within a repeat, both conditions decode from the same prefill, interleaved.
     def repeat_medians(pol: str, b: float) -> dict[tuple[int, int], float]:
@@ -248,6 +283,8 @@ def main() -> None:
             "tier": tiers,
             "latency_vs_quest": latency_vs_quest,
             "prefetch_overlap": overlap_summary(runs),
+            "spare0": {"speed": speed0, "tier": tiers0, "speed_runs": len(runs0), "prefetch_overlap": overlap_summary(runs0), "sources": [r["provenance"] for r in runs0]},
+            "probe": probe_table(base),
             "blocksize": blocksize_sweep(base),
             "summary": summary,
         },
