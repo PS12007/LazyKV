@@ -35,6 +35,29 @@ from lazykv.cache import CacheStats, FullGPUCache
 QUEST_DENSE_LAYERS = 2  # Quest: "we only apply Quest and all baselines on later layers"
 
 
+def top_blocks(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, k: int) -> torch.Tensor:
+    """Indices [1, kv, k] of the k candidate blocks with the highest Quest bound, per KV head.
+
+    `query` is [1, n_q, 1, d]; `kmin`/`kmax` are [1, kv, n, d] over the candidate blocks. Each
+    block is scored by the maximum bound over the head's query group, and `topk` returns the
+    blocks in descending bound order: callers gather in that order, so two runtimes that share
+    this function attend to identical key sequences.
+    """
+    n_q, n_kv, d = query.shape[1], kmin.shape[1], query.shape[-1]
+    q = query.view(1, n_kv, n_q // n_kv, d)
+    qp = q.clamp_min(0)
+    # sum_i max(q_i m_i, q_i M_i) = q+ . M + q- . m, per query head and block.
+    bound = (qp @ kmax.transpose(-1, -2)) + ((q - qp) @ kmin.transpose(-1, -2))  # [1, kv, g, n]
+    return bound.amax(dim=2).topk(k, dim=-1).indices
+
+
+def current_block_mask(total: int, block_size: int, fill: int, dtype: torch.dtype, device: torch.device, reuse: torch.Tensor | None = None) -> torch.Tensor:
+    """Additive mask [1, 1, 1, total] hiding the unfilled part of the current block, which is gathered last."""
+    mask = torch.zeros((1, 1, 1, total), dtype=dtype, device=device) if reuse is None else reuse.zero_()
+    mask[..., total - block_size + fill :] = float("-inf")
+    return mask
+
+
 def blocks_for_budget(fraction: float, total_tokens: int, block_size: int) -> int:
     """Selected blocks K such that sink + K blocks + the current block stay within the budget."""
     return max(1, math.floor(fraction * total_tokens / block_size) - 2)
@@ -125,13 +148,8 @@ class QuestView(Cache):
         st = self._state[layer_idx]
         self._refresh_metadata(layer_idx, self.full.layers[layer_idx].keys, n_full * bs)
         assert st.kmin is not None and st.kmax is not None
-        n_q, n_kv, d = query.shape[1], key.shape[1], query.shape[-1]
-        q = query.view(1, n_kv, n_q // n_kv, d)
-        qp = q.clamp_min(0)
-        kmin, kmax = st.kmin[:, :, 1:n_full], st.kmax[:, :, 1:n_full]
-        # sum_i max(q_i m_i, q_i M_i) = q+ . M + q- . m, per query head and block.
-        bound = (qp @ kmax.transpose(-1, -2)) + ((q - qp) @ kmin.transpose(-1, -2))  # [1, kv, g, n_full-1]
-        top = bound.amax(dim=2).topk(self.k_blocks, dim=-1).indices + 1  # [1, kv, K], block ids
+        n_kv, d = key.shape[1], query.shape[-1]
+        top = top_blocks(query, st.kmin[:, :, 1:n_full], st.kmax[:, :, 1:n_full], self.k_blocks) + 1  # [1, kv, K], block ids
         if self._offsets is None:
             self._offsets = torch.arange(bs, device=key.device)
         sink = torch.zeros((1, n_kv, 1), dtype=top.dtype, device=top.device)
@@ -145,13 +163,8 @@ class QuestView(Cache):
         storage_v = self.full.layers[layer_idx].values
         k_sel = torch.gather(storage_k, 2, idx)
         v_sel = torch.gather(storage_v, 2, idx)
-        total = (self.k_blocks + 2) * bs
-        if self._mask is None or self._mask_fill != fill:
-            if self._mask is None:
-                self._mask = torch.zeros((1, 1, 1, total), dtype=query.dtype, device=query.device)
-            else:
-                self._mask.zero_()
-            self._mask[..., total - bs + fill :] = float("-inf")
+        if self._mask_fill != fill:
+            self._mask = current_block_mask((self.k_blocks + 2) * bs, bs, fill, query.dtype, query.device, self._mask)
             self._mask_fill = fill
         self.counters.host_select_s += time.perf_counter() - t0
         self.counters.selections += 1
