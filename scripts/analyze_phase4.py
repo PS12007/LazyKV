@@ -238,6 +238,15 @@ def main() -> None:
             rows.append({"budget": b, "ratio_median": statistics.median(ratios) if ratios else None, "ratio_span": span(ratios), "delta_ms_median": statistics.median(deltas) if deltas else None, "pairs": len(ratios)})
         latency_vs_quest[pol] = rows
 
+    # Budgets at which the tier really offloads. With 2x slots the slot count is capped at the
+    # candidate blocks, so at the largest budgets every block is resident and the tier degenerates
+    # to rung 5 plus bookkeeping; spans over all budgets would hide the working range.
+    candidates = cfg["context"] // cfg["block_size"] - 1
+    active = {pol: [b for b in budgets if (rows.get(f"{b:g}") or {}).get("n_slots", 0) < candidates] for pol, rows in tiers.items()}
+
+    def tspan(rows: dict[str, Any], pol: str, key: str) -> dict[str, float] | None:
+        return span([rows[f"{b:g}"][key] for b in active.get(pol, budgets) if rows.get(f"{b:g}") and rows[f"{b:g}"].get(key) is not None])
+
     sp = {s["label"]: s for s in speed}
     nb = {pol: cond_rows(niah, pol) for pol in policies}
     summary: dict[str, Any] = {
@@ -249,8 +258,8 @@ def main() -> None:
         "tokens_per_s_at": {pol: {f"b{round(100 * b)}": sp[label(pol, b)]["tokens_per_s"]["median"] for b in budgets} for pol in policies if speed},
         "latency_ratio_vs_quest": {pol: span([r["ratio_median"] for r in rows if r["ratio_median"] is not None]) for pol, rows in latency_vs_quest.items()},
         "manager_ms_per_token": {pol: span([sp[label(pol, b)]["manager_host_s_per_token"]["median"] * 1e3 for b in budgets]) for pol in policies if speed},
-        "hit_rate": {pol: span([v["hit_rate"] for v in rows.values() if v]) for pol, rows in tiers.items()},
-        "fetch_mib_per_token": {pol: span([v["fetch_mib_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "hit_rate": {pol: tspan(rows, pol, "hit_rate") for pol, rows in tiers.items()},
+        "fetch_mib_per_token": {pol: tspan(rows, pol, "fetch_mib_per_token") for pol, rows in tiers.items()},
         # The gate's claim: the tier turns rung 5's attended budget into VRAM, at identical outputs.
         "vram_saving_vs_quest_at": {
             pol: {
@@ -262,22 +271,28 @@ def main() -> None:
         },
         "identity_answers_differing": sum(v["niah_answers_differing"] for v in identity(q, policies, budgets).values()),
         "identity_max_kl_diff": max((v["tf_max_abs_kl_diff"] or 0.0) for v in identity(q, policies, budgets).values()),
-        "thrash_share": {pol: span([v["thrash_share_of_fetches"] for v in rows.values() if v]) for pol, rows in tiers.items()},
-        "rank_ms_per_token": {pol: span([v["host_rank_ms_per_token"] for v in rows.values() if v and v.get("host_rank_ms_per_token")]) for pol, rows in tiers.items()},
-        "fetch_ms_per_token": {pol: span([v["host_fetch_ms_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
-        "seal_ms_per_token": {pol: span([v["host_seal_ms_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
+        "thrash_share": {pol: tspan(rows, pol, "thrash_share_of_fetches") for pol, rows in tiers.items()},
+        # Keyed without a decimal point: the doc renderer's lookup splits dotted paths.
+        "fetch_mib_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetch_mib_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers.items()},
+        "fetch_transfers_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["fetch_transfers_per_token"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers.items()},
+        "rank_ms_per_token": {pol: tspan(rows, pol, "host_rank_ms_per_token") for pol, rows in tiers.items()},
+        "fetch_ms_per_token": {pol: tspan(rows, pol, "host_fetch_ms_per_token") for pol, rows in tiers.items()},
+        "seal_ms_per_token": {pol: tspan(rows, pol, "host_seal_ms_per_token") for pol, rows in tiers.items()},
         "boundary_d2h_s": span([v["boundary_d2h_s"] for rows in tiers.values() for v in rows.values() if v]),
         "boundary_d2h_mib": span([v["boundary_d2h_mib"] for rows in tiers.values() for v in rows.values() if v]),
         "host_pinned_mib": max((v["host_pinned_mib"] for rows in tiers.values() for v in rows.values() if v), default=None),
-        "fetched_pairs_per_token": {pol: span([v["fetched_pairs_per_token"] for v in rows.values() if v]) for pol, rows in tiers.items()},
-        "prefetch_precision": span([v.get("prefetch_precision") for v in tiers.get("tiered_prefetch", {}).values() if v]),
-        "prefetch_coverage": span([v.get("prefetch_coverage") for v in tiers.get("tiered_prefetch", {}).values() if v]),
+        "fetched_pairs_per_token": {pol: tspan(rows, pol, "fetched_pairs_per_token") for pol, rows in tiers.items()},
+        "prefetch_precision": tspan(tiers.get("tiered_prefetch", {}), "tiered_prefetch", "prefetch_precision"),
+        "prefetch_coverage": tspan(tiers.get("tiered_prefetch", {}), "tiered_prefetch", "prefetch_coverage"),
+        "tier_active_budgets": active,
+        "tier_inactive_budgets": {pol: [b for b in budgets if b not in active.get(pol, [])] for pol in tiers},
         "dense_layers": next((r["dense_layers"] for r in q["niah"] if r["policy"] in TIERED), None),
     }
     if tiers0:
         summary["spare0"] = {
             "fetched_pairs_per_token": {pol: span([v["fetched_pairs_per_token"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
             "thrash_share": {pol: span([v["thrash_share_of_fetches"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
+            "hit_rate_at": {pol: {f"b{round(100 * b)}": rows[f"{b:g}"]["hit_rate"] for b in budgets if rows.get(f"{b:g}")} for pol, rows in tiers0.items()},
             "resident_mib_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / MIB for b in budgets} for pol in tiers0},
             "tokens_per_s_at": {pol: {f"b{round(100 * b)}": {s["label"]: s for s in speed0}[label(pol, b)]["tokens_per_s"]["median"] for b in budgets} for pol in tiers0},
             "hit_rate": {pol: span([v["hit_rate"] for v in rows.values() if v]) for pol, rows in tiers0.items()},
@@ -309,6 +324,7 @@ def main() -> None:
             "block_size": cfg["block_size"],
             "kv_bytes_per_token": q["kv_bytes_per_token"],
             "full_niah_accuracy": full_acc,
+            "niah_prompts_per_condition": len(full_scores),
             "full_niah_accuracy_ci95": bootstrap_mean_ci(list(full_scores.values())),
             "niah": niah,
             "teacher_forced": teacher_forced,

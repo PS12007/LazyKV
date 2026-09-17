@@ -1,0 +1,156 @@
+# Phase 4 gate report: the CPU tier, synchronous fetch and layer-ahead prefetch
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Phase 3 ended with a result that was half a result: query-aware selection (rung 5) retained
+{{ phase4.analysis.summary.retention_at.quest.b75 | pct }} of the full cache's NIAH accuracy while
+attending to a quarter of the sequence — but it *evicted nothing*, so its budget bought accuracy,
+not memory. Phase 4 puts the blocks it does not attend to in pinned host RAM and brings them back
+on demand (rung 6) or one layer ahead on a copy stream (rung 7).
+
+Because rungs 6 and 7 use rung 5's selection unchanged — same block metadata, same bound, same
+top-K, same gather order — their outputs should be *identical*, not merely close. That is the
+first thing measured, and it holds: the tier is a memory mechanism with no quality axis of its own.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: the tier reproduces rung 5 bit for bit on both kernels, with and without prefetch, under both fetch modes and with spare slots; the host pool holds exactly the KV rung 5 writes, for prompt blocks and for blocks sealed during decode; `admit` coalesces pairs that are consecutive in both pools into one transfer, evicts only outside the current selection, fills empty slots before occupied ones, and refuses a budget that covers every block; `close()` removes every prefetch hook. All Phase 0-3 tests still pass.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase4.yaml` and `scripts/02_budget_speed.py --config configs/phase4.yaml` ({{ phase4.analysis.speed_runs }} runs at 2× slots, {{ phase4.analysis.spare0.speed_runs }} with VRAM holding exactly the attended set), launched detached from a clean tree. Provenance below.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was built
+
+| Piece | Where | Design choice and why |
+|---|---|---|
+| Pinned host pools | `lazykv/tiered.py` (`allocate_host_pools`) | One pinned tensor per selecting layer, `[blocks, heads, 2, block_size, head_dim]`, so one (head, block) pair is contiguous and a run of pairs is one transfer. Allocated once per process: pinning {{ phase4.analysis.summary.host_pinned_mib | int }} MiB inside a timed condition would measure the allocator, not the policy. |
+| Residency unit | `lazykv/tiered.py` (`TieredLayer`) | Per (layer, **KV head**, block). Selection is per head, so a per-block unit would have to hold the union of all heads' choices — up to 8× the attended set on this model. |
+| Seal-time D2H only | `TieredLayer._seal` | KV is immutable once written and Phase 0 measured one copy engine, so each block is copied to host exactly once, when it seals, and never written back on eviction. |
+| Rung 6: synchronous fetch | `TieredCache.select` | Bound, rank, bring the missing pairs in on the compute stream, then attend. Victims: least recently selected slots outside the current selection. |
+| Rung 7: layer-ahead prefetch | `TieredCache._make_hook` | A forward pre-hook on layer L speculates layer L+1's query from L's input hidden state (InfiniGen's premise that the residual stream changes little between adjacent layers), through L+1's own norm, `q_proj` and RoPE, and issues the copies on a separate stream while L computes. |
+| Two fetch mechanisms | `TieredLayer.admit` | `runs`: one H2D per run of pairs consecutive in both pools. `gather`: a host-side gather into pinned staging, one H2D per layer, then a device scatter. The probe below chose between them by measurement. |
+| Overlap and thrash instrumentation | `TierCounters`, `TieredCache.overlap` | CUDA events on every prefetch copy and on the compute stream from launch until the target layer selects; re-fetches of pairs evicted within the last 16 steps are counted as thrash. |
+
+Context, budgets, block size ({{ phase4.analysis.block_size }} tokens), prompts, needle set and
+decode lengths are Phase 2's and Phase 3's, so every phase is directly comparable, and rung 5 is
+re-measured inside this run.
+
+## Headline findings
+
+1. **The tier is exact: it changes where KV lives, not what the model says.** Across
+   {{ phase4.analysis.identity_vs_quest.tiered_sync.niah_prompt_conditions }} prompt × budget NIAH
+   cells per policy, rungs 6 and 7 produced
+   **{{ phase4.analysis.summary.identity_answers_differing | int }} answers** different from rung 5,
+   and the largest teacher-forced KL difference against rung 5 was
+   **{{ phase4.analysis.summary.identity_max_kl_diff | .1e }} nats**. The accuracy column of §1 is
+   rung 5's column, re-measured.
+2. **The attended budget is now a memory budget.** At a 25% attended budget, rung 6 holds
+   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b25 | int }} MiB of KV in VRAM
+   against rung 5's {{ phase4.analysis.summary.resident_mib_at.quest.b25 | int }} MiB for the same
+   answers, and at 6.25% it holds
+   {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b6 | int }} MiB. What is left is
+   dominated by the {{ phase4.analysis.summary.dense_layers }} dense layers that Quest's method
+   keeps fully resident, which the budget never touches.
+3. **The price is latency, and it is large.** Rung 6 decodes at
+   {{ phase4.analysis.summary.tokens_per_s_at.tiered_sync.b25 | .1f }} tokens/s at a 25% budget
+   against rung 5's {{ phase4.analysis.summary.tokens_per_s_at.quest.b25 | .1f }} and the full
+   cache's {{ phase4.analysis.summary.tokens_per_s_full | .1f }}. Every selecting layer must bring
+   its top-K indices to the host before it can decide what to fetch, and that host round trip, not
+   the PCIe transfer, is the dominant new cost (§3).
+4. **Selection churns, and spare VRAM absorbs it.** With VRAM holding exactly the attended set,
+   {{ phase4.analysis.summary.spare0.fetched_pairs_per_token.tiered_sync.max | int }} (head, block)
+   pairs per token have to be re-fetched at the worst budget, and
+   {{ phase4.analysis.summary.spare0.thrash_share.tiered_sync.max | pct0 }} of those fetches are
+   blocks evicted within the previous 16 steps. Doubling the slots cuts fetches to
+   {{ phase4.analysis.summary.fetched_pairs_per_token.tiered_sync.min | int }}–{{ phase4.analysis.summary.fetched_pairs_per_token.tiered_sync.max | int }}
+   per token and thrash to {{ phase4.analysis.summary.thrash_share.tiered_sync.min | pct0 }}–{{ phase4.analysis.summary.thrash_share.tiered_sync.max | pct0 }}.
+5. **Negative result: layer-ahead prefetch never stalls and still loses.** Every prefetch copy
+   finished inside the window it was launched into
+   ({{ phase4.analysis.summary.overlap_fraction_median.min | pct0 }}–{{ phase4.analysis.summary.overlap_fraction_median.max | pct0 }}
+   of the copy inside the window, copies of
+   {{ phase4.analysis.summary.copy_ms_median.min | .2f }}–{{ phase4.analysis.summary.copy_ms_median.max | .2f }} ms
+   against windows of
+   {{ phase4.analysis.summary.window_ms_median.min | .2f }}–{{ phase4.analysis.summary.window_ms_median.max | .2f }} ms),
+   so the transfer is fully hidden — exactly what Phase 0's overlap measurement predicted. It still
+   makes decode slower, because speculating costs a second host round trip per layer and its
+   precision is only
+   {{ phase4.analysis.summary.prefetch_precision.min | pct0 }}–{{ phase4.analysis.summary.prefetch_precision.max | pct0 }}:
+   the wrong guesses evict blocks the real selection then has to fetch back. **On a host-bound
+   decode, hiding a transfer that was never the bottleneck buys nothing.**
+6. **The bottleneck moved from PCIe to the host, and the numbers say so.** At a 25% budget rung 6
+   moves {{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token in
+   {{ phase4.analysis.summary.fetch_transfers_at.tiered_sync.b25 | .0f }} transfers, which at
+   the Phase 0 pinned-H2D asymptote is under a millisecond of link time, while ranking and its host
+   sync alone cost
+   {{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.min | .1f }}–{{ phase4.analysis.summary.rank_ms_per_token.tiered_sync.max | .1f }} ms
+   per token. This is the same host-bound regime Phase 1 measured for plain decode, now with 14
+   extra synchronizations in it.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_tradeoff-dark.png">
+  <img alt="Decode tokens per second against GPU-resident KV for rungs 5 to 7, and a breakdown of the tier's host time per token" src="../figures/p4_tradeoff-light.png">
+</picture>
+
+## 1. NIAH retrieval
+
+The same {{ phase4.analysis.niah_prompts_per_condition }} prompts per condition as Phases 2 and 3,
+at {{ phase4.analysis.context | int }} tokens, scored on the repeatable quality kernel.
+
+{{> p4_niah }}
+
+Rungs 6 and 7 are rung 5's selection over a CPU tier, so their rows should be identical to rung 5's,
+not similar to them. Measured:
+
+{{> p4_identity }}
+
+## 2. Teacher-forced divergence
+
+{{> p4_teacher_forced }}
+
+## 3. What the tier does per token
+
+"Pairs" are (KV head, block) units: the residency unit. "Thrash" is the share of on-demand fetches
+that bring back a pair evicted within the previous 16 steps. The two VRAM-slot variants are the
+same sweep run twice: slots for exactly the attended set, and slots for twice it.
+
+{{> p4_tier }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_fetch-dark.png">
+  <img alt="Pairs fetched per token and the thrash share, by budget, for both slot variants" src="../figures/p4_fetch-light.png">
+</picture>
+
+## 4. Speed
+
+Fast kernel, power throttling opted out, {{ phase4.analysis.speed_runs }} independent runs at 2×
+slots. Conditions that spilled into shared system memory:
+{{ phase4.analysis.summary.conditions_with_spill }}.
+
+{{> p4_speed }}
+
+## 5. Prefetch overlap, measured inside real decode
+
+For every prefetch that moved bytes: the copy's interval on the copy stream against the compute
+stream's interval from the launch until the target layer began selecting.
+
+{{> p4_overlap }}
+
+## 6. The design probe that chose this configuration
+
+The first implementation sent one transfer per fetched pair and gave VRAM exactly the attended set.
+It was slow, and the counters said why, so four configurations were measured at one repeat each
+before the gate sweep. They are reported because they are the evidence for the gate's configuration,
+and because the first two rows are the honest starting point.
+
+{{> p4_probe }}
+
+`probe_per_pair_transfers` and `probe_runs_spare0` are the same configuration measured twice, which
+is the only repeatability estimate these single-repeat probes have.
+
+## 7. Headline number (brief §B8)
+
+{{> p4_headline }}
+
+## 8. Provenance
+
+{{> p4_provenance }}
