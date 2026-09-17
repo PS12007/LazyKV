@@ -21,7 +21,9 @@ def _git(*args: str) -> str | None:
         )
     except (OSError, subprocess.CalledProcessError):
         return None
-    return out.stdout.strip()
+    # rstrip only: porcelain status lines start with a significant space (" M path"), and a full
+    # strip() cut the first dirty file's name short by one character.
+    return out.stdout.rstrip()
 
 
 def provenance() -> dict[str, Any]:
