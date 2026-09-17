@@ -1,13 +1,10 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-17T20:47:41+00:00",
-    "git_commit": "294cdcb28f0ad01d2a1e4737e8a4203cd4faf399",
+    "generated_at_utc": "2026-09-17T21:11:55+00:00",
+    "git_commit": "4be2f9f15cc5a2174eb926066f1b81cbf97cac21",
     "git_dirty": true,
     "git_dirty_files": [
-      "docs/figures/p4_blocksize-dark.png",
-      "docs/figures/p4_blocksize-light.png",
-      "docs/phases/PHASE_4.md",
       "results/phase4/analysis/metrics.json",
       "scripts/analyze_phase4.py"
     ],
@@ -5267,33 +5264,387 @@
             "python": "3.12.10"
           }
         ]
+      },
+      {
+        "block_size": 128,
+        "policy": "quest",
+        "budget": 0.25,
+        "decode_wall_median_s": {
+          "n_runs": 1,
+          "median": 0.024820600003295112,
+          "min": 0.024820600003295112,
+          "max": 0.024820600003295112
+        },
+        "tokens_per_s": {
+          "n_runs": 1,
+          "median": 40.2891146816452,
+          "min": 40.2891146816452,
+          "max": 40.2891146816452
+        },
+        "manager_host_s_per_token": {
+          "n_runs": 1,
+          "median": 0.005835867671145448,
+          "min": 0.005835867671145448,
+          "max": 0.005835867671145448
+        },
+        "niah_accuracy": 0.6888888888888889,
+        "niah_retention": 0.775,
+        "tf_mean_kl": 0.042861992637242816,
+        "tier": {},
+        "provenance": [
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:40:40+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_budget_speed.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "128",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_speed_bs128",
+              "--run-id",
+              "1"
+            ],
+            "python": "3.12.10"
+          },
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:55:01+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_policy_quality.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "128",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_quality_bs128"
+            ],
+            "python": "3.12.10"
+          }
+        ]
+      },
+      {
+        "block_size": 128,
+        "policy": "tiered_sync",
+        "budget": 0.25,
+        "decode_wall_median_s": {
+          "n_runs": 1,
+          "median": 0.04725124999822583,
+          "min": 0.04725124999822583,
+          "max": 0.04725124999822583
+        },
+        "tokens_per_s": {
+          "n_runs": 1,
+          "median": 21.16346128488765,
+          "min": 21.16346128488765,
+          "max": 21.16346128488765
+        },
+        "manager_host_s_per_token": {
+          "n_runs": 1,
+          "median": 0.017109023308411197,
+          "min": 0.017109023308411197,
+          "max": 0.017109023308411197
+        },
+        "niah_accuracy": 0.6888888888888889,
+        "niah_retention": 0.775,
+        "tf_mean_kl": 0.042861992637242816,
+        "tier": {
+          "k_blocks": 62,
+          "n_slots": 124,
+          "fetch": "gather",
+          "decode_wall_median_s": 0.04725124999822583,
+          "gpu_resident_kv_bytes": 637267712,
+          "hit_rate": 0.9862574061882817,
+          "fetched_pairs_per_token": 95.42857142857143,
+          "fetched_pairs_per_token_steady_median": 63.5,
+          "fetched_pairs_per_token_steady_p90": 118,
+          "first_step_fetched_pairs": 1584,
+          "fetch_mib_per_token": 2.982142857142857,
+          "fetch_transfers_per_token": 12.849624060150376,
+          "fetch_mean_transfer_kib": 237.6500877706261,
+          "thrash_share_of_fetches": 0.3510872990860385,
+          "selected_pairs_per_token": 6944.0,
+          "host_select_ms_per_token": 17.085663910169167,
+          "host_rank_ms_per_token": 6.267853381564749,
+          "host_fetch_ms_per_token": 6.974018045615307,
+          "host_prefetch_ms_per_token": 0.0,
+          "host_seal_ms_per_token": 0.025846616516442954,
+          "boundary_d2h_s": 0.06266750002396293,
+          "boundary_d2h_mib": 896.0,
+          "host_pinned_mib": 955.0,
+          "pair_kib": 32.0
+        },
+        "provenance": [
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:40:40+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_budget_speed.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "128",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_speed_bs128",
+              "--run-id",
+              "1"
+            ],
+            "python": "3.12.10"
+          },
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:55:01+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_policy_quality.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "128",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_quality_bs128"
+            ],
+            "python": "3.12.10"
+          }
+        ]
+      },
+      {
+        "block_size": 256,
+        "policy": "quest",
+        "budget": 0.25,
+        "decode_wall_median_s": {
+          "n_runs": 1,
+          "median": 0.02473144999385113,
+          "min": 0.02473144999385113,
+          "max": 0.02473144999385113
+        },
+        "tokens_per_s": {
+          "n_runs": 1,
+          "median": 40.43434575201315,
+          "min": 40.43434575201315,
+          "max": 40.43434575201315
+        },
+        "manager_host_s_per_token": {
+          "n_runs": 1,
+          "median": 0.005861447367570328,
+          "min": 0.005861447367570328,
+          "max": 0.005861447367570328
+        },
+        "niah_accuracy": 0.5722222222222222,
+        "niah_retention": 0.64375,
+        "tf_mean_kl": 0.05082522597614099,
+        "tier": {},
+        "provenance": [
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:56:41+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_budget_speed.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "256",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_speed_bs256",
+              "--run-id",
+              "1"
+            ],
+            "python": "3.12.10"
+          },
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T21:11:03+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_policy_quality.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "256",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_quality_bs256"
+            ],
+            "python": "3.12.10"
+          }
+        ]
+      },
+      {
+        "block_size": 256,
+        "policy": "tiered_sync",
+        "budget": 0.25,
+        "decode_wall_median_s": {
+          "n_runs": 1,
+          "median": 0.0315818999952171,
+          "min": 0.0315818999952171,
+          "max": 0.0315818999952171
+        },
+        "tokens_per_s": {
+          "n_runs": 1,
+          "median": 31.66370611494066,
+          "min": 31.66370611494066,
+          "max": 31.66370611494066
+        },
+        "manager_host_s_per_token": {
+          "n_runs": 1,
+          "median": 0.011199604510460958,
+          "min": 0.011199604510460958,
+          "max": 0.011199604510460958
+        },
+        "niah_accuracy": 0.5722222222222222,
+        "niah_retention": 0.64375,
+        "tf_mean_kl": 0.05082522597614099,
+        "tier": {
+          "k_blocks": 30,
+          "n_slots": 60,
+          "fetch": "gather",
+          "decode_wall_median_s": 0.0315818999952171,
+          "gpu_resident_kv_bytes": 625090304,
+          "hit_rate": 0.9878088077336198,
+          "fetched_pairs_per_token": 40.962406015037594,
+          "fetched_pairs_per_token_steady_median": 26.0,
+          "fetched_pairs_per_token_steady_p90": 53,
+          "first_step_fetched_pairs": 694,
+          "fetch_mib_per_token": 2.5601503759398496,
+          "fetch_transfers_per_token": 10.37593984962406,
+          "fetch_mean_transfer_kib": 253.06550218340612,
+          "thrash_share_of_fetches": 0.3608663729809104,
+          "selected_pairs_per_token": 3360.0,
+          "host_select_ms_per_token": 11.19960451046096,
+          "host_rank_ms_per_token": 4.568863910871481,
+          "host_fetch_ms_per_token": 3.910596990240983,
+          "host_prefetch_ms_per_token": 0.0,
+          "host_seal_ms_per_token": 0.0,
+          "boundary_d2h_s": 0.085619899968151,
+          "boundary_d2h_mib": 896.0,
+          "host_pinned_mib": 954.0,
+          "pair_kib": 64.0
+        },
+        "provenance": [
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T20:56:41+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_budget_speed.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "256",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_speed_bs256",
+              "--run-id",
+              "1"
+            ],
+            "python": "3.12.10"
+          },
+          {
+            "schema_version": 1,
+            "generated_at_utc": "2026-09-17T21:11:03+00:00",
+            "git_commit": "c8971b78bbb7a26cef5ad48c61319b82ac355672",
+            "git_dirty": false,
+            "git_dirty_files": [],
+            "argv": [
+              "scripts\\02_policy_quality.py",
+              "--config",
+              "configs\\phase4.yaml",
+              "--block-size",
+              "256",
+              "--budgets",
+              "0.25",
+              "--policies",
+              "quest",
+              "tiered_sync",
+              "--out",
+              "blocksize_quality_bs256"
+            ],
+            "python": "3.12.10"
+          }
+        ]
       }
     ],
     "pcie_knee_kib": 386.05747160384993,
     "ends": {
       "min_block": 16,
-      "max_block": 64,
+      "max_block": 256,
       "quest": {
         "tokens_per_s_lo": 35.31123320720109,
-        "tokens_per_s_hi": 39.99536053544325,
-        "speedup": 1.1326526122935552,
+        "tokens_per_s_hi": 40.43434575201315,
+        "speedup": 1.1450844980335406,
         "niah_lo": 0.8611111111111112,
-        "niah_hi": 0.7444444444444445,
+        "niah_hi": 0.5722222222222222,
         "manager_ms_lo": 7.126796992164792,
-        "manager_ms_hi": 5.823531580097182,
-        "niah_drop_pp": -0.1166666666666667
+        "manager_ms_hi": 5.861447367570328,
+        "niah_drop_pp": -0.288888888888889
       },
       "tiered_sync": {
         "tokens_per_s_lo": 17.33841464489132,
-        "tokens_per_s_hi": 19.633655620468243,
-        "speedup": 1.1323789413614702,
+        "tokens_per_s_hi": 31.66370611494066,
+        "speedup": 1.8262169156434507,
         "niah_lo": 0.8611111111111112,
-        "niah_hi": 0.7444444444444445,
+        "niah_hi": 0.5722222222222222,
         "manager_ms_lo": 25.830373682779317,
-        "manager_ms_hi": 19.786064662813924,
-        "niah_drop_pp": -0.1166666666666667,
+        "manager_ms_hi": 11.199604510460958,
+        "niah_drop_pp": -0.288888888888889,
         "transfer_kib_lo": 453.77228786251345,
-        "transfer_kib_hi": 234.94327390599676
+        "transfer_kib_hi": 253.06550218340612,
+        "transfer_kib_min_block": 64,
+        "transfer_kib_min": 234.94327390599676,
+        "frac_of_ref_lo": 0.49101696740955114,
+        "frac_of_ref_hi": 0.7830893644016531
       }
     }
   },

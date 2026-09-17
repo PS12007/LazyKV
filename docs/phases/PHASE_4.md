@@ -264,31 +264,53 @@ isolates the first effect, rung 6 pays both.
 | 32 | CPU tier, sync fetch (rung 6) | 255 | 56.6 ms | 17.7 | 24.5 ms | 83.9% | 94.4% | 2.82e-02 | 628 | 4.9 | 359 | 38% |
 | 64 | Quest-style (rung 5) | – | 25.0 ms | 40.0 | 5.8 ms | 74.4% | 83.8% | 3.57e-02 | – | – | – | – |
 | 64 | CPU tier, sync fetch (rung 6) | 126 | 50.9 ms | 19.6 | 19.8 ms | 74.4% | 83.8% | 3.57e-02 | 204 | 3.2 | 235 | 30% |
+| 128 | Quest-style (rung 5) | – | 24.8 ms | 40.3 | 5.8 ms | 68.9% | 77.5% | 4.29e-02 | – | – | – | – |
+| 128 | CPU tier, sync fetch (rung 6) | 62 | 47.3 ms | 21.2 | 17.1 ms | 68.9% | 77.5% | 4.29e-02 | 95 | 3.0 | 238 | 35% |
+| 256 | Quest-style (rung 5) | – | 24.7 ms | 40.4 | 5.9 ms | 57.2% | 64.4% | 5.08e-02 | – | – | – | – |
+| 256 | CPU tier, sync fetch (rung 6) | 30 | 31.6 ms | 31.7 | 11.2 ms | 57.2% | 64.4% | 5.08e-02 | 41 | 2.6 | 253 | 36% |
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../figures/p4_blocksize-dark.png">
   <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
 </picture>
 
-The sweep buys speed with quality, and it buys the same quality loss for both rungs. Going from
-16 to 64 tokens
-per block is worth 1.1× on rung 6
-(17.3 → 19.6 tokens/s)
-and costs -11.7 pp of NIAH accuracy. Rung 5
-moves by the same -11.7 pp and gains a near-identical
-1.1×, so the accuracy is lost to selection granularity,
-not to anything the tier does — §1's exactness holds at every block size swept.
+The sweep buys speed with quality, and the quality half of that trade is identical for both rungs.
+Going from 16 to 256
+tokens per block costs -28.9 pp of NIAH accuracy
+(86.1% → 57.2%),
+and rung 5 loses exactly the same -28.9 pp. The accuracy
+goes to selection granularity, not to anything the tier does — §1's exactness holds at every block size
+swept. Retention is below the brief's 99% bar at every block size in this sweep, including the smallest
+(86.1% accuracy at
+16 tokens), so no setting here is a free win — this sweep is a
+trade curve, not a search for a better default.
 
-The speed comes from the host, not the link. Rung 6's manager time falls from
-25.8 ms to
-19.8 ms per token, because a larger block
-means fewer (head, block) pairs to rank and admit per layer. Transfer *efficiency* moves the wrong way
-over the same span: the mean transfer shrinks from 454 KiB
-to 235 KiB, crossing below the Phase 0
-knee at 386 KiB, because small blocks fetch many more pairs
-and `admit` coalesces long consecutive runs of them into single large copies. Larger blocks are the
-better setting here only because this machine is host-bound; on a system where PCIe were the constraint
-the sweep would read the other way.
+The speed half is **not** shared, and that is the useful result. Rung 5 saturates almost immediately:
+it gains only 1.1× across the whole sweep, because its
+manager time is already down to 5.9 ms/token
+and there is nothing left to remove. Rung 6 gains 1.8×
+(17.3 → 31.7 tokens/s),
+because its manager time is the thing block size actually attacks: fewer (head, block) pairs to rank and
+admit per layer drops it from 25.8 ms to
+11.2 ms/token. The tier closes most of its
+gap to rung 5 as a result — from 49% of
+rung 5's throughput at 16 tokens to
+78% at 256.
+This is §3's finding arriving from a second direction: the tier's penalty is per-pair host work, so the one
+knob that reduces pair count helps it disproportionately, and it helps rung 5 hardly at all.
+
+The link is not what improves. Mean transfer size is not even monotonic in block size — it bottoms out at
+235 KiB at
+64 tokens and comes back up to
+253 KiB, having started at
+454 KiB. Small blocks fetch many more
+pairs, and `admit` coalesces long consecutive runs of them into single large copies, so the smallest block
+size produces the *largest* transfers — the only point in the sweep above the Phase 0 efficiency knee at
+386 KiB. Every speed gain across the sweep comes from the
+host, and none of it from better use of the link.
+
+Larger blocks are the better setting on this machine only because it is host-bound, and only if the
+accuracy is affordable. On a system where PCIe were the constraint the sweep would read the other way.
 
 ## 7. The design probe that chose this configuration
 

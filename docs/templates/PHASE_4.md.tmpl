@@ -173,25 +173,43 @@ isolates the first effect, rung 6 pays both.
   <img alt="NIAH accuracy, decode speed and mean transfer size against block size, for rung 5 and rung 6" src="../figures/p4_blocksize-light.png">
 </picture>
 
-The sweep buys speed with quality, and it buys the same quality loss for both rungs. Going from
-{{ phase4.analysis.blocksize.ends.min_block }} to {{ phase4.analysis.blocksize.ends.max_block }} tokens
-per block is worth {{ phase4.analysis.blocksize.ends.tiered_sync.speedup | x }} on rung 6
-({{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_lo | .1f }} → {{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_hi | .1f }} tokens/s)
-and costs {{ phase4.analysis.blocksize.ends.tiered_sync.niah_drop_pp | pp }} of NIAH accuracy. Rung 5
-moves by the same {{ phase4.analysis.blocksize.ends.quest.niah_drop_pp | pp }} and gains a near-identical
-{{ phase4.analysis.blocksize.ends.quest.speedup | x }}, so the accuracy is lost to selection granularity,
-not to anything the tier does — §1's exactness holds at every block size swept.
+The sweep buys speed with quality, and the quality half of that trade is identical for both rungs.
+Going from {{ phase4.analysis.blocksize.ends.min_block }} to {{ phase4.analysis.blocksize.ends.max_block }}
+tokens per block costs {{ phase4.analysis.blocksize.ends.tiered_sync.niah_drop_pp | pp }} of NIAH accuracy
+({{ phase4.analysis.blocksize.ends.tiered_sync.niah_lo | pct }} → {{ phase4.analysis.blocksize.ends.tiered_sync.niah_hi | pct }}),
+and rung 5 loses exactly the same {{ phase4.analysis.blocksize.ends.quest.niah_drop_pp | pp }}. The accuracy
+goes to selection granularity, not to anything the tier does — §1's exactness holds at every block size
+swept. Retention is below the brief's 99% bar at every block size in this sweep, including the smallest
+({{ phase4.analysis.blocksize.ends.tiered_sync.niah_lo | pct }} accuracy at
+{{ phase4.analysis.blocksize.ends.min_block }} tokens), so no setting here is a free win — this sweep is a
+trade curve, not a search for a better default.
 
-The speed comes from the host, not the link. Rung 6's manager time falls from
-{{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_lo | .1f }} ms to
-{{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_hi | .1f }} ms per token, because a larger block
-means fewer (head, block) pairs to rank and admit per layer. Transfer *efficiency* moves the wrong way
-over the same span: the mean transfer shrinks from {{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_lo | .0f }} KiB
-to {{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_hi | .0f }} KiB, crossing below the Phase 0
-knee at {{ phase4.analysis.blocksize.pcie_knee_kib | .0f }} KiB, because small blocks fetch many more pairs
-and `admit` coalesces long consecutive runs of them into single large copies. Larger blocks are the
-better setting here only because this machine is host-bound; on a system where PCIe were the constraint
-the sweep would read the other way.
+The speed half is **not** shared, and that is the useful result. Rung 5 saturates almost immediately:
+it gains only {{ phase4.analysis.blocksize.ends.quest.speedup | x }} across the whole sweep, because its
+manager time is already down to {{ phase4.analysis.blocksize.ends.quest.manager_ms_hi | .1f }} ms/token
+and there is nothing left to remove. Rung 6 gains {{ phase4.analysis.blocksize.ends.tiered_sync.speedup | x }}
+({{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_lo | .1f }} → {{ phase4.analysis.blocksize.ends.tiered_sync.tokens_per_s_hi | .1f }} tokens/s),
+because its manager time is the thing block size actually attacks: fewer (head, block) pairs to rank and
+admit per layer drops it from {{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_lo | .1f }} ms to
+{{ phase4.analysis.blocksize.ends.tiered_sync.manager_ms_hi | .1f }} ms/token. The tier closes most of its
+gap to rung 5 as a result — from {{ phase4.analysis.blocksize.ends.tiered_sync.frac_of_ref_lo | pct0 }} of
+rung 5's throughput at {{ phase4.analysis.blocksize.ends.min_block }} tokens to
+{{ phase4.analysis.blocksize.ends.tiered_sync.frac_of_ref_hi | pct0 }} at {{ phase4.analysis.blocksize.ends.max_block }}.
+This is §3's finding arriving from a second direction: the tier's penalty is per-pair host work, so the one
+knob that reduces pair count helps it disproportionately, and it helps rung 5 hardly at all.
+
+The link is not what improves. Mean transfer size is not even monotonic in block size — it bottoms out at
+{{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_min | .0f }} KiB at
+{{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_min_block }} tokens and comes back up to
+{{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_hi | .0f }} KiB, having started at
+{{ phase4.analysis.blocksize.ends.tiered_sync.transfer_kib_lo | .0f }} KiB. Small blocks fetch many more
+pairs, and `admit` coalesces long consecutive runs of them into single large copies, so the smallest block
+size produces the *largest* transfers — the only point in the sweep above the Phase 0 efficiency knee at
+{{ phase4.analysis.blocksize.pcie_knee_kib | .0f }} KiB. Every speed gain across the sweep comes from the
+host, and none of it from better use of the link.
+
+Larger blocks are the better setting on this machine only because it is host-bound, and only if the
+accuracy is affordable. On a system where PCIe were the constraint the sweep would read the other way.
 
 ## 7. The design probe that chose this configuration
 

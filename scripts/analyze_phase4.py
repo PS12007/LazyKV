@@ -232,7 +232,17 @@ def blocksize_ends(rows: list[dict[str, Any]]) -> dict[str, Any]:
         if lo["tier"] and hi["tier"]:
             e["transfer_kib_lo"] = lo["tier"]["fetch_mean_transfer_kib"]
             e["transfer_kib_hi"] = hi["tier"]["fetch_mean_transfer_kib"]
+            # Transfer size is not monotonic in block size: coalescing shrinks as fewer pairs are
+            # fetched, so report where it actually bottoms out rather than implying a trend.
+            xfer = [(r["block_size"], r["tier"]["fetch_mean_transfer_kib"]) for r in rows if r["policy"] == pol and r["tier"]]
+            e["transfer_kib_min_block"], e["transfer_kib_min"] = min(xfer, key=lambda kv: kv[1])
         out[pol] = e
+    # How much of rung 5's speed the tier recovers at each end of the sweep.
+    ref = out.get(REFERENCE)
+    for pol in TIERED:
+        if pol in out and ref:
+            out[pol]["frac_of_ref_lo"] = out[pol]["tokens_per_s_lo"] / ref["tokens_per_s_lo"]
+            out[pol]["frac_of_ref_hi"] = out[pol]["tokens_per_s_hi"] / ref["tokens_per_s_hi"]
     return out
 
 
