@@ -34,6 +34,7 @@ OUTPUTS = {
     "PHASE_2.md.tmpl": "docs/phases/PHASE_2.md",
     "PHASE_3.md.tmpl": "docs/phases/PHASE_3.md",
     "PHASE_4.md.tmpl": "docs/phases/PHASE_4.md",
+    "PHASE_5.md.tmpl": "docs/phases/PHASE_5.md",
 }
 
 GENERATED_BANNER = (
@@ -737,6 +738,7 @@ POLICY_NAMES = {
     "quest": "Quest-style (rung 5)",
     "tiered_sync": "CPU tier, sync fetch (rung 6)",
     "tiered_prefetch": "CPU tier + prefetch (rung 7)",
+    "tiered_int8": "CPU tier, int8 warm/cold (rung 8)",
 }
 
 
@@ -1107,6 +1109,150 @@ def block_p4_blocksize(ctx: Mapping[str, Any]) -> str:
         rows,
         ["---:", "---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"],
     )
+
+
+# -- Phase 5: the int8 warm/cold tier (rung 8) ------------------------------------------------
+
+
+def block_p5_niah(ctx: Mapping[str, Any]) -> str:
+    return _sweep_niah(ctx, "phase5")
+
+
+def block_p5_teacher_forced(ctx: Mapping[str, Any]) -> str:
+    return _sweep_teacher_forced(ctx, "phase5")
+
+
+def block_p5_speed(ctx: Mapping[str, Any]) -> str:
+    return _sweep_speed(ctx, "phase5")
+
+
+def block_p5_headline(ctx: Mapping[str, Any]) -> str:
+    return _sweep_headline(ctx, "phase5")
+
+
+def block_p5_provenance(ctx: Mapping[str, Any]) -> str:
+    return _sweep_provenance(ctx, "phase5")
+
+
+def block_p5_capacity(ctx: Mapping[str, Any]) -> str:
+    """What rung 8 saves: stored off-GPU, pinned, and moved. The point of the phase."""
+    rows_in = lookup(ctx, "phase5.analysis.capacity")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            _pct_budget(r["budget"]),
+            f"{r['host_kv_mib_exact']:,.0f}",
+            f"{r['host_kv_mib_int8']:,.0f}",
+            f"{r['host_kv_ratio']:.3f}x" if r["host_kv_ratio"] is not None else NOT_MEASURED,
+            f"{r['host_pinned_mib_exact']:,.0f}",
+            f"{r['host_pinned_mib_int8']:,.0f}",
+            f"{r['boundary_d2h_mib_exact']:,.0f}",
+            f"{r['boundary_d2h_mib_int8']:,.0f}",
+            f"{r['fetch_mib_per_token_exact']:.2f}",
+            f"{r['fetch_mib_per_token_int8']:.2f}",
+            f"{r['fetch_mib_ratio']:.2f}x" if r["fetch_mib_ratio"] is not None else NOT_MEASURED,
+            f"{r['fetched_pairs_ratio']:.2f}x" if r["fetched_pairs_ratio"] is not None else NOT_MEASURED,
+        ]
+        for r in rows_in
+    ]
+    header = [
+        "Budget", "Off-GPU KV, bf16 MiB", "int8 MiB", "Stored ratio", "Pinned, bf16 MiB", "int8 MiB",
+        "Boundary D2H, bf16 MiB", "int8 MiB", "Fetched MiB/token, bf16", "int8", "Fetch ratio", "Pairs fetched ratio",
+    ]
+    return table(header, rows, ["---"] + ["---:"] * 11)
+
+
+def block_p5_divergence(ctx: Mapping[str, Any]) -> str:
+    """The quality axis rungs 6 and 7 did not have: how far rung 8 moved from the exact tier."""
+    rows_in = lookup(ctx, "phase5.analysis.divergence_vs_exact")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = [
+        [
+            _pct_budget(r["budget"]),
+            f"{r['answers_differing']} of {r['prompts']}",
+            f"{r['answers_broken']} / {r['answers_fixed']}",
+            f"{100 * r['score_delta_mean']:+.1f} pp",
+            f"{r['tf_mean_kl_exact']:.2e}" if r["tf_mean_kl_exact"] is not None else NOT_MEASURED,
+            f"{r['tf_mean_kl']:.2e}" if r["tf_mean_kl"] is not None else NOT_MEASURED,
+            f"{100 * r['tf_top1_agreement_exact']:.1f}%" if r["tf_top1_agreement_exact"] is not None else NOT_MEASURED,
+            f"{100 * r['tf_top1_agreement']:.1f}%" if r["tf_top1_agreement"] is not None else NOT_MEASURED,
+        ]
+        for r in rows_in
+    ]
+    header = [
+        "Budget", "NIAH answers differing from rung 6", "of which broken / fixed", "Mean NIAH score change",
+        "Teacher-forced KL, rung 6", "rung 8", "Top-1 agreement, rung 6", "rung 8",
+    ]
+    return table(header, rows, ["---"] + ["---:"] * 7)
+
+
+def block_p5_host_time(ctx: Mapping[str, Any]) -> str:
+    """Where rung 8's time goes. Ranking is unchanged by construction; fetching now dequantizes."""
+    rows_in = lookup(ctx, "phase5.analysis.host_time")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    lat_in = lookup(ctx, "phase5.analysis.latency_vs_exact")
+    lat = {r["budget"]: r for r in lat_in} if isinstance(lat_in, list) else {}
+    f1 = lambda v: NOT_MEASURED if v is None else f"{v:.2f}"  # noqa: E731
+    rows = []
+    for r in rows_in:
+        lr = lat.get(r["budget"], {})
+        rows.append([
+            _pct_budget(r["budget"]),
+            f1(r["host_rank_ms_per_token_exact"]),
+            f1(r["host_rank_ms_per_token_int8"]),
+            f1(r["host_fetch_ms_per_token_exact"]),
+            f1(r["host_fetch_ms_per_token_int8"]),
+            f"{r['host_fetch_ms_per_token_delta']:+.2f}" if r["host_fetch_ms_per_token_delta"] is not None else NOT_MEASURED,
+            f1(r["host_seal_ms_per_token_exact"]),
+            f1(r["host_seal_ms_per_token_int8"]),
+            f"{lr['ratio_median']:.3f}x" if lr.get("ratio_median") is not None else NOT_MEASURED,
+            f"{lr['delta_ms_median']:+.1f} ms" if lr.get("delta_ms_median") is not None else NOT_MEASURED,
+        ])
+    header = [
+        "Budget", "Rank + sync, ms (rung 6)", "rung 8", "Fetch, ms (rung 6)", "rung 8", "Fetch delta",
+        "Seal, ms (rung 6)", "rung 8", "Decode / rung 6", "Decode delta",
+    ]
+    return table(header, rows, ["---"] + ["---:"] * 9)
+
+
+def block_p5_tier(ctx: Mapping[str, Any]) -> str:
+    """The Phase 4 tier table, with rung 6 rather than rung 5 as the denominator."""
+    a = lookup(ctx, "phase5.analysis")
+    if not isinstance(a, Mapping) or not a.get("tier"):
+        return f"_{NOT_MEASURED}_"
+    by = {r["label"]: r for r in a["speed"]}
+    rows = []
+    for pol, per_budget in a["tier"].items():
+        for b_key, t in sorted(per_budget.items(), key=lambda kv: -float(kv[0])):
+            if not t:
+                continue
+            sp = by.get(f"{pol}@{b_key}")
+            ref = by.get(f"tiered_sync@{b_key}")
+            over = sp["decode_wall_median_s"]["median"] / ref["decode_wall_median_s"]["median"] if sp and ref else None
+            rows.append([
+                POLICY_NAMES.get(pol, pol),
+                _pct_budget(float(b_key)),
+                f"{t['k_blocks']} / {t['n_slots']}",
+                f"{t['pair_kib']:.1f}" if t.get("pair_kib") is not None else NOT_MEASURED,
+                rng(sp["gpu_resident_kv_bytes"], _mib, show_range=False) if sp else NOT_MEASURED,
+                f"{t['host_kv_mib']:,.0f}" if t.get("host_kv_mib") is not None else NOT_MEASURED,
+                rng(sp["decode_wall_median_s"], lambda v: f"{v * 1e3:.1f} ms") if sp else NOT_MEASURED,
+                f"{over:.2f}x" if over is not None else NOT_MEASURED,
+                f"{100 * t['hit_rate']:.1f}%",
+                f"{t['fetched_pairs_per_token']:,.0f}",
+                f"{t['fetch_mib_per_token']:.2f}",
+                f"{t['fetch_transfers_per_token']:.1f}",
+                f"{100 * t['thrash_share_of_fetches']:.0f}%",
+            ])
+    header = [
+        "Policy", "Budget", "K / slots per head", "Pair on the wire, KiB", "Resident KV", "Off-GPU KV, MiB",
+        "Decode / token (range over runs)", "/ rung 6", "Hit rate", "Pairs fetched / token", "MiB fetched / token",
+        "H2D transfers / token", "Thrash",
+    ]
+    return table(header, rows, ["---", "---:"] + ["---:"] * 11)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
