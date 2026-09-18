@@ -808,13 +808,23 @@ def fig_p5_capacity(a: dict[str, Any], t: Theme) -> None:
     axes[0].set_title("KV held off-GPU, MiB", color=t.ink, fontsize=10, loc="left")
     axes[0].set_ylim(bottom=0)
 
+    # Drawn on the same budget axis as the other two panels rather than as categorical bars, so the
+    # three panels line up and a reader can follow one budget across all of them.
     niah = {(r["policy"], r["budget"]): r for r in a["niah"]}
+    sig = {d["budget"]: d["sign_test_p"] for d in a.get("divergence_vs_exact", [])}
     deltas = [100 * (niah[("tiered_int8", b)]["accuracy"] - niah[("tiered_sync", b)]["accuracy"]) for b in budgets]
     axes[1].axhline(0, color=t.muted, linewidth=1)
-    axes[1].bar(range(len(budgets)), deltas, color=[t.series[2] if d >= 0 else t.series[1] for d in deltas], width=0.55)
-    axes[1].set_xticks(range(len(budgets)), [f"{100 * b:g}%" for b in budgets])
-    axes[1].set_xscale("linear")
+    axes[1].plot(budgets, deltas, color=t.series[2], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+    # Every point carries its paired p-value: without it a few flipped prompts read as a real change.
+    for b, d in zip(budgets, deltas):
+        pv = sig.get(b)
+        if pv is None:
+            continue
+        axes[1].annotate(f"p={pv:.2f}", (b, d), xytext=(0, 8 if d >= 0 else -14), textcoords="offset points", ha="center", color=t.ink2, fontsize=8)
     axes[1].set_title("NIAH accuracy against the exact tier, percentage points", color=t.ink, fontsize=10, loc="left")
+    lo, hi = min(deltas), max(deltas)
+    pad = max(1.0, 0.35 * (hi - lo))
+    axes[1].set_ylim(lo - pad, hi + pad)
 
     lat = {r["budget"]: r["ratio_median"] for r in a["latency_vs_exact"]}
     ys = [lat[b] for b in budgets if lat.get(b) is not None]
