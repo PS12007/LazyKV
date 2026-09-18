@@ -7,6 +7,64 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-18: Phase 5, the int8 warm/cold tier — the capacity result the ladder promised, and no more
+
+### What was asked, and what was measured
+
+Phase 4 ended with a prediction on the record: rung 8 narrows the bytes, and on this machine bytes are
+not the constraint, so it should be run as a capacity experiment and not expected to buy latency. That
+is exactly what happened, and stating the prediction first is the only reason the null result is worth
+anything.
+
+**The capacity claim is real and it is exactly the record width.** The host pool holds
+not measured× of what the same blocks cost in bf16 at every
+budget where the tier actually offloads — the int8 payload plus the per-channel key scales and the
+per-token value scales, and nothing data-dependent. At a 6.25% budget that is
+not measured MiB down to
+not measured MiB, with pinned host RAM falling from
+not measured MiB to
+not measured MiB on a machine that has
+16 GiB of it in
+1 DIMM.
+
+**The latency prediction also held.** Rung 8 decodes
+not measured–not measured×
+the exact tier's time. Ranking is unchanged between the two rungs by construction — same bound, same
+top-K, same host sync — so the whole difference had to appear in the fetch path, and it does:
+dequantizing on arrival adds
+not measured–not measured ms
+per token. Halving the traffic on a host-bound decode buys nothing and the widening costs real time.
+
+### The result I nearly got wrong
+
+Rung 8 is the first tier rung that is not bit-identical to rung 5, so it is the first with a quality
+axis of its own, and at the tightest budget its NIAH accuracy came out **higher** than the exact tier's
+(not measured of retention). Quantization cannot add
+information, so that is not a quality gain. Quantizing the block metadata perturbs the Quest ranking,
+and at a tight budget the ranking is nearly arbitrary among many similar-scoring blocks, so the
+perturbation is a coin flip.
+
+The paired evidence says so plainly. Only
+not measured of
+not measured answers changed at that budget, splitting
+not measured worse against
+not measured better, an exact sign test on the discordant
+prompts giving p = not measured. Teacher-forced
+divergence, which is far more sensitive than a scored answer, barely moves at all. **The honest
+statement is that int8 is quality-neutral here, not that it helps** — and the unpaired confidence
+intervals in §2 of the phase report are far too wide to have settled that either way, which is why the
+paired test was added.
+
+### Kept because it was measured
+
+The boundary D2H got *slower* while moving half the bytes, because the prompt KV is packed on the GPU
+before it crosses the link. A narrower record is not a cheaper boundary.
+
+The tier still degenerates at the two largest budgets: with slots capped at the candidate block count
+every block stays resident, so there is nothing off-GPU to narrow and the capacity columns are empty
+there. That is Phase 4's finding unchanged, and it means rung 8's claim has content only at 25% and
+below.
+
 ## 2026-09-17: Phase 4, the CPU tier — an exact mechanism whose cost is not the link
 
 ### The result that matters
