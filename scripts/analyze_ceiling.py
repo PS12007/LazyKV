@@ -80,6 +80,29 @@ def main() -> None:
         })
 
     tiered = [r for r in out if r["ceiling_speedup"] is not None]
+
+    # A second, looser bound. The replay removes the bound and its host sync; `admit`'s residency
+    # bookkeeping still runs on the host. A device-side design could attack that too, so the
+    # arithmetic limit is what decode would cost if *all* of the tier's host select time vanished.
+    # It is arithmetic, not a measurement, and is labelled as such wherever it is quoted -- Phases 4
+    # and 5 both found arithmetic predictions about this system to be wrong.
+    p5 = json.loads((base / "analysis" / "metrics.json").read_text(encoding="utf-8")) if (base / "analysis" / "metrics.json").exists() else None
+    for r in out:
+        r["host_select_ms"] = r["all_host_ms"] = r["arithmetic_ceiling_speedup"] = None
+        if p5 is None or r["policy"] not in p5["tier"]:
+            continue
+        t = p5["tier"][r["policy"]].get(f"{r['budget']:g}")
+        if not t:
+            continue
+        decode_ms = 1e3 * t["decode_wall_median_s"]
+        r["host_select_ms"] = t["host_select_ms_per_token"]
+        r["all_host_ms"] = t["host_select_ms_per_token"] + t["host_seal_ms_per_token"]
+        remaining = decode_ms - r["all_host_ms"]
+        r["arithmetic_ceiling_speedup"] = decode_ms / remaining if remaining > 0 else None
+        # The replay's measured saving should land near the counted rank time; if it does not, one
+        # of the two instruments is wrong and the ceiling should not be trusted.
+        r["rank_ms_counted"] = t["host_rank_ms_per_token"]
+        r["saved_vs_counted_rank_ms"] = None if r["saved_ms"] is None else r["saved_ms"] - t["host_rank_ms_per_token"]
     summary = {
         "runs": len(runs),
         "context": runs[0]["config"]["context"],
@@ -92,6 +115,11 @@ def main() -> None:
         "full_inter_layer_gap_ms": None if full_gap is None else 1e3 * full_gap,
         "inter_layer_gap_excess_ms": span([r["inter_layer_gap_excess_ms"] for r in tiered if r["inter_layer_gap_excess_ms"] is not None]),
         "ceiling_speedup_at": {f"{r['policy']}@{r['budget']:g}": r["ceiling_speedup"] for r in tiered},
+        "arithmetic_ceiling_speedup": span([r["arithmetic_ceiling_speedup"] for r in tiered if r["arithmetic_ceiling_speedup"] is not None]),
+        "host_select_ms": span([r["host_select_ms"] for r in tiered if r["host_select_ms"] is not None]),
+        # Corroboration: the replay's saving against the independently counted rank+sync time.
+        "saved_vs_counted_rank_ms": span([r["saved_vs_counted_rank_ms"] for r in tiered if r.get("saved_vs_counted_rank_ms") is not None]),
+        "full_decode_ms": next((r["decode_ms"] for r in out if r["policy"] == "full"), None),
     }
     write_metrics(base / "ceiling", {
         "sources": [r["provenance"] for r in runs],

@@ -7,6 +7,62 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-18: pricing the redesign before building it
+
+Phase 5 ended with an owner decision: take the residency decision off the host critical path, or
+try rung 9. Before spending a phase on the first, this measures what it could possibly be worth.
+
+### The instrument, and two wrong turns on the way to it
+
+The obvious measurement was the GPU-stream gap between consecutive decoder layers, on the theory
+that a host round trip leaves the GPU with nothing queued. It reads
+0.025 ms for the full cache and only
+0.23–0.53 ms
+more under the tier — nowhere near enough to explain anything. The reason is structural: `select()`
+runs *inside* the attention module, so the stall falls within a layer's span, not between layers.
+The gap is kept as the evidence for that and is not the ceiling.
+
+What works is a **replay ablation**. Pass one decodes and records the selection each layer made at
+each step; pass two decodes again driven by that record, so the bound and its host sync never run
+while the blocks chosen, the pairs fetched and the gathers stay identical. Two attempts at this were
+wrong before it was right, and both were caught by guards rather than by inspection: greedy decode
+let the passes part on a near-tie (the fast kernel is not bit-repeatable), after which they sealed
+different blocks — fixed by forcing the token sequence from the corpus; and a dict-ordering slip let
+post-profiling counters overwrite the fetch count, making a clean ablation look broken. With both
+fixed, every condition reports identical fetch counts, which is the evidence that the ablation
+changed only the decision and not the work.
+
+### The answer
+
+**Removing the per-layer bound and its host sync is worth
+1.11–1.16×**, or
+6.2–8.5 ms
+off a 52–62 ms
+token. The saving lands within
+1.6 ms of the rank-and-sync time counted
+independently by the tier's own counters in Phase 5, which is two instruments agreeing on a quantity
+neither was built to check.
+
+That is only half the redesign, and the limit has to be stated as such: the replay still runs
+`admit`'s residency bookkeeping on the host. If *all* of the tier's host select time
+(20–28 ms
+per token) vanished, decode would fall by
+1.63–1.90×.
+**That second number is arithmetic, not a measurement**, and Phases 4 and 5 both found arithmetic
+predictions about this system to be wrong, so it is an optimistic bound and nothing more.
+
+### What it means for the decision
+
+Even the optimistic bound leaves the tier slower than simply keeping everything in VRAM: the full
+cache decodes a token in 21.7 ms, and a tier with every
+scrap of host decision time removed would still be around thirty. A device-side residency decision
+would close part of the gap the tier pays, not the gap to the full cache.
+
+So the honest framing for the owner's decision is that the redesign is a
+1.16× improvement to a mechanism whose reason to
+exist is memory, not speed — worth doing if the goal is to make the memory win cheaper, not worth
+doing if the goal is to beat the full cache on latency at a context that still fits in VRAM.
+
 ## 2026-09-18: Phase 5, the int8 warm/cold tier — the capacity result the ladder promised, and no more
 
 ### What was asked, and what was measured
