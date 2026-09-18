@@ -158,6 +158,10 @@ def main() -> None:
                 dec = forced_decode(lm.model, built.cache, forced)
                 wall = dec.wall_s[sp["warmup_steps"] :]
                 selection = built.cache.recorded_selection() if isinstance(built.cache, TieredCache) else None
+                # Captured here, before the profiled pass adds its own steps to the same counters:
+                # the replay pass only decodes `forced`, so comparing against a total that includes
+                # profiling would show a mismatch that is pure accounting.
+                fetched_pairs = built.cache.counters.fetched_pairs if isinstance(built.cache, TieredCache) else None
                 last = torch.zeros(lm.model.config.vocab_size, device="cuda")
                 last[dec.tokens[-1]] = 1.0
                 with LayerProfiler(lm.model) as prof:
@@ -182,17 +186,19 @@ def main() -> None:
                     rbuilt.cache._replay = selection  # noqa: SLF001
                     rdec = forced_decode(lm.model, rbuilt.cache, forced)
                     replay_wall = summarize(rdec.wall_s[sp["warmup_steps"] :]).to_dict()
-                    # Not asserted: the fast kernel is not bit-repeatable for single-query decode
-                    # (Phase 1; ~1% of calls), so two identical passes can part company on a
-                    # near-tie and never rejoin. What the ablation needs is that the *work* is the
-                    # same, and the fetch counts are the direct evidence for that. Token agreement
-                    # is recorded so a real divergence -- replay doing something structurally
-                    # different -- would show up as a collapse rather than a few late flips.
+                    # Forcing the tokens is what makes the two passes comparable, so the guard
+                    # that matters is the fetch count: equal counts mean equal work. Token agreement
+                    # is now only a readout of the fast kernel's own repeatability (Phase 1: not
+                    # bit-exact for single-query decode), recorded rather than asserted.
                     replay_agreement = sum(1 for a, b in zip(rdec.tokens, dec.tokens) if a == b) / len(dec.tokens)
                     replay_fetched = rbuilt.cache.counters.fetched_pairs
                     rbuilt.close()
                     del rbuilt
                 rows.append({
+                    # `facts` first: it carries the tier counters as they stood after the profiled
+                    # pass, and the explicit keys below deliberately override the ones the ablation
+                    # needs measured at a different point.
+                    **facts,
                     "repeat": rep,
                     "policy": cond.policy,
                     "budget": cond.budget,
@@ -207,8 +213,7 @@ def main() -> None:
                     "replay_wall_s": replay_wall,
                     "replay_token_agreement": replay_agreement,
                     "replay_fetched_pairs": replay_fetched,
-                    "fetched_pairs": facts.get("fetched_pairs"),
-                    **facts,
+                    "fetched_pairs": fetched_pairs,
                 })
                 log.info(
                     "rep %d %s: decode %.2f ms, replay %s, inter-layer gap %.3f ms/token",
