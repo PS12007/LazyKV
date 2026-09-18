@@ -71,16 +71,17 @@ def test_refetching_an_evicted_block_returns_the_same_bytes(tiny) -> None:  # no
     _, full, _ = _prefilled(model, cfg)
     tier = _build(model, full)
     layer = next(iter(tier.tiers.values()))
-    before = layer.pool[1:].clone()
     chosen = layer.slot_block[:, :1].copy()  # blocks that are resident right now
+    before = {j: layer.pool[1, j].clone() for j in range(layer.h)}  # slot 1 holds chosen[j, 0]
     layer.slot_block[:, :] = -1  # evict everything, then ask for them back
     layer.block_slot[:, :] = -1
     layer.last_used[:, :] = -2
+    layer.pool[1:].zero_()
     layer.admit(chosen, step=1, counters=tier.counters, stream=None, stage=tier._stage_compute)
     torch.cuda.synchronize()
     for j in range(layer.h):
         slot = int(layer.block_slot[j, chosen[j, 0]])
-        assert torch.equal(layer.pool[slot, j], before[0, j]) or torch.equal(layer.pool[slot, j], _dequantized(layer, int(chosen[j, 0]))[j])
+        assert torch.equal(layer.pool[slot, j], before[j])
 
 
 @cuda
@@ -150,3 +151,25 @@ def test_a_bf16_host_pool_is_refused_for_an_int8_tier(tiny) -> None:  # noqa: AN
     wrong = allocate_host_pools(cfg.num_hidden_layers - 1, cfg.num_key_value_heads, cfg.head_dim, BS, 512)
     with pytest.raises(ValueError, match="host pool must be pinned"):
         _build(model, full, host_pools=wrong)
+
+
+@cuda
+def test_the_sweep_keeps_one_host_pool_per_precision(tiny) -> None:  # noqa: ANN001
+    """A sweep that measures rung 6 against rung 8 needs both pools alive, and must not swap them."""
+    from lazykv.sweep import Condition, build_cache, make_host_memory
+
+    cfg, model = tiny
+    conds = [Condition("tiered_sync", 0.25), Condition("tiered_int8", 0.25)]
+    host = make_host_memory(conds, model, BS, 512, PROMPT, {"fetch": "gather", "spare": 0.0})
+    assert set(host.pools) == {None, "int8"}
+    assert host.pools[None][0].dtype == torch.bfloat16
+    assert host.pools["int8"][0].dtype == torch.uint8
+
+    _, full, _ = _prefilled(model, cfg)
+    for cond, quant in ((conds[0], None), (conds[1], "int8")):
+        built = build_cache(full, cond, PROMPT, BS, model=model, host=host, tier={"fetch": "gather", "spare": 0.0})
+        assert built.cache.quant == quant
+        # Each cache must be using the pool of its own precision, not a copy of it.
+        assert next(iter(built.cache.tiers.values())).host.data_ptr() == host.pools[quant][0].data_ptr()
+        built.close()
+        full.truncate(PROMPT)
