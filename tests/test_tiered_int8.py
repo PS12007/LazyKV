@@ -173,3 +173,34 @@ def test_the_sweep_keeps_one_host_pool_per_precision(tiny) -> None:  # noqa: ANN
         assert next(iter(built.cache.tiers.values())).host.data_ptr() == host.pools[quant][0].data_ptr()
         built.close()
         full.truncate(PROMPT)
+
+
+@cuda
+def test_inter_layer_gaps_are_one_per_step_and_larger_under_the_tier(tiny) -> None:  # noqa: ANN001
+    """The Phase 6 scoping measurement: the gap between decoder layers is where the host sync lands.
+
+    The full cache does no residency work, so its gap is the hook-overhead floor; the tier has to
+    sync per selecting layer, so its gap must be larger. If that ordering ever failed, the
+    measurement would not be measuring what it claims to.
+    """
+    from lazykv.generate import greedy_decode
+    from lazykv.profiling import LayerProfiler
+
+    cfg, model = tiny
+    _, full, pre = _prefilled(model, cfg)
+
+    def gaps(cache) -> float:  # noqa: ANN001
+        with LayerProfiler(model) as prof:
+            greedy_decode(model, cache, pre.last_logits, 2)
+            prof.reset()
+            greedy_decode(model, cache, pre.last_logits, 6)
+            g = prof.step_gaps()
+        assert len(g) == 6  # one total per decode step
+        assert all(x >= 0 for x in g)
+        return sorted(g)[len(g) // 2]
+
+    baseline = gaps(full)
+    full.truncate(PROMPT)
+    tier = _build(model, full)
+    assert gaps(tier) > baseline
+    tier.close()

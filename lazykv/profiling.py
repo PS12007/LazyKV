@@ -71,6 +71,33 @@ class LayerProfiler:
         self._open.clear()
         kernel_timer().reset()
 
+    def step_gaps(self) -> list[float]:
+        """Per decode step: total GPU-stream time between the end of one decoder layer and the start
+        of the next.
+
+        This is where a per-layer host round trip shows up. Rungs 6-8 must bring each selecting
+        layer's top-K indices to the CPU before they can decide what to fetch, and while that
+        happens the GPU has nothing queued -- so the gap between layer spans is an upper bound on
+        what taking the residency decision off the host critical path could recover.
+
+        Two things make it only a bound, both of which the caller must handle rather than hide:
+        the hooks themselves run host code between layers, and a decode step does work outside the
+        decoder stack (embedding, lm_head) that this does not count. Profiling the full cache under
+        the same hooks gives the hook-overhead control, and the difference is the part the tier owns.
+        """
+        torch.cuda.synchronize()
+        n_layers = len(self.model.model.layers)
+        per_layer = [self._spans.get(f"{i}.layer", []) for i in range(n_layers)]
+        steps = min((len(s) for s in per_layer), default=0)
+        out = []
+        for s in range(steps):
+            total = 0.0
+            for i in range(n_layers - 1):
+                # elapsed_time between two events on the same stream: end of layer i to start of i+1.
+                total += per_layer[i][s].end.elapsed_time(per_layer[i + 1][s].start) / 1e3
+            out.append(total)
+        return out
+
     def collect(self) -> dict[int, dict[str, float]]:
         """Synchronize, then return mean seconds per call for each layer component."""
         torch.cuda.synchronize()
