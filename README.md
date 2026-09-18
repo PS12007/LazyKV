@@ -30,6 +30,8 @@ negative results included.
 > measured on the same sweep, at 32,768 tokens, with the same prompts and
 > the same quality metrics. KV leaves VRAM, and the warm/cold copy is now
 > 0.531× the width of the hot one.
+> **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
+> number, the four negative results and the limitations.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md).

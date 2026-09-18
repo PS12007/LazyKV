@@ -35,6 +35,7 @@ OUTPUTS = {
     "PHASE_3.md.tmpl": "docs/phases/PHASE_3.md",
     "PHASE_4.md.tmpl": "docs/phases/PHASE_4.md",
     "PHASE_5.md.tmpl": "docs/phases/PHASE_5.md",
+    "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
 GENERATED_BANNER = (
@@ -1254,6 +1255,69 @@ def block_p5_tier(ctx: Mapping[str, Any]) -> str:
         "H2D transfers / token", "Thrash",
     ]
     return table(header, rows, ["---", "---:"] + ["---:"] * 11)
+
+
+# -- The consolidated ladder (docs/FINDINGS.md) ------------------------------------------------
+
+
+def block_ladder_headline(ctx: Mapping[str, Any]) -> str:
+    """Brief §B8's headline question, per rung."""
+    best = lookup(ctx, "ladder.best")
+    if not isinstance(best, Mapping) or not best:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for key in sorted(best, key=int):
+        v = best[key]
+        rows.append([
+            key,
+            v["name"],
+            _pct_budget(v["min_budget_meeting_target"]) if v["min_budget_meeting_target"] is not None else "**none**",
+            f"{100 * v['best_retention']:.1f}%" if v["best_retention"] is not None else NOT_MEASURED,
+            _pct_budget(v["best_retention_budget"]) if v["best_retention_budget"] is not None else NOT_MEASURED,
+            f"{v['resident_mib_at_best']:,.0f}" if v["resident_mib_at_best"] is not None else NOT_MEASURED,
+            f"{v['tokens_per_s_at_best']:.1f}" if v["tokens_per_s_at_best"] is not None else NOT_MEASURED,
+        ])
+    header = ["Rung", "Policy", "Smallest budget retaining >= 99%", "Best retention measured", "at budget", "Resident KV, MiB", "Tokens/s there"]
+    return table(header, rows, ["---:", "---", "---:", "---:", "---:", "---:", "---:"])
+
+
+def block_ladder_table(ctx: Mapping[str, Any]) -> str:
+    """Every rung at every budget: the frontier as numbers."""
+    rows_in = lookup(ctx, "ladder.rows")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["rung"], -r["budget"], r["slots"] or "")):
+        rows.append([
+            str(r["rung"]),
+            r["name"],
+            r["slots"] or "-",
+            _pct_budget(r["budget"]),
+            f"{100 * r['accuracy']:.1f}% [{100 * r['accuracy_ci95'][0]:.0f}, {100 * r['accuracy_ci95'][1]:.0f}]",
+            f"{100 * r['retention']:.1f}%" if r["retention"] is not None else NOT_MEASURED,
+            f"{r['resident_mib']:,.0f}" if r["resident_mib"] is not None else NOT_MEASURED,
+            f"{r['tokens_per_s']:.1f}" if r["tokens_per_s"] is not None else NOT_MEASURED,
+            r["phase"].replace("phase", "Phase "),
+        ])
+    header = ["Rung", "Policy", "VRAM slots", "Budget", "NIAH accuracy [95% CI]", "Retention", "Resident KV, MiB", "Tokens/s", "Measured in"]
+    return table(header, rows, ["---:", "---", "---", "---:", "---:", "---:", "---:", "---:", "---"])
+
+
+def block_ladder_repeatability(ctx: Mapping[str, Any]) -> str:
+    """Conditions measured in more than one phase, and how far those phases disagree."""
+    rows_in = lookup(ctx, "ladder.repeatability")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["policy"], -r["budget"])):
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            ", ".join(p.replace("phase", "P") for p in r["phases"]),
+            f"{r['accuracy_max_gap_pp']:.2f} pp",
+            f"{r['tokens_per_s_max_ratio']:.3f}x" if r["tokens_per_s_max_ratio"] is not None else "-",
+        ])
+    return table(["Condition", "Budget", "Phases", "Largest accuracy gap", "Largest tokens/s ratio"], rows, ["---", "---:", "---", "---:", "---:"])
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {

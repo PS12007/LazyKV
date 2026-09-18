@@ -1,0 +1,1202 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-18T22:07:13+00:00",
+    "git_commit": "c6beb2ecf121b697ed9c036c7f1dc78ba4b73a38",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "scripts/make_figures.py",
+      "scripts/render_docs.py"
+    ],
+    "argv": [
+      "scripts/analyze_ladder.py"
+    ],
+    "python": "3.12.10"
+  },
+  "shape": {
+    "phase2": {
+      "context": 32768,
+      "block_size": 64,
+      "prompts": 45,
+      "full_niah_accuracy": 0.8888888888888888
+    },
+    "phase3": {
+      "context": 32768,
+      "block_size": 64,
+      "prompts": 45,
+      "full_niah_accuracy": 0.8888888888888888
+    },
+    "phase4": {
+      "context": 32768,
+      "block_size": 64,
+      "prompts": 45,
+      "full_niah_accuracy": 0.8888888888888888
+    },
+    "phase5": {
+      "context": 32768,
+      "block_size": 64,
+      "prompts": 45,
+      "full_niah_accuracy": 0.8888888888888888
+    }
+  },
+  "rows": [
+    {
+      "rung": 1,
+      "policy": "full",
+      "name": "Full GPU KV (reference, exact)",
+      "phase": "phase5",
+      "slots": null,
+      "budget": 1.0,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 52.277741171119764
+    },
+    {
+      "rung": 2,
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.75,
+      "accuracy": 0.5555555555555556,
+      "accuracy_ci95": [
+        0.42777777777777776,
+        0.6833333333333333
+      ],
+      "retention": 0.6250000000000001,
+      "resident_mib": 768.15625,
+      "tokens_per_s": 51.487738199556844
+    },
+    {
+      "rung": 2,
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.5,
+      "accuracy": 0.4166666666666667,
+      "accuracy_ci95": [
+        0.29444444444444445,
+        0.5444444444444444
+      ],
+      "retention": 0.46875000000000006,
+      "resident_mib": 512.15625,
+      "tokens_per_s": 51.41242791571745
+    },
+    {
+      "rung": 2,
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.25,
+      "accuracy": 0.21666666666666667,
+      "accuracy_ci95": [
+        0.11666666666666667,
+        0.31666666666666665
+      ],
+      "retention": 0.24375000000000002,
+      "resident_mib": 254.15625,
+      "tokens_per_s": 50.17259371216892
+    },
+    {
+      "rung": 2,
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.125,
+      "accuracy": 0.19444444444444445,
+      "accuracy_ci95": [
+        0.09444444444444444,
+        0.3
+      ],
+      "retention": 0.21875000000000003,
+      "resident_mib": 126.15625,
+      "tokens_per_s": 50.575421854373474
+    },
+    {
+      "rung": 2,
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.0625,
+      "accuracy": 0.17777777777777778,
+      "accuracy_ci95": [
+        0.07777777777777778,
+        0.2833333333333333
+      ],
+      "retention": 0.2,
+      "resident_mib": 62.15625,
+      "tokens_per_s": 51.237907856083226
+    },
+    {
+      "rung": 3,
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.75,
+      "accuracy": 0.2611111111111111,
+      "accuracy_ci95": [
+        0.15,
+        0.3888888888888889
+      ],
+      "retention": 0.29375,
+      "resident_mib": 768.15625,
+      "tokens_per_s": 32.233109854334
+    },
+    {
+      "rung": 3,
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.5,
+      "accuracy": 0.22777777777777777,
+      "accuracy_ci95": [
+        0.11666666666666667,
+        0.35555555555555557
+      ],
+      "retention": 0.25625000000000003,
+      "resident_mib": 512.15625,
+      "tokens_per_s": 39.29165012165607
+    },
+    {
+      "rung": 3,
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.25,
+      "accuracy": 0.12222222222222222,
+      "accuracy_ci95": [
+        0.03888888888888889,
+        0.21666666666666667
+      ],
+      "retention": 0.1375,
+      "resident_mib": 254.15625,
+      "tokens_per_s": 40.7991742402739
+    },
+    {
+      "rung": 3,
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.125,
+      "accuracy": 0.1111111111111111,
+      "accuracy_ci95": [
+        0.022222222222222223,
+        0.2
+      ],
+      "retention": 0.125,
+      "resident_mib": 126.15625,
+      "tokens_per_s": 38.95044140374029
+    },
+    {
+      "rung": 3,
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "phase": "phase2",
+      "slots": null,
+      "budget": 0.0625,
+      "accuracy": 0.12777777777777777,
+      "accuracy_ci95": [
+        0.044444444444444446,
+        0.2222222222222222
+      ],
+      "retention": 0.14375,
+      "resident_mib": 62.15625,
+      "tokens_per_s": 39.35458481728352
+    },
+    {
+      "rung": 4,
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "phase": "phase3",
+      "slots": null,
+      "budget": 0.75,
+      "accuracy": 0.8222222222222222,
+      "accuracy_ci95": [
+        0.7277777777777777,
+        0.9055555555555556
+      ],
+      "retention": 0.925,
+      "resident_mib": 768.15625,
+      "tokens_per_s": 42.63446912189192
+    },
+    {
+      "rung": 4,
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "phase": "phase3",
+      "slots": null,
+      "budget": 0.5,
+      "accuracy": 0.6111111111111112,
+      "accuracy_ci95": [
+        0.49444444444444446,
+        0.7277777777777777
+      ],
+      "retention": 0.6875000000000001,
+      "resident_mib": 512.15625,
+      "tokens_per_s": 43.00834791849444
+    },
+    {
+      "rung": 4,
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "phase": "phase3",
+      "slots": null,
+      "budget": 0.25,
+      "accuracy": 0.5222222222222223,
+      "accuracy_ci95": [
+        0.4,
+        0.6388888888888888
+      ],
+      "retention": 0.5875,
+      "resident_mib": 254.15625,
+      "tokens_per_s": 42.513391725865816
+    },
+    {
+      "rung": 4,
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "phase": "phase3",
+      "slots": null,
+      "budget": 0.125,
+      "accuracy": 0.3611111111111111,
+      "accuracy_ci95": [
+        0.24444444444444444,
+        0.4777777777777778
+      ],
+      "retention": 0.40625,
+      "resident_mib": 126.15625,
+      "tokens_per_s": 41.066581239718666
+    },
+    {
+      "rung": 4,
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "phase": "phase3",
+      "slots": null,
+      "budget": 0.0625,
+      "accuracy": 0.32222222222222224,
+      "accuracy_ci95": [
+        0.2,
+        0.4444444444444444
+      ],
+      "retention": 0.36250000000000004,
+      "resident_mib": 62.15625,
+      "tokens_per_s": 40.953982061057395
+    },
+    {
+      "rung": 5,
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "phase": "phase4",
+      "slots": null,
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 35.907803116601585
+    },
+    {
+      "rung": 5,
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "phase": "phase4",
+      "slots": null,
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 40.98612618756285
+    },
+    {
+      "rung": 5,
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "phase": "phase4",
+      "slots": null,
+      "budget": 0.25,
+      "accuracy": 0.7444444444444445,
+      "accuracy_ci95": [
+        0.6333333333333333,
+        0.85
+      ],
+      "retention": 0.8375,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 40.33095581751347
+    },
+    {
+      "rung": 5,
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "phase": "phase4",
+      "slots": null,
+      "budget": 0.125,
+      "accuracy": 0.6444444444444445,
+      "accuracy_ci95": [
+        0.5222222222222223,
+        0.7611111111111111
+      ],
+      "retention": 0.7250000000000001,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 38.79811208733125
+    },
+    {
+      "rung": 5,
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "phase": "phase4",
+      "slots": null,
+      "budget": 0.0625,
+      "accuracy": 0.38333333333333336,
+      "accuracy_ci95": [
+        0.25555555555555554,
+        0.5166666666666667
+      ],
+      "retention": 0.4312500000000001,
+      "resident_mib": 1028.15625,
+      "tokens_per_s": 39.63676865253463
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 1108.3633422851562,
+      "tokens_per_s": 35.26292033528033
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 1103.1133422851562,
+      "tokens_per_s": 32.910163469115595
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.25,
+      "accuracy": 0.7444444444444445,
+      "accuracy_ci95": [
+        0.6333333333333333,
+        0.85
+      ],
+      "retention": 0.8375,
+      "resident_mib": 651.6133422851562,
+      "tokens_per_s": 19.204215707550507
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.125,
+      "accuracy": 0.6444444444444445,
+      "accuracy_ci95": [
+        0.5222222222222223,
+        0.7611111111111111
+      ],
+      "retention": 0.7250000000000001,
+      "resident_mib": 427.61334228515625,
+      "tokens_per_s": 19.188094170024055
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.0625,
+      "accuracy": 0.38333333333333336,
+      "accuracy_ci95": [
+        0.25555555555555554,
+        0.5166666666666667
+      ],
+      "retention": 0.4312500000000001,
+      "resident_mib": 315.61334228515625,
+      "tokens_per_s": 18.745424948689948
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "2x attended",
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 1172.5196533203125,
+      "tokens_per_s": 24.210642272238925
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "2x attended",
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 1167.2696533203125,
+      "tokens_per_s": 24.16719834649977
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "2x attended",
+      "budget": 0.25,
+      "accuracy": 0.7444444444444445,
+      "accuracy_ci95": [
+        0.6333333333333333,
+        0.85
+      ],
+      "retention": 0.8375,
+      "resident_mib": 715.7696533203125,
+      "tokens_per_s": 12.767878060832915
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "2x attended",
+      "budget": 0.125,
+      "accuracy": 0.6444444444444445,
+      "accuracy_ci95": [
+        0.5222222222222223,
+        0.7611111111111111
+      ],
+      "retention": 0.7250000000000001,
+      "resident_mib": 491.7696533203125,
+      "tokens_per_s": 12.661834066471945
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "2x attended",
+      "budget": 0.0625,
+      "accuracy": 0.38333333333333336,
+      "accuracy_ci95": [
+        0.25555555555555554,
+        0.5166666666666667
+      ],
+      "retention": 0.4312500000000001,
+      "resident_mib": 379.7696533203125,
+      "tokens_per_s": 12.325927095040484
+    },
+    {
+      "rung": 8,
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 1078.3047485351562,
+      "tokens_per_s": 35.38708159445317
+    },
+    {
+      "rung": 8,
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 1073.0547485351562,
+      "tokens_per_s": 33.56188981900095
+    },
+    {
+      "rung": 8,
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.25,
+      "accuracy": 0.7611111111111111,
+      "accuracy_ci95": [
+        0.6555555555555556,
+        0.8611111111111112
+      ],
+      "retention": 0.85625,
+      "resident_mib": 621.5547485351562,
+      "tokens_per_s": 16.735141288962456
+    },
+    {
+      "rung": 8,
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.125,
+      "accuracy": 0.6333333333333333,
+      "accuracy_ci95": [
+        0.5055555555555555,
+        0.7555555555555555
+      ],
+      "retention": 0.7125,
+      "resident_mib": 397.55474853515625,
+      "tokens_per_s": 16.916852820362042
+    },
+    {
+      "rung": 8,
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "phase": "phase5",
+      "slots": "2x attended",
+      "budget": 0.0625,
+      "accuracy": 0.45,
+      "accuracy_ci95": [
+        0.31666666666666665,
+        0.5833333333333334
+      ],
+      "retention": 0.5062500000000001,
+      "resident_mib": 285.55474853515625,
+      "tokens_per_s": 16.518400260422737
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 864.6054077148438,
+      "tokens_per_s": 18.227585991950107
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 640.6054077148438,
+      "tokens_per_s": 17.682590426290705
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.25,
+      "accuracy": 0.7444444444444445,
+      "accuracy_ci95": [
+        0.6333333333333333,
+        0.85
+      ],
+      "retention": 0.8375,
+      "resident_mib": 414.85540771484375,
+      "tokens_per_s": 17.709035236705077
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.125,
+      "accuracy": 0.6444444444444445,
+      "accuracy_ci95": [
+        0.5222222222222223,
+        0.7611111111111111
+      ],
+      "retention": 0.7250000000000001,
+      "resident_mib": 302.85540771484375,
+      "tokens_per_s": 18.658857314275412
+    },
+    {
+      "rung": 6,
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.0625,
+      "accuracy": 0.38333333333333336,
+      "accuracy_ci95": [
+        0.25555555555555554,
+        0.5166666666666667
+      ],
+      "retention": 0.4312500000000001,
+      "resident_mib": 246.85540771484375,
+      "tokens_per_s": 18.78003044351927
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.75,
+      "accuracy": 0.8777777777777778,
+      "accuracy_ci95": [
+        0.8055555555555556,
+        0.9444444444444444
+      ],
+      "retention": 0.9875,
+      "resident_mib": 912.5037841796875,
+      "tokens_per_s": 10.829584041066827
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.5,
+      "accuracy": 0.8444444444444444,
+      "accuracy_ci95": [
+        0.7555555555555555,
+        0.9222222222222223
+      ],
+      "retention": 0.9500000000000001,
+      "resident_mib": 688.5037841796875,
+      "tokens_per_s": 10.923798313413071
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.25,
+      "accuracy": 0.7444444444444445,
+      "accuracy_ci95": [
+        0.6333333333333333,
+        0.85
+      ],
+      "retention": 0.8375,
+      "resident_mib": 462.7537841796875,
+      "tokens_per_s": 11.574161147872703
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.125,
+      "accuracy": 0.6444444444444445,
+      "accuracy_ci95": [
+        0.5222222222222223,
+        0.7611111111111111
+      ],
+      "retention": 0.7250000000000001,
+      "resident_mib": 350.7537841796875,
+      "tokens_per_s": 11.753622906577768
+    },
+    {
+      "rung": 7,
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "phase": "phase4",
+      "slots": "= attended",
+      "budget": 0.0625,
+      "accuracy": 0.38333333333333336,
+      "accuracy_ci95": [
+        0.25555555555555554,
+        0.5166666666666667
+      ],
+      "retention": 0.4312500000000001,
+      "resident_mib": 294.7537841796875,
+      "tokens_per_s": 11.919455471612748
+    }
+  ],
+  "repeatability": [
+    {
+      "policy": "block_full",
+      "budget": 1.0,
+      "phases": [
+        "phase2",
+        "phase3",
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.8888888888888888,
+        "phase3": 0.8888888888888888,
+        "phase4": 0.8888888888888888,
+        "phase5": 0.8888888888888888
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 51.52607348811104,
+        "phase3": 52.81964469779176,
+        "phase4": 51.15207253217841,
+        "phase5": 50.835610335383485
+      },
+      "tokens_per_s_max_ratio": 1.0390284359589426
+    },
+    {
+      "policy": "full",
+      "budget": 1.0,
+      "phases": [
+        "phase2",
+        "phase3",
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.8888888888888888,
+        "phase3": 0.8888888888888888,
+        "phase4": 0.8888888888888888,
+        "phase5": 0.8888888888888888
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 53.92594350680557,
+        "phase3": 48.15726234805469,
+        "phase4": 51.96316849037812,
+        "phase5": 52.277741171119764
+      },
+      "tokens_per_s_max_ratio": 1.1197883948854477
+    },
+    {
+      "policy": "quest",
+      "budget": 0.0625,
+      "phases": [
+        "phase3",
+        "phase4"
+      ],
+      "accuracy_by_phase": {
+        "phase3": 0.38333333333333336,
+        "phase4": 0.38333333333333336
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase3": 39.2406156122647,
+        "phase4": 39.63676865253463
+      },
+      "tokens_per_s_max_ratio": 1.0100954848462191
+    },
+    {
+      "policy": "quest",
+      "budget": 0.125,
+      "phases": [
+        "phase3",
+        "phase4"
+      ],
+      "accuracy_by_phase": {
+        "phase3": 0.6444444444444445,
+        "phase4": 0.6444444444444445
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase3": 40.185415501474935,
+        "phase4": 38.79811208733125
+      },
+      "tokens_per_s_max_ratio": 1.0357569824794821
+    },
+    {
+      "policy": "quest",
+      "budget": 0.25,
+      "phases": [
+        "phase3",
+        "phase4"
+      ],
+      "accuracy_by_phase": {
+        "phase3": 0.7444444444444445,
+        "phase4": 0.7444444444444445
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase3": 40.797676156407725,
+        "phase4": 40.33095581751347
+      },
+      "tokens_per_s_max_ratio": 1.0115722607965463
+    },
+    {
+      "policy": "quest",
+      "budget": 0.5,
+      "phases": [
+        "phase3",
+        "phase4"
+      ],
+      "accuracy_by_phase": {
+        "phase3": 0.8444444444444444,
+        "phase4": 0.8444444444444444
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase3": 41.01176011298943,
+        "phase4": 40.98612618756285
+      },
+      "tokens_per_s_max_ratio": 1.0006254293296533
+    },
+    {
+      "policy": "quest",
+      "budget": 0.75,
+      "phases": [
+        "phase3",
+        "phase4"
+      ],
+      "accuracy_by_phase": {
+        "phase3": 0.8777777777777778,
+        "phase4": 0.8777777777777778
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase3": 40.39555325737933,
+        "phase4": 35.907803116601585
+      },
+      "tokens_per_s_max_ratio": 1.1249798024737103
+    },
+    {
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "phases": [
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase4": 0.38333333333333336,
+        "phase5": 0.38333333333333336
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase4": 18.598803351566907,
+        "phase5": 18.745424948689948
+      },
+      "tokens_per_s_max_ratio": 1.007883388750959
+    },
+    {
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "phases": [
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase4": 0.6444444444444445,
+        "phase5": 0.6444444444444445
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase4": 19.28058358239146,
+        "phase5": 19.188094170024055
+      },
+      "tokens_per_s_max_ratio": 1.0048201458439732
+    },
+    {
+      "policy": "tiered_sync",
+      "budget": 0.25,
+      "phases": [
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase4": 0.7444444444444445,
+        "phase5": 0.7444444444444445
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase4": 18.593235782293355,
+        "phase5": 19.204215707550507
+      },
+      "tokens_per_s_max_ratio": 1.0328603333175066
+    },
+    {
+      "policy": "tiered_sync",
+      "budget": 0.5,
+      "phases": [
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase4": 0.8444444444444444,
+        "phase5": 0.8444444444444444
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase4": 34.4897160186252,
+        "phase5": 32.910163469115595
+      },
+      "tokens_per_s_max_ratio": 1.0479958888989394
+    },
+    {
+      "policy": "tiered_sync",
+      "budget": 0.75,
+      "phases": [
+        "phase4",
+        "phase5"
+      ],
+      "accuracy_by_phase": {
+        "phase4": 0.8777777777777778,
+        "phase5": 0.8777777777777778
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase4": 34.85729423550135,
+        "phase5": 35.26292033528033
+      },
+      "tokens_per_s_max_ratio": 1.0116367638015304
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "phases": [
+        "phase2",
+        "phase3"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.17777777777777778,
+        "phase3": 0.17777777777777778
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 51.237907856083226,
+        "phase3": 48.12643778766406
+      },
+      "tokens_per_s_max_ratio": 1.0646519919497701
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "phases": [
+        "phase2",
+        "phase3"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.19444444444444445,
+        "phase3": 0.19444444444444445
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 50.575421854373474,
+        "phase3": 51.13167171846085
+      },
+      "tokens_per_s_max_ratio": 1.0109984226268847
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "phases": [
+        "phase2",
+        "phase3"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.21666666666666667,
+        "phase3": 0.21666666666666667
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 50.17259371216892,
+        "phase3": 50.93711559358325
+      },
+      "tokens_per_s_max_ratio": 1.0152378385259542
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "phases": [
+        "phase2",
+        "phase3"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.4166666666666667,
+        "phase3": 0.4166666666666667
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 51.41242791571745,
+        "phase3": 51.388121632355144
+      },
+      "tokens_per_s_max_ratio": 1.0004729941976902
+    },
+    {
+      "policy": "window_sink",
+      "budget": 0.75,
+      "phases": [
+        "phase2",
+        "phase3"
+      ],
+      "accuracy_by_phase": {
+        "phase2": 0.5555555555555556,
+        "phase3": 0.5555555555555556
+      },
+      "accuracy_max_gap_pp": 0.0,
+      "tokens_per_s_by_phase": {
+        "phase2": 51.487738199556844,
+        "phase3": 52.00667763863048
+      },
+      "tokens_per_s_max_ratio": 1.0100788936787692
+    }
+  ],
+  "best": {
+    "1": {
+      "policy": "full",
+      "name": "Full GPU KV (reference, exact)",
+      "best_retention": 1.0,
+      "best_retention_budget": 1.0,
+      "resident_mib_at_best": 1028.15625,
+      "tokens_per_s_at_best": 52.277741171119764,
+      "min_budget_meeting_target": 1.0
+    },
+    "2": {
+      "policy": "window_sink",
+      "name": "Sliding window + attention sink",
+      "best_retention": 0.6250000000000001,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 768.15625,
+      "tokens_per_s_at_best": 51.487738199556844,
+      "min_budget_meeting_target": null
+    },
+    "3": {
+      "policy": "lru",
+      "name": "LRU block eviction",
+      "best_retention": 0.29375,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 768.15625,
+      "tokens_per_s_at_best": 32.233109854334,
+      "min_budget_meeting_target": null
+    },
+    "4": {
+      "policy": "h2o",
+      "name": "Attention-score eviction (H2O style)",
+      "best_retention": 0.925,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 768.15625,
+      "tokens_per_s_at_best": 42.63446912189192,
+      "min_budget_meeting_target": null
+    },
+    "5": {
+      "policy": "quest",
+      "name": "Query-aware block selection (Quest style)",
+      "best_retention": 0.9875,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 1028.15625,
+      "tokens_per_s_at_best": 35.907803116601585,
+      "min_budget_meeting_target": null
+    },
+    "6": {
+      "policy": "tiered_sync",
+      "name": "CPU tier, synchronous fetch",
+      "best_retention": 0.9875,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 864.6054077148438,
+      "tokens_per_s_at_best": 18.227585991950107,
+      "min_budget_meeting_target": null
+    },
+    "7": {
+      "policy": "tiered_prefetch",
+      "name": "CPU tier + layer-ahead prefetch",
+      "best_retention": 0.9875,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 912.5037841796875,
+      "tokens_per_s_at_best": 10.829584041066827,
+      "min_budget_meeting_target": null
+    },
+    "8": {
+      "policy": "tiered_int8",
+      "name": "CPU tier, int8 warm/cold",
+      "best_retention": 0.9875,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 1078.3047485351562,
+      "tokens_per_s_at_best": 35.38708159445317,
+      "min_budget_meeting_target": null
+    }
+  },
+  "summary": {
+    "context": 32768,
+    "block_size": 64,
+    "prompts": 45,
+    "full_niah_accuracy": 0.8888888888888888,
+    "phases_combined": [
+      "phase2",
+      "phase3",
+      "phase4",
+      "phase5"
+    ],
+    "sweeps_comparable": true,
+    "rungs": 8,
+    "overlapping_conditions": 17,
+    "repeatability_accuracy_max_gap_pp": 0.0,
+    "repeatability_tokens_per_s_max_ratio": 1.1249798024737103,
+    "rungs_meeting_target_below_full": [],
+    "any_rung_meeting_target_below_full": false,
+    "best_retention_overall": {
+      "min": 0.29375,
+      "max": 1.0
+    },
+    "best_retention_excluding_full": {
+      "min": 0.29375,
+      "max": 0.9875
+    },
+    "best_retention_budget_excluding_full": 0.75
+  }
+}

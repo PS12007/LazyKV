@@ -841,6 +841,78 @@ def fig_p5_capacity(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p5_capacity", t)
 
 
+def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
+    """Brief §B8's headline experiment: every rung on one memory axis, accuracy and speed.
+
+    x is GPU-resident KV bytes, which is the resource the whole project is spending. Each rung is a
+    curve across the same budget sweep, so a rung that sits up and to the left is strictly better.
+    Where a rung was measured at two VRAM-slot counts, the curve uses the one that actually frees
+    memory, because otherwise the x axis would mean different things in different curves.
+    """
+    rows = a.get("rows") or []
+    if not rows:
+        return
+    # One row per (rung, budget), preferring the memory-honest variant.
+    picked: dict[tuple[int, float], dict[str, Any]] = {}
+    for r in rows:
+        key = (r["rung"], r["budget"])
+        if key not in picked or r["slots"] == "= attended":
+            picked[key] = r
+    by_rung: dict[int, list[dict[str, Any]]] = {}
+    for r in picked.values():
+        by_rung.setdefault(r["rung"], []).append(r)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13.0, 5.0), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    for ax in axes:
+        style_axes(ax, t)
+        ax.set_xlabel("GPU-resident KV, MiB")
+    target = 100 * 0.99 * a["summary"]["full_niah_accuracy"]
+    axes[0].axhline(target, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    axes[0].annotate("99% of full-cache accuracy", (0, target), xytext=(4, 5), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    for i, rung in enumerate(sorted(by_rung)):
+        rs = sorted((r for r in by_rung[rung] if r["resident_mib"] is not None), key=lambda r: r["resident_mib"])
+        if not rs:
+            continue
+        color = t.series[i % len(t.series)]
+        dash = "-" if i < len(t.series) else (0, (4, 2))
+        marker = "o" if rung != 1 else "*"
+        name = rs[0]["name"]
+        # The slot variant belongs in the legend: rungs 6 and 7 are shown with VRAM holding exactly
+        # the attended set, rung 8 was only ever run at twice it, and without the label the memory
+        # axis would quietly mean two different things.
+        variant = rs[0]["slots"]
+        axes[0].plot([r["resident_mib"] for r in rs], [100 * r["accuracy"] for r in rs], color=color, linestyle=dash,
+                     linewidth=2, marker=marker, markersize=6 if rung != 1 else 12, markeredgecolor=t.surface,
+                     markeredgewidth=1.2, label=f"{rung}. {name}" + (f" (slots {variant})" if variant else ""))
+        # Rung 5 is a vertical line, and that is the finding rather than a drawing error.
+        if rung == 5 and len({round(r["resident_mib"]) for r in rs}) == 1:
+            top = max(rs, key=lambda r: r["accuracy"])
+            axes[0].annotate(
+                "rung 5 frees nothing:\nits budget buys accuracy,\nnot memory",
+                (top["resident_mib"], 100 * top["accuracy"]), xytext=(-12, -58), textcoords="offset points",
+                ha="right", color=t.ink2, fontsize=8.5,
+                arrowprops={"arrowstyle": "-", "color": t.muted, "linewidth": 0.8},
+            )
+        sp = [r for r in rs if r["tokens_per_s"] is not None]
+        if sp:
+            axes[1].plot([r["resident_mib"] for r in sp], [r["tokens_per_s"] for r in sp], color=color, linestyle=dash,
+                         linewidth=2, marker=marker, markersize=6 if rung != 1 else 12, markeredgecolor=t.surface, markeredgewidth=1.2)
+    axes[0].set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
+    axes[0].set_ylim(0, 100)
+    axes[1].set_title("Decode tokens/s", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_ylim(bottom=0)
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(1.08, -0.13), ncol=3, frameon=False, fontsize=8.5)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    sm = a["summary"]
+    title(fig, t, f"The policy ladder at {sm['context']:,} tokens: what a GPU KV budget buys",
+          f"{sm['prompts']} NIAH prompts per condition, {sm['block_size']}-token blocks; "
+          f"conditions measured in more than one phase agree to {sm['repeatability_accuracy_max_gap_pp']:.2f} pp")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.83, bottom=0.30, wspace=0.16)
+    save(fig, "ladder_pareto", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -853,6 +925,8 @@ def main() -> None:
     p4 = json.loads(p4_path.read_text(encoding="utf-8")) if p4_path.exists() else None
     p5_path = RESULTS_DIR / "phase5" / "analysis" / "metrics.json"
     p5 = json.loads(p5_path.read_text(encoding="utf-8")) if p5_path.exists() else None
+    ladder_path = RESULTS_DIR / "ladder" / "metrics.json"
+    ladder = json.loads(ladder_path.read_text(encoding="utf-8")) if ladder_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
     lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
@@ -881,6 +955,8 @@ def main() -> None:
             fig_p4_blocksize(p4, t)
         if p5 is not None:
             fig_p5_capacity(p5, t)
+        if ladder is not None:
+            fig_ladder_pareto(ladder, t)
     print("figures written to", FIG_DIR)
 
 
