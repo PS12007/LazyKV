@@ -1,6 +1,6 @@
 # Phase 5 gate report: the int8 warm/cold tier
 
-**Status: running. Findings are written against the completed sweep before this phase is closed.**
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
 
 Phase 4 put the blocks rung 5 does not attend to in pinned host RAM and brought them back on
 demand. It also measured, in §3 and §7 of that report, that the decode is **host-bound**: at a 25%
@@ -26,9 +26,9 @@ The prediction on the record before the run, from Phase 4 §8: rung 8 will not i
 ## Gate checklist (CLAUDE.md rule 3)
 
 - [x] **Tests run.** `pytest`: int8 records round-trip within one quantization level of each group's range, a key-channel outlier does not degrade its neighbours, a constant group is exact, and packing on the GPU agrees with packing on the host to within a level (it is *not* bit-identical, and the test says so); the tier's resident slots hold exactly what a fetch would produce, the sink stays exact because it never leaves VRAM, the Quest bound covers the dequantized keys rather than the exact ones, decode differs from the exact tier but stays bounded, and both a `runs` fetch and a bf16 host pool are refused. All Phase 0-4 tests still pass.
-- [ ] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase5.yaml` and `scripts/02_budget_speed.py --config configs/phase5.yaml` ({{ phase5.analysis.speed_runs }} runs), launched detached from a clean tree. Provenance below.
-- [ ] **Phase doc written.** This file, re-read against the finished run.
-- [ ] **Committed and pushed.**
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase5.yaml` and `scripts/02_budget_speed.py --config configs/phase5.yaml` ({{ phase5.analysis.speed_runs }} runs), launched detached from a worktree pinned at the commit under test. Provenance below.
+- [x] **Phase doc written.** This file, re-read against the finished run.
+- [x] **Committed and pushed.**
 
 ## What was built
 
@@ -44,6 +44,58 @@ The prediction on the record before the run, from Phase 4 §8: rung 8 will not i
 Context, budgets, block size ({{ phase5.analysis.block_size }} tokens), prompts, needle set and
 decode lengths are Phase 4's, so rung 6 is re-measured inside this run and the two rungs are compared
 within one process on identical prefills.
+
+## Headline findings
+
+1. **The capacity claim is real, exact, and independent of the data.** The host pool holds
+   {{ phase5.analysis.summary.host_kv_ratio.min | .3f }}× of what the same blocks cost in bf16, at
+   every budget where the tier holds anything at all — the int8 payload plus the per-channel key
+   scales and the per-token value scales, and nothing else. At a 6.25% budget that is
+   {{ phase5.analysis.summary.host_kv_mib_at.b6.exact | int }} MiB down to
+   {{ phase5.analysis.summary.host_kv_mib_at.b6.int8 | int }} MiB, and pinned host RAM across the
+   whole sweep falls from {{ phase5.analysis.summary.host_pinned_mib_at.b6.exact | int }} MiB to
+   {{ phase5.analysis.summary.host_pinned_mib_at.b6.int8 | int }} MiB.
+2. **Quality is unchanged, and the place it looks like a gain is noise.** Across every budget,
+   {{ phase5.analysis.summary.answers_differing_total }} of
+   {{ phase5.analysis.niah_prompts_per_condition }}×5 NIAH answers changed, splitting
+   {{ phase5.analysis.summary.answers_broken_total }} worse against
+   {{ phase5.analysis.summary.answers_fixed_total }} better — an exact sign test on the discordant
+   prompts gives p = {{ phase5.analysis.summary.sign_test_p_pooled | .2f }} pooled, and no single
+   budget falls below p = {{ phase5.analysis.summary.sign_test_p_min | .2f }}. Teacher-forced KL,
+   which is far more sensitive than a scored answer, moves by at most
+   {{ phase5.analysis.summary.tf_kl_increase.max | .1e }} nats. **Rung 8's retention at 6.25% is
+   {{ phase5.analysis.summary.retention_delta_at.b6 | pp }} against the exact tier, and that is not a
+   quality improvement**: quantization cannot add information. Quantizing the block metadata perturbs
+   the Quest ranking, and at a tight budget the ranking is nearly arbitrary among many similar-scoring
+   blocks, so the perturbation is a coin flip that landed favourably on these prompts. §3 is written
+   to make that visible rather than to let the accuracy column carry it.
+3. **Phase 4's prediction held: narrowing the bytes buys no time, and costs some.** Rung 8 decodes
+   {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× the exact tier's time at a 25% budget,
+   {{ phase5.analysis.summary.latency_ratio_at.b12 | .2f }}× at 12.5% and
+   {{ phase5.analysis.summary.latency_ratio_at.b6 | .2f }}× at 6.25%. Ranking is unchanged between
+   the two rungs by construction, so the whole difference had to land in the fetch path, and it does:
+   widening the records on arrival adds
+   {{ phase5.analysis.summary.fetch_ms_delta_offloading.max | .1f }} ms per token at the worst budget.
+   This is the third independent measurement in two phases saying the same thing — Phase 4 cut fetches
+   tenfold for no speedup, hid every prefetch copy for no speedup, and now halving the bytes is worse
+   than not halving them.
+4. **The boundary got slower while moving half the bytes.** The prefill→decode D2H falls from
+   {{ phase5.analysis.summary.boundary_d2h_mib.tiered_sync.min | int }} MiB to
+   {{ phase5.analysis.summary.boundary_d2h_mib.tiered_int8.min | int }} MiB, and the copy nevertheless goes from
+   {{ phase5.analysis.summary.boundary_d2h_s.tiered_sync.min | ms }} to
+   {{ phase5.analysis.summary.boundary_d2h_s.tiered_int8.min | ms }}, because the prompt KV is packed
+   on the GPU before it crosses the link. A narrower record is not a cheaper boundary.
+5. **At a 25% budget rung 8 moves fewer bytes than the record ratio explains, and that is a selection
+   effect, not a compression one.** It fetches
+   {{ phase5.analysis.capacity.2.fetched_pairs_ratio | .2f }}× the pairs rung 6 does, so bytes per
+   token come out at {{ phase5.analysis.capacity.2.fetch_mib_ratio | .2f }}× rather than
+   {{ phase5.analysis.summary.pair_ratio.min | .2f }}×. The same metadata perturbation behind finding 2
+   shows up here in the counters. At the tighter budgets the pair counts match and the ratio is the
+   record ratio again.
+6. **The claim has content only at 25% and below.** At a 75% budget the slot count is capped at the
+   candidate block count, every block stays resident, and there is nothing off-GPU to narrow; at 50%
+   only {{ phase5.analysis.summary.host_kv_mib_at.b50.exact | int }} MiB is off-GPU. This is Phase 4's
+   degeneracy unchanged, and it is why the latency ratios at those two budgets are not informative.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../figures/p5_capacity-dark.png">
@@ -108,7 +160,36 @@ seal path, where it quantizes. Measured per budget, paired within each repeat:
 
 ## 7. What this says about Phase 6
 
-_Written against the finished run._
+The ladder's memory rungs are now finished, and they tell one story. Rung 6 made the attended budget
+into a memory budget. Rung 7 hid the transfers completely and lost. Rung 8 halved the transfers and
+lost. Phase 4 also cut on-demand fetches roughly tenfold and gained almost nothing. **Four separate
+attacks on bytes moved, and not one of them made decode faster**, because on this machine the decode
+is bound by the per-layer host round trip that decides *what* to move, not by moving it.
+
+That is a finding, not a failure, and it is worth stating in the terms the brief asked for: a
+reproducible cross-policy study on constrained hardware found that the constraint the design was
+built around is not the constraint the design hits. The PCIe arithmetic in §B1 of the brief is
+correct and the conclusion drawn from it — that dense refetch is impossible — still holds. What it
+did not predict is that once selection makes the transfers small enough to be affordable, the
+decision cost dominates whatever is saved.
+
+Two directions follow, and choosing between them is the owner's call under CLAUDE.md rule 8:
+
+- **Take the residency decision off the host critical path.** Keep the top-K on the device and drive
+  the gather from device memory, so no layer has to synchronize to decide what it needs. This is the
+  only lever the measurements point at, and it is a redesign rather than a rung.
+- **Rung 9, exact partial attention.** Compute attention over non-resident blocks where they already
+  live and merge with log-sum-exp rescaling, moving O(head_dim) bytes instead of O(block_bytes).
+  Brief §B8 makes this conditional on Phase 0's CPU-throughput measurement, which is on record in
+  `SYSTEM_INFO.md` §5 and should be re-read before committing to it. Note that it does not obviously
+  escape the problem this phase found: it removes the transfer, but the host still has to be told
+  what to compute.
+
+What rung 8 *should* be used for, on its own terms, is capacity. It is the cheapest way measured so
+far to hold more context off-GPU for the same host RAM, at no measurable cost in quality, on a
+machine with {{ phase0.feasibility.run_1.system.host.ram_total_bytes | iec }} of it in
+{{ phase0.feasibility.run_1.system.host.ram_dimm_count }} DIMM. That is a smaller claim than the
+ladder implies, and it is the one the measurements support.
 
 ## 8. Headline number (brief §B8)
 

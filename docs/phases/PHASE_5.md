@@ -2,7 +2,7 @@
 
 # Phase 5 gate report: the int8 warm/cold tier
 
-**Status: running. Findings are written against the completed sweep before this phase is closed.**
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
 
 Phase 4 put the blocks rung 5 does not attend to in pinned host RAM and brought them back on
 demand. It also measured, in §3 and §7 of that report, that the decode is **host-bound**: at a 25%
@@ -28,9 +28,9 @@ The prediction on the record before the run, from Phase 4 §8: rung 8 will not i
 ## Gate checklist (CLAUDE.md rule 3)
 
 - [x] **Tests run.** `pytest`: int8 records round-trip within one quantization level of each group's range, a key-channel outlier does not degrade its neighbours, a constant group is exact, and packing on the GPU agrees with packing on the host to within a level (it is *not* bit-identical, and the test says so); the tier's resident slots hold exactly what a fetch would produce, the sink stays exact because it never leaves VRAM, the Quest bound covers the dequantized keys rather than the exact ones, decode differs from the exact tier but stays bounded, and both a `runs` fetch and a bf16 host pool are refused. All Phase 0-4 tests still pass.
-- [ ] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase5.yaml` and `scripts/02_budget_speed.py --config configs/phase5.yaml` (not measured runs), launched detached from a clean tree. Provenance below.
-- [ ] **Phase doc written.** This file, re-read against the finished run.
-- [ ] **Committed and pushed.**
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase5.yaml` and `scripts/02_budget_speed.py --config configs/phase5.yaml` (3 runs), launched detached from a worktree pinned at the commit under test. Provenance below.
+- [x] **Phase doc written.** This file, re-read against the finished run.
+- [x] **Committed and pushed.**
 
 ## What was built
 
@@ -43,9 +43,61 @@ The prediction on the record before the run, from Phase 4 §8: rung 8 will not i
 | Gather-only fetch | `TieredLayer.admit` | `runs` writes host bytes straight into their slots, which needs the two pools to share a layout. An int8 record has to land in a device staging buffer and be widened from there, so rung 8 always uses Phase 4's chosen `gather` path. |
 | Built on rung 6, not rung 7 | `TieredCache.policy_name` | The ladder writes rung 8 as "rung 7 + mixed precision". Phase 4 measured rung 7 slower than rung 6 with no quality difference, so stacking rung 8 on it would confound the capacity result with a known latency penalty. The substitution is stated rather than made silently. |
 
-Context, budgets, block size (not measured tokens), prompts, needle set and
+Context, budgets, block size (64 tokens), prompts, needle set and
 decode lengths are Phase 4's, so rung 6 is re-measured inside this run and the two rungs are compared
 within one process on identical prefills.
+
+## Headline findings
+
+1. **The capacity claim is real, exact, and independent of the data.** The host pool holds
+   0.531× of what the same blocks cost in bf16, at
+   every budget where the tier holds anything at all — the int8 payload plus the per-channel key
+   scales and the per-token value scales, and nothing else. At a 6.25% budget that is
+   793 MiB down to
+   421 MiB, and pinned host RAM across the
+   whole sweep falls from 988 MiB to
+   525 MiB.
+2. **Quality is unchanged, and the place it looks like a gain is noise.** Across every budget,
+   26 of
+   45×5 NIAH answers changed, splitting
+   4 worse against
+   8 better — an exact sign test on the discordant
+   prompts gives p = 0.39 pooled, and no single
+   budget falls below p = 0.45. Teacher-forced KL,
+   which is far more sensitive than a scored answer, moves by at most
+   1.6e-03 nats. **Rung 8's retention at 6.25% is
+   +7.5 pp against the exact tier, and that is not a
+   quality improvement**: quantization cannot add information. Quantizing the block metadata perturbs
+   the Quest ranking, and at a tight budget the ranking is nearly arbitrary among many similar-scoring
+   blocks, so the perturbation is a coin flip that landed favourably on these prompts. §3 is written
+   to make that visible rather than to let the accuracy column carry it.
+3. **Phase 4's prediction held: narrowing the bytes buys no time, and costs some.** Rung 8 decodes
+   1.14× the exact tier's time at a 25% budget,
+   1.13× at 12.5% and
+   1.14× at 6.25%. Ranking is unchanged between
+   the two rungs by construction, so the whole difference had to land in the fetch path, and it does:
+   widening the records on arrival adds
+   7.5 ms per token at the worst budget.
+   This is the third independent measurement in two phases saying the same thing — Phase 4 cut fetches
+   tenfold for no speedup, hid every prefetch copy for no speedup, and now halving the bytes is worse
+   than not halving them.
+4. **The boundary got slower while moving half the bytes.** The prefill→decode D2H falls from
+   896 MiB to
+   476 MiB, and the copy nevertheless goes from
+   62.77 ms to
+   206.92 ms, because the prompt KV is packed
+   on the GPU before it crosses the link. A narrower record is not a cheaper boundary.
+5. **At a 25% budget rung 8 moves fewer bytes than the record ratio explains, and that is a selection
+   effect, not a compression one.** It fetches
+   0.71× the pairs rung 6 does, so bytes per
+   token come out at 0.38× rather than
+   0.53×. The same metadata perturbation behind finding 2
+   shows up here in the counters. At the tighter budgets the pair counts match and the ratio is the
+   record ratio again.
+6. **The claim has content only at 25% and below.** At a 75% budget the slot count is capped at the
+   candidate block count, every block stays resident, and there is nothing off-GPU to narrow; at 50%
+   only 5 MiB is off-GPU. This is Phase 4's
+   degeneracy unchanged, and it is why the latency ratios at those two budgets are not informative.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="../figures/p5_capacity-dark.png">
@@ -58,7 +110,13 @@ A bf16 pair at this geometry is 2 × block_size × head_dim × 2 bytes. An int8 
 plus the scale arrays — per channel for keys, per token for values — so the saving is a little under
 2×, and the exact figure is a property of the block geometry, not of the data.
 
-_not measured_
+| Budget | Off-GPU KV, bf16 MiB | int8 MiB | Stored ratio | Pinned, bf16 MiB | int8 MiB | Boundary D2H, bf16 MiB | int8 MiB | Fetched MiB/token, bf16 | int8 | Fetch ratio | Pairs fetched ratio |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 6.25% | 793 | 421 | 0.531x | 988 | 525 | 896 | 476 | 5.45 | 2.87 | 0.53x | 0.99x |
+| 12.5% | 681 | 362 | 0.531x | 988 | 525 | 896 | 476 | 4.82 | 2.57 | 0.53x | 1.00x |
+| 25% | 457 | 243 | 0.531x | 988 | 525 | 896 | 476 | 4.48 | 1.69 | 0.38x | 0.71x |
+| 50% | 5 | 3 | 0.531x | 988 | 525 | 896 | 476 | 0.05 | 0.02 | 0.53x | 1.01x |
+| 75% | 0 | 0 | not measured | 988 | 525 | 896 | 476 | 0.03 | 0.01 | 0.53x | 1.00x |
 
 "Stored ratio" is what the host pool holds for the same blocks. "Pairs fetched ratio" is *not* the
 record ratio, and the difference is the interesting part: rung 8 quantizes the block metadata as
@@ -67,17 +125,36 @@ number of pairs. Bytes moved per token is the product of the two.
 
 ## 2. NIAH retrieval
 
-The same not measured prompts per condition as Phases 2-4, at
-not measured tokens, scored on the repeatable quality kernel.
+The same 45 prompts per condition as Phases 2-4, at
+32,768 tokens, scored on the repeatable quality kernel.
 
-_not measured_
+| Policy | Budget | Resident at answer | Accuracy [95% CI] | Retention | single | multikey | multivalue | depth 0% | depth 25% | depth 50% | depth 75% | depth 100% |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Block pool, 100% | 100% | 100.0% | 88.9% [82, 95] | 100.0% | 100% | 93% | 73% | 89% | 89% | 97% | 78% | 92% |
+| Full cache (rung 1) | 100% | 100.0% | 88.9% [82, 95] | 100.0% | 100% | 93% | 73% | 89% | 89% | 97% | 78% | 92% |
+| CPU tier, int8 warm/cold (rung 8) | 75% | 105.0% | 87.8% [81, 94] | 98.8% | 100% | 87% | 77% | 78% | 89% | 97% | 78% | 97% |
+| CPU tier, int8 warm/cold (rung 8) | 50% | 104.4% | 84.4% [76, 92] | 95.0% | 93% | 87% | 73% | 67% | 89% | 94% | 78% | 94% |
+| CPU tier, int8 warm/cold (rung 8) | 25% | 60.7% | 76.1% [66, 86] | 85.6% | 93% | 73% | 62% | 58% | 81% | 92% | 67% | 83% |
+| CPU tier, int8 warm/cold (rung 8) | 12.5% | 38.9% | 63.3% [51, 76] | 71.2% | 93% | 53% | 43% | 39% | 67% | 81% | 53% | 78% |
+| CPU tier, int8 warm/cold (rung 8) | 6.25% | 27.9% | 45.0% [32, 58] | 50.6% | 67% | 47% | 22% | 6% | 56% | 47% | 44% | 72% |
+| CPU tier, sync fetch (rung 6) | 75% | 108.0% | 87.8% [81, 94] | 98.8% | 100% | 87% | 77% | 78% | 89% | 97% | 78% | 97% |
+| CPU tier, sync fetch (rung 6) | 50% | 107.5% | 84.4% [76, 92] | 95.0% | 93% | 87% | 73% | 67% | 89% | 94% | 78% | 94% |
+| CPU tier, sync fetch (rung 6) | 25% | 63.7% | 74.4% [63, 85] | 83.8% | 93% | 73% | 57% | 58% | 81% | 86% | 67% | 81% |
+| CPU tier, sync fetch (rung 6) | 12.5% | 41.9% | 64.4% [52, 76] | 72.5% | 93% | 53% | 47% | 36% | 75% | 81% | 53% | 78% |
+| CPU tier, sync fetch (rung 6) | 6.25% | 30.9% | 38.3% [26, 52] | 43.1% | 60% | 33% | 22% | 8% | 53% | 36% | 22% | 72% |
 
 ## 3. Divergence from the exact tier
 
 Rung 6 is bit-identical to rung 5 (Phase 4 §1), so it is this phase's exact reference and every row
 below is rung 8 against a tier that made exactly rung 5's choices.
 
-_not measured_
+| Budget | NIAH answers differing from rung 6 | of which broken / fixed | Mean NIAH score change | Sign test p | Teacher-forced KL, rung 6 | rung 8 | Top-1 agreement, rung 6 | rung 8 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 6.25% | 11 of 45 | 2 / 5 | +6.7 pp | 0.45 | 1.28e-01 | 1.30e-01 | 79.3% | 79.3% |
+| 12.5% | 7 of 45 | 2 / 1 | -1.1 pp | 1.00 | 7.42e-02 | 7.49e-02 | 86.3% | 85.0% |
+| 25% | 6 of 45 | 0 / 2 | +1.7 pp | 0.50 | 3.57e-02 | 3.53e-02 | 90.8% | 91.2% |
+| 50% | 2 of 45 | 0 / 0 | +0.0 pp | 1.00 | 9.41e-03 | 9.23e-03 | 95.1% | 94.7% |
+| 75% | 0 of 45 | 0 / 0 | +0.0 pp | 1.00 | 3.29e-03 | 3.19e-03 | 96.7% | 97.1% |
 
 "Broken / fixed" splits the prompts whose answer changed into those that went from right to wrong and
 those that went the other way. A quantization that is *noise* rather than *damage* produces both;
@@ -85,37 +162,117 @@ reporting only the net change would hide that distinction.
 
 ## 4. Teacher-forced divergence
 
-_not measured_
+| Policy | Budget | Top-1 agreement (mean of documents) | Worst document | Mean KL, nats | Worst document KL | Bit-identical |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Block pool, 100% | 100% | 100.0% | 100.0% | 0.00e+00 | 0.00e+00 | **yes** |
+| Full cache (rung 1) | 100% | 100.0% | 100.0% | 0.00e+00 | 0.00e+00 | **yes** |
+| CPU tier, int8 warm/cold (rung 8) | 75% | 97.1% | 96.1% | 3.19e-03 | 3.31e-03 | no |
+| CPU tier, int8 warm/cold (rung 8) | 50% | 94.7% | 94.5% | 9.23e-03 | 9.29e-03 | no |
+| CPU tier, int8 warm/cold (rung 8) | 25% | 91.2% | 91.0% | 3.53e-02 | 3.59e-02 | no |
+| CPU tier, int8 warm/cold (rung 8) | 12.5% | 85.0% | 84.4% | 7.49e-02 | 8.01e-02 | no |
+| CPU tier, int8 warm/cold (rung 8) | 6.25% | 79.3% | 78.5% | 1.30e-01 | 1.31e-01 | no |
+| CPU tier, sync fetch (rung 6) | 75% | 96.7% | 95.7% | 3.29e-03 | 3.37e-03 | no |
+| CPU tier, sync fetch (rung 6) | 50% | 95.1% | 94.9% | 9.41e-03 | 9.59e-03 | no |
+| CPU tier, sync fetch (rung 6) | 25% | 90.8% | 90.2% | 3.57e-02 | 3.68e-02 | no |
+| CPU tier, sync fetch (rung 6) | 12.5% | 86.3% | 86.3% | 7.42e-02 | 7.92e-02 | no |
+| CPU tier, sync fetch (rung 6) | 6.25% | 79.3% | 78.1% | 1.28e-01 | 1.30e-01 | no |
 
 ## 5. What the tier does per token
 
 "Pairs" are (KV head, block) units: the residency unit. "Pair on the wire" is the record width that
 actually crosses the link, which is the one column where the two rungs differ by construction.
 
-_not measured_
+| Policy | Budget | K / slots per head | Pair on the wire, KiB | Resident KV | Off-GPU KV, MiB | Decode / token (range over runs) | / rung 6 | Hit rate | Pairs fetched / token | MiB fetched / token | H2D transfers / token | Thrash |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| CPU tier, sync fetch (rung 6) | 75% | 383 / 513 | 16.0 | 1,108 MiB | 0 | 28.4 ms (28.3 ms–28.5 ms) | 1.00x | 100.0% | 2 | 0.03 | 0.2 | 0% |
+| CPU tier, sync fetch (rung 6) | 50% | 255 / 510 | 16.0 | 1,103 MiB | 5 | 30.4 ms (29.2 ms–31.1 ms) | 1.00x | 100.0% | 3 | 0.05 | 1.4 | 11% |
+| CPU tier, sync fetch (rung 6) | 25% | 126 / 252 | 16.0 | 652 MiB | 457 | 52.1 ms (51.6 ms–52.8 ms) | 1.00x | 98.0% | 287 | 4.48 | 14.0 | 39% |
+| CPU tier, sync fetch (rung 6) | 12.5% | 62 / 124 | 16.0 | 428 MiB | 681 | 52.1 ms (49.9 ms–52.3 ms) | 1.00x | 95.6% | 309 | 4.82 | 14.0 | 48% |
+| CPU tier, sync fetch (rung 6) | 6.25% | 30 / 60 | 16.0 | 316 MiB | 793 | 53.3 ms (51.4 ms–54.0 ms) | 1.00x | 89.6% | 349 | 5.45 | 14.0 | 59% |
+| CPU tier, int8 warm/cold (rung 8) | 75% | 383 / 513 | 8.5 | 1,078 MiB | 0 | 28.3 ms (28.2 ms–29.9 ms) | 1.00x | 100.0% | 2 | 0.01 | 0.2 | 0% |
+| CPU tier, int8 warm/cold (rung 8) | 50% | 255 / 510 | 8.5 | 1,073 MiB | 3 | 29.8 ms (29.3 ms–30.0 ms) | 0.98x | 100.0% | 3 | 0.02 | 1.4 | 12% |
+| CPU tier, int8 warm/cold (rung 8) | 25% | 126 / 252 | 8.5 | 622 MiB | 243 | 59.8 ms (58.2 ms–60.7 ms) | 1.15x | 98.6% | 204 | 1.69 | 13.9 | 30% |
+| CPU tier, int8 warm/cold (rung 8) | 12.5% | 62 / 124 | 8.5 | 398 MiB | 362 | 59.1 ms (58.9 ms–60.8 ms) | 1.13x | 95.5% | 309 | 2.57 | 14.0 | 48% |
+| CPU tier, int8 warm/cold (rung 8) | 6.25% | 30 / 60 | 8.5 | 286 MiB | 421 | 60.5 ms (59.1 ms–61.7 ms) | 1.13x | 89.7% | 345 | 2.87 | 14.0 | 59% |
 
 ## 6. Speed, and where the time goes
 
-Fast kernel, power throttling opted out, not measured independent runs.
+Fast kernel, power throttling opted out, 3 independent runs.
 Conditions that spilled into shared system memory:
-not measured.
+0.
 
-_not measured_
+| Policy | Budget | Decode / token (range over runs) | Tokens/s | ÷ full | p90 | Manager host time / token | of which attention observation | Boundary build | Resident KV | Peak allocated | Spill |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| Block pool, 100% | 100% | 19.67 ms (18.67 ms–20.77 ms) | 50.8 | 1.03× | 21.51 ms | 0.95 ms | 0.00 ms | 26.55 ms | 1,028 MiB | 4.66 GiB | no |
+| Full cache (rung 1) | 100% | 19.13 ms (18.37 ms–19.25 ms) | 52.3 | 1.00× | 20.51 ms | – | – | – | 1,028 MiB | 3.59 GiB | no |
+| CPU tier, int8 warm/cold (rung 8) | 75% | 28.26 ms (28.22 ms–29.90 ms) | 35.4 | 1.48× | 30.88 ms | 9.65 ms | – | 245.27 ms | 1,078 MiB | 4.65 GiB | no |
+| CPU tier, int8 warm/cold (rung 8) | 50% | 29.80 ms (29.34 ms–29.98 ms) | 33.6 | 1.56× | 33.32 ms | 10.09 ms | – | 238.74 ms | 1,073 MiB | 4.64 GiB | no |
+| CPU tier, int8 warm/cold (rung 8) | 25% | 59.75 ms (58.23 ms–60.67 ms) | 16.7 | 3.12× | 73.56 ms | 27.82 ms | – | 233.90 ms | 622 MiB | 4.2 GiB | no |
+| CPU tier, int8 warm/cold (rung 8) | 12.5% | 59.11 ms (58.87 ms–60.82 ms) | 16.9 | 3.09× | 73.93 ms | 28.17 ms | – | 226.95 ms | 398 MiB | 3.99 GiB | no |
+| CPU tier, int8 warm/cold (rung 8) | 6.25% | 60.54 ms (59.07 ms–61.69 ms) | 16.5 | 3.16× | 74.29 ms | 28.55 ms | – | 234.92 ms | 286 MiB | 3.88 GiB | no |
+| CPU tier, sync fetch (rung 6) | 75% | 28.36 ms (28.30 ms–28.47 ms) | 35.3 | 1.48× | 32.78 ms | 9.08 ms | – | 91.59 ms | 1,108 MiB | 4.61 GiB | no |
+| CPU tier, sync fetch (rung 6) | 50% | 30.39 ms (29.24 ms–31.12 ms) | 32.9 | 1.59× | 38.87 ms | 9.71 ms | – | 98.42 ms | 1,103 MiB | 4.6 GiB | no |
+| CPU tier, sync fetch (rung 6) | 25% | 52.07 ms (51.64 ms–52.76 ms) | 19.2 | 2.72× | 64.57 ms | 20.31 ms | – | 86.71 ms | 652 MiB | 4.16 GiB | no |
+| CPU tier, sync fetch (rung 6) | 12.5% | 52.12 ms (49.88 ms–52.28 ms) | 19.2 | 2.72× | 64.50 ms | 20.16 ms | – | 86.68 ms | 428 MiB | 3.95 GiB | no |
+| CPU tier, sync fetch (rung 6) | 6.25% | 53.35 ms (51.40 ms–54.01 ms) | 18.7 | 2.79× | 64.50 ms | 20.65 ms | – | 84.53 ms | 316 MiB | 3.84 GiB | no |
 
 Ranking is unchanged between the two rungs by construction — same bound, same top-K, same host sync
 — so any latency difference has to appear in the fetch path, where rung 8 dequantizes, or in the
 seal path, where it quantizes. Measured per budget, paired within each repeat:
 
-_not measured_
+| Budget | Rank + sync, ms (rung 6) | rung 8 | Fetch, ms (rung 6) | rung 8 | Fetch delta | Seal, ms (rung 6) | rung 8 | Decode / rung 6 | Decode delta |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 6.25% | 6.66 | 6.86 | 9.94 | 17.48 | +7.54 | 0.06 | 0.38 | 1.140x | +7.5 ms |
+| 12.5% | 6.67 | 6.64 | 9.40 | 16.91 | +7.51 | 0.05 | 0.40 | 1.126x | +6.6 ms |
+| 25% | 6.67 | 6.64 | 9.69 | 16.39 | +6.71 | 0.06 | 0.40 | 1.143x | +7.3 ms |
+| 50% | 5.29 | 4.91 | 1.35 | 1.83 | +0.48 | 0.06 | 0.39 | 0.982x | -0.5 ms |
+| 75% | 4.97 | 5.05 | 1.09 | 1.20 | +0.11 | 0.06 | 0.39 | 1.003x | +0.1 ms |
 
 ## 7. What this says about Phase 6
 
-_Written against the finished run._
+The ladder's memory rungs are now finished, and they tell one story. Rung 6 made the attended budget
+into a memory budget. Rung 7 hid the transfers completely and lost. Rung 8 halved the transfers and
+lost. Phase 4 also cut on-demand fetches roughly tenfold and gained almost nothing. **Four separate
+attacks on bytes moved, and not one of them made decode faster**, because on this machine the decode
+is bound by the per-layer host round trip that decides *what* to move, not by moving it.
+
+That is a finding, not a failure, and it is worth stating in the terms the brief asked for: a
+reproducible cross-policy study on constrained hardware found that the constraint the design was
+built around is not the constraint the design hits. The PCIe arithmetic in §B1 of the brief is
+correct and the conclusion drawn from it — that dense refetch is impossible — still holds. What it
+did not predict is that once selection makes the transfers small enough to be affordable, the
+decision cost dominates whatever is saved.
+
+Two directions follow, and choosing between them is the owner's call under CLAUDE.md rule 8:
+
+- **Take the residency decision off the host critical path.** Keep the top-K on the device and drive
+  the gather from device memory, so no layer has to synchronize to decide what it needs. This is the
+  only lever the measurements point at, and it is a redesign rather than a rung.
+- **Rung 9, exact partial attention.** Compute attention over non-resident blocks where they already
+  live and merge with log-sum-exp rescaling, moving O(head_dim) bytes instead of O(block_bytes).
+  Brief §B8 makes this conditional on Phase 0's CPU-throughput measurement, which is on record in
+  `SYSTEM_INFO.md` §5 and should be re-read before committing to it. Note that it does not obviously
+  escape the problem this phase found: it removes the transfer, but the host still has to be told
+  what to compute.
+
+What rung 8 *should* be used for, on its own terms, is capacity. It is the cheapest way measured so
+far to hold more context off-GPU for the same host RAM, at no measurable cost in quality, on a
+machine with 16 GiB of it in
+1 DIMM. That is a smaller claim than the
+ladder implies, and it is the one the measurements support.
 
 ## 8. Headline number (brief §B8)
 
-_not measured_
+| Policy | Smallest budget retaining ≥ 99% of full-cache NIAH accuracy | Tokens/s there | Best retention measured |
+| --- | ---: | ---: | ---: |
+| CPU tier, sync fetch (rung 6) | **none below 100%** | – | 98.8% at 75% |
+| CPU tier, int8 warm/cold (rung 8) | **none below 100%** | – | 98.8% at 75% |
 
 ## 9. Provenance
 
-_not measured_
+| Experiment | Finished (UTC) | Commit | Uncommitted tracked changes |
+| --- | --- | --- | --- |
+| Policy quality (NIAH + teacher-forced) | 2026-09-18T17:42:06+00:00 | `ffc5759` | no |
+| Budget speed run 1 | 2026-09-18T17:47:24+00:00 | `ffc5759` | no |
+| Budget speed run 2 | 2026-09-18T17:52:40+00:00 | `ffc5759` | no |
+| Budget speed run 3 | 2026-09-18T17:57:57+00:00 | `ffc5759` | no |

@@ -26,11 +26,13 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 4 (pinned CPU tier, synchronous fetch and layer-ahead prefetch) complete.** Seven
-> rungs of the policy ladder are now measured on the same sweep, at 32,768
-> tokens, with the same prompts and the same quality metrics. KV now actually leaves VRAM.
+> **Status: Phase 5 (int8 warm/cold tier) complete.** Eight rungs of the policy ladder are now
+> measured on the same sweep, at 32,768 tokens, with the same prompts and
+> the same quality metrics. KV leaves VRAM, and the warm/cold copy is now
+> 0.531× the width of the hot one.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
-> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) · [Phase 4](docs/phases/PHASE_4.md).
+> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
+> [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md).
 
 ## Where the ladder stands
 
@@ -91,6 +93,8 @@ Other measured facts from these two phases:
 | Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
 | The CPU tier against the selection it implements (Phase 4) | 0 of 225 answers differ from rung 5, and the largest teacher-forced KL difference is 0.0e+00 nats |
 | Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,692 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 59% |
+| Four attacks on bytes moved, none of them faster (Phases 4-5) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is 1.14× its time at a 25% budget |
+| int8 warm/cold tier against the exact tier (Phase 5) | 26 NIAH answers changed across all budgets, 4 worse against 8 better (exact sign test, p = 0.39): quality-neutral, and the apparent gain at the tightest budget is noise |
 
 ## Phase 1 in brief
 
@@ -287,6 +291,19 @@ attended set instead of twice it):
 .venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --run-id 1 > logs\p4_budget_speed_run_1.log 2>&1   # also 2, 3
 .venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --spare 0 --out budget_speed_spare0 --run-id 1 > logs\p4_spare0_run_1.log 2>&1   # also 2, 3
 .venv\Scripts\python.exe scripts\analyze_phase4.py
+.venv\Scripts\python.exe scripts\make_figures.py
+.venv\Scripts\python.exe scripts\render_docs.py
+```
+
+## Reproduce Phase 5
+
+Same scripts with the Phase 5 config (adds the int8 warm/cold tier and measures it against the exact
+tier in one process):
+
+```powershell
+.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase5.yaml > logs\p5_policy_quality.log 2>&1
+.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase5.yaml --run-id 1 > logs\p5_budget_speed_run_1.log 2>&1   # also 2, 3
+.venv\Scripts\python.exe scripts\analyze_phase5.py
 .venv\Scripts\python.exe scripts\make_figures.py
 .venv\Scripts\python.exe scripts\render_docs.py
 ```

@@ -17,39 +17,42 @@ is exactly what happened, and stating the prediction first is the only reason th
 anything.
 
 **The capacity claim is real and it is exactly the record width.** The host pool holds
-not measured× of what the same blocks cost in bf16 at every
+0.531× of what the same blocks cost in bf16 at every
 budget where the tier actually offloads — the int8 payload plus the per-channel key scales and the
 per-token value scales, and nothing data-dependent. At a 6.25% budget that is
-not measured MiB down to
-not measured MiB, with pinned host RAM falling from
-not measured MiB to
-not measured MiB on a machine that has
+793 MiB down to
+421 MiB, with pinned host RAM falling from
+988 MiB to
+525 MiB on a machine that has
 16 GiB of it in
 1 DIMM.
 
-**The latency prediction also held.** Rung 8 decodes
-not measured–not measured×
-the exact tier's time. Ranking is unchanged between the two rungs by construction — same bound, same
-top-K, same host sync — so the whole difference had to appear in the fetch path, and it does:
-dequantizing on arrival adds
-not measured–not measured ms
-per token. Halving the traffic on a host-bound decode buys nothing and the widening costs real time.
+**The latency prediction also held.** At the budgets where the tier actually holds anything off-GPU,
+rung 8 decodes 1.14× the exact tier's time at 25%,
+1.13× at 12.5% and
+1.14× at 6.25%. The 50% and 75% budgets are left
+out of that list because the tier degenerates there — the slot count is capped at the candidate block
+count, so almost nothing is off-GPU and the ratio measures bookkeeping. Ranking is
+unchanged between the two rungs by construction — same bound, same top-K, same host sync — so the
+whole difference had to appear in the fetch path, and it does: widening the records on arrival adds up
+to 7.5 ms per token. Halving the traffic
+on a host-bound decode buys nothing and the widening costs real time.
 
 ### The result I nearly got wrong
 
 Rung 8 is the first tier rung that is not bit-identical to rung 5, so it is the first with a quality
 axis of its own, and at the tightest budget its NIAH accuracy came out **higher** than the exact tier's
-(not measured of retention). Quantization cannot add
+(+7.5 pp of retention). Quantization cannot add
 information, so that is not a quality gain. Quantizing the block metadata perturbs the Quest ranking,
 and at a tight budget the ranking is nearly arbitrary among many similar-scoring blocks, so the
 perturbation is a coin flip.
 
 The paired evidence says so plainly. Only
-not measured of
-not measured answers changed at that budget, splitting
-not measured worse against
-not measured better, an exact sign test on the discordant
-prompts giving p = not measured. Teacher-forced
+11 of
+45 answers changed at that budget, splitting
+2 worse against
+5 better, an exact sign test on the discordant
+prompts giving p = 0.45. Teacher-forced
 divergence, which is far more sensitive than a scored answer, barely moves at all. **The honest
 statement is that int8 is quality-neutral here, not that it helps** — and the unpaired confidence
 intervals in §2 of the phase report are far too wide to have settled that either way, which is why the

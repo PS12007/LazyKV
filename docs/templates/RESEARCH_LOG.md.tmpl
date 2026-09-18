@@ -25,13 +25,16 @@ per-token value scales, and nothing data-dependent. At a 6.25% budget that is
 {{ phase0.feasibility.run_1.system.host.ram_total_bytes | iec }} of it in
 {{ phase0.feasibility.run_1.system.host.ram_dimm_count }} DIMM.
 
-**The latency prediction also held.** Rung 8 decodes
-{{ phase5.analysis.summary.latency_ratio_vs_exact.min | .2f }}–{{ phase5.analysis.summary.latency_ratio_vs_exact.max | .2f }}×
-the exact tier's time. Ranking is unchanged between the two rungs by construction — same bound, same
-top-K, same host sync — so the whole difference had to appear in the fetch path, and it does:
-dequantizing on arrival adds
-{{ phase5.analysis.summary.fetch_ms_delta.min | .1f }}–{{ phase5.analysis.summary.fetch_ms_delta.max | .1f }} ms
-per token. Halving the traffic on a host-bound decode buys nothing and the widening costs real time.
+**The latency prediction also held.** At the budgets where the tier actually holds anything off-GPU,
+rung 8 decodes {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× the exact tier's time at 25%,
+{{ phase5.analysis.summary.latency_ratio_at.b12 | .2f }}× at 12.5% and
+{{ phase5.analysis.summary.latency_ratio_at.b6 | .2f }}× at 6.25%. The 50% and 75% budgets are left
+out of that list because the tier degenerates there — the slot count is capped at the candidate block
+count, so almost nothing is off-GPU and the ratio measures bookkeeping. Ranking is
+unchanged between the two rungs by construction — same bound, same top-K, same host sync — so the
+whole difference had to appear in the fetch path, and it does: widening the records on arrival adds up
+to {{ phase5.analysis.summary.fetch_ms_delta_offloading.max | .1f }} ms per token. Halving the traffic
+on a host-bound decode buys nothing and the widening costs real time.
 
 ### The result I nearly got wrong
 
@@ -43,11 +46,11 @@ and at a tight budget the ranking is nearly arbitrary among many similar-scoring
 perturbation is a coin flip.
 
 The paired evidence says so plainly. Only
-{{ phase5.analysis.divergence_vs_exact.-1.answers_differing }} of
-{{ phase5.analysis.divergence_vs_exact.-1.prompts }} answers changed at that budget, splitting
-{{ phase5.analysis.divergence_vs_exact.-1.answers_broken }} worse against
-{{ phase5.analysis.divergence_vs_exact.-1.answers_fixed }} better, an exact sign test on the discordant
-prompts giving p = {{ phase5.analysis.divergence_vs_exact.-1.sign_test_p | .2f }}. Teacher-forced
+{{ phase5.analysis.divergence_vs_exact.0.answers_differing }} of
+{{ phase5.analysis.divergence_vs_exact.0.prompts }} answers changed at that budget, splitting
+{{ phase5.analysis.divergence_vs_exact.0.answers_broken }} worse against
+{{ phase5.analysis.divergence_vs_exact.0.answers_fixed }} better, an exact sign test on the discordant
+prompts giving p = {{ phase5.analysis.divergence_vs_exact.0.sign_test_p | .2f }}. Teacher-forced
 divergence, which is far more sensitive than a scored answer, barely moves at all. **The honest
 statement is that int8 is quality-neutral here, not that it helps** — and the unpaired confidence
 intervals in §2 of the phase report are far too wide to have settled that either way, which is why the
