@@ -1174,6 +1174,7 @@ def block_p5_divergence(ctx: Mapping[str, Any]) -> str:
             f"{r['answers_differing']} of {r['prompts']}",
             f"{r['answers_broken']} / {r['answers_fixed']}",
             f"{100 * r['score_delta_mean']:+.1f} pp",
+            f"{r['sign_test_p']:.2f}" if r.get("sign_test_p") is not None else NOT_MEASURED,
             f"{r['tf_mean_kl_exact']:.2e}" if r["tf_mean_kl_exact"] is not None else NOT_MEASURED,
             f"{r['tf_mean_kl']:.2e}" if r["tf_mean_kl"] is not None else NOT_MEASURED,
             f"{100 * r['tf_top1_agreement_exact']:.1f}%" if r["tf_top1_agreement_exact"] is not None else NOT_MEASURED,
@@ -1183,9 +1184,9 @@ def block_p5_divergence(ctx: Mapping[str, Any]) -> str:
     ]
     header = [
         "Budget", "NIAH answers differing from rung 6", "of which broken / fixed", "Mean NIAH score change",
-        "Teacher-forced KL, rung 6", "rung 8", "Top-1 agreement, rung 6", "rung 8",
+        "Sign test p", "Teacher-forced KL, rung 6", "rung 8", "Top-1 agreement, rung 6", "rung 8",
     ]
-    return table(header, rows, ["---"] + ["---:"] * 7)
+    return table(header, rows, ["---"] + ["---:"] * 8)
 
 
 def block_p5_host_time(ctx: Mapping[str, Any]) -> str:

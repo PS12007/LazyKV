@@ -30,7 +30,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
-from harness.stats import bootstrap_mean_ci  # noqa: E402
+from harness.stats import bootstrap_mean_ci, sign_test_p  # noqa: E402
 from harness.sweep_analysis import cond_rows, headline, label, niah_table, span, speed_table, teacher_forced_table  # noqa: E402
 from scripts.analyze_phase4 import prompt_key, tier_rates  # noqa: E402
 
@@ -65,6 +65,10 @@ def divergence(q: dict[str, Any], budgets: list[float]) -> list[dict[str, Any]]:
             "answers_differing_share": len(differing) / len(keys),
             "answers_broken": broke,
             "answers_fixed": fixed,
+            # Paired: the same prompts, so the question is whether the discordant prompts lean one
+            # way more than a coin would. Without this a swing of a few prompts in 45 reads as a
+            # quality change when it is sampling noise.
+            "sign_test_p": sign_test_p(broke, fixed),
             "score_delta_mean": statistics.mean(answers[k]["score"] - answers[(EXACT,) + k[1:]]["score"] for k in keys),
             "tf_mean_kl": statistics.mean(a["mean_kl"] for a, _ in rows) if rows else None,
             "tf_mean_kl_exact": statistics.mean(e["mean_kl"] for _, e in rows) if rows else None,
@@ -207,6 +211,8 @@ def main() -> None:
         "answers_differing_share": span([d["answers_differing_share"] for d in div]),
         "answers_broken_total": sum(d["answers_broken"] for d in div),
         "answers_fixed_total": sum(d["answers_fixed"] for d in div),
+        "sign_test_p_min": min((d["sign_test_p"] for d in div), default=None),
+        "sign_test_p_at": {f"b{round(100 * d['budget'])}": d["sign_test_p"] for d in div},
         "retention_delta_at": {f"b{round(100 * b)}": nb[QUANT][b]["retention"] - nb[EXACT][b]["retention"] for b in budgets},
         "retention_delta": span([nb[QUANT][b]["retention"] - nb[EXACT][b]["retention"] for b in budgets]),
         "tf_kl_increase": span([d["tf_kl_increase"] for d in div if d["tf_kl_increase"] is not None]),

@@ -87,3 +87,14 @@ def test_packing_on_the_gpu_agrees_with_the_host_to_within_a_level() -> None:
     dev = unpack(pack(x.cuda()), BS, D, torch.float32).cpu()
     level = (x.float().amax(-1, keepdim=True) - x.float().amin(-1, keepdim=True)).abs().max() / 255
     assert (host - dev).abs().max() <= level
+
+
+def test_sign_test_calls_a_five_two_split_noise_and_a_six_nil_split_real() -> None:
+    """Phase 5 leans on this: a swing of a few prompts in 45 must not read as a quality change."""
+    from harness.stats import sign_test_p
+
+    assert sign_test_p(0, 0) == 1.0  # nothing changed; nothing to test
+    assert sign_test_p(2, 1) == 1.0
+    assert sign_test_p(2, 5) > 0.05  # the shape Phase 5 actually measured: not significant
+    assert sign_test_p(0, 6) < 0.05  # one-sided in every discordant prompt: that would be real
+    assert sign_test_p(5, 2) == sign_test_p(2, 5)  # two-sided, so direction does not matter

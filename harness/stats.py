@@ -131,3 +131,22 @@ def bootstrap_mean_ci(values: list[float], iters: int = 2000, seed: int = 0) -> 
     n = len(values)
     means = sorted(sum(values[rng.randrange(n)] for _ in range(n)) / n for _ in range(iters))
     return means[int(0.025 * iters)], means[int(0.975 * iters) - 1]
+
+
+def sign_test_p(worse: int, better: int) -> float:
+    """Two-sided exact sign test on discordant pairs (McNemar's exact test when scores are binary).
+
+    `worse` and `better` count the paired prompts on which one condition scored lower and higher
+    than the other. Prompts the two conditions scored identically carry no information about a
+    difference and are excluded by construction, which is the whole point of pairing.
+
+    This is the right test for two policies scored on *the same* prompts. An unpaired confidence
+    interval on each accuracy is far too wide to resolve a difference this small -- and, more to the
+    point here, would let a difference that is pure sampling noise read as a finding.
+    """
+    n = worse + better
+    if n == 0:
+        return 1.0
+    k = min(worse, better)
+    tail = sum(math.comb(n, i) for i in range(k + 1)) / 2**n
+    return min(1.0, 2 * tail)
