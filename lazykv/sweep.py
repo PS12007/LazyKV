@@ -26,8 +26,10 @@ from lazykv.tiered import TieredCache, allocate_host_pools, allocate_stages
 
 # Policies whose decode cache is a view over the full cache rather than a block pool.
 SELECTORS = ("quest",)
-# Rungs 6-7: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
-TIERED = ("tiered_sync", "tiered_prefetch")
+# Rungs 6-8: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
+TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8")
+# Host-pool precision per policy. Rung 8 narrows the warm/cold tier to int8; the VRAM slots stay bf16.
+TIER_QUANT: dict[str, str | None] = {"tiered_int8": "int8"}
 
 
 @dataclass(frozen=True)
@@ -64,10 +66,14 @@ def make_scorer(cfg: dict[str, Any], conds: list[Condition], num_layers: int, ma
 
 @dataclass
 class HostMemory:
-    """Pinned memory the tiered conditions share: per-layer host pools and gather staging buffers."""
+    """Pinned memory the tiered conditions share: per-layer host pools and gather staging buffers.
 
-    pools: list[torch.Tensor]
-    stages: Any = None  # (compute, copy) staging, when tier.fetch is "gather"
+    Keyed by tier precision, because a bf16 host pool and an int8 one are different buffers and a
+    sweep that measures rung 6 against rung 8 needs both alive at once.
+    """
+
+    pools: dict[str | None, list[torch.Tensor]]
+    stages: dict[str | None, Any]  # (compute, copy) staging, when tier.fetch is "gather"
 
 
 def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_len: int, total_tokens: int, tier: dict[str, Any] | None = None) -> HostMemory | None:
@@ -77,11 +83,14 @@ def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_le
         return None
     c = model.config
     head_dim = getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads
-    pools = allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype)
-    stages = None
-    if (tier or {}).get("fetch", "runs") == "gather":
-        slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered)
-        stages = allocate_stages(slots * c.num_key_value_heads, c.num_key_value_heads, head_dim, block_size, model.dtype)
+    gather = (tier or {}).get("fetch", "runs") == "gather"
+    pools: dict[str | None, list[torch.Tensor]] = {}
+    stages: dict[str | None, Any] = {}
+    for quant in dict.fromkeys(TIER_QUANT.get(cond.policy) for cond in tiered):
+        pools[quant] = allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype, quant)
+        if gather or quant is not None:
+            slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered if TIER_QUANT.get(cond.policy) == quant)
+            stages[quant] = allocate_stages(slots * c.num_key_value_heads, c.num_key_value_heads, head_dim, block_size, model.dtype, quant)
     return HostMemory(pools, stages)
 
 
@@ -143,10 +152,13 @@ def build_cache(
     if cond.policy in TIERED:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
         n_slots = n_slots_for(cond, total_tokens, block_size, tier)
+        quant = TIER_QUANT.get(cond.policy)
         cache = TieredCache(
             full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch",
-            host_pools=None if host is None else host.pools, instrument=instrument, n_slots=n_slots,
-            fetch=(tier or {}).get("fetch", "runs"), stages=None if host is None else host.stages,
+            host_pools=None if host is None else host.pools[quant], instrument=instrument, n_slots=n_slots,
+            # Rung 8 has nowhere to dequantize in "runs" mode, so it always gathers.
+            fetch="gather" if quant else (tier or {}).get("fetch", "runs"),
+            stages=None if host is None else host.stages.get(quant), quant=quant,
         )
         torch.cuda.synchronize()
         return Built(cache, time.perf_counter() - t0, n_slots, k)
@@ -193,4 +205,7 @@ def cache_facts(built: Built) -> dict[str, Any]:
         facts["attended_tokens_selecting_layers"] = (cache.k_blocks + 2) * cache.block_size
         facts["dense_layers"] = cache.dense_layers
         facts["host_kv_bytes"] = cache.stats().host_kv_bytes
+        # What those same blocks would cost in the model's dtype: the denominator of rung 8's saving.
+        facts["host_kv_logical_bytes"] = cache.host_logical_bytes()
+        facts["tier_quant"] = cache.quant or "none"
     return facts
