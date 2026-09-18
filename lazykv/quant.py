@@ -12,7 +12,7 @@ memory rung and because it is the first rung at which the tier stops being exact
 quality axis back on the tier that rungs 6 and 7 did not have.
 
 Scheme, following KIVI (arXiv 2402.02750), which measured that key and value tensors have
-differently-shaped outliers:
+differently-shaped outliers (KIVI's own scheme is 2-bit; what is borrowed here is the choice of reduction axis, not the width):
 
 - **Keys: per channel.** Key outliers are concentrated in a few channels that are consistently
   large across tokens, so a scale shared along the token axis wastes almost the whole range on
