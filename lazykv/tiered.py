@@ -425,6 +425,8 @@ class TieredCache(Cache):
         fetch: str = "runs",
         stages: tuple[_Stage, _Stage] | None = None,
         quant: str | None = None,
+        record_selection: bool = False,
+        replay_selection: dict[tuple[int, int], np.ndarray] | None = None,
     ) -> None:
         super().__init__(layers=full.layers)
         if prefetch and model is None:
@@ -467,6 +469,9 @@ class TieredCache(Cache):
                 self._stage_copy = stages[1]
                 self._stages.append(self._stage_copy)
         self._mask_cache: dict[str, Any] = {}
+        # Selection record/replay, used only by the Phase 6 ceiling ablation. Keyed by (layer, step).
+        self._record: dict[tuple[int, int], np.ndarray] | None = {} if record_selection else None
+        self._replay = replay_selection
         self._step = 0
         self._step_fetched = 0
         self._hooks: list[Any] = []
@@ -539,7 +544,16 @@ class TieredCache(Cache):
             # The gather below reads slots the copy stream may still be writing.
             torch.cuda.current_stream().wait_event(ev)
         tr = time.perf_counter()
-        chosen = tier.rank(query)
+        if self._replay is None:
+            chosen = tier.rank(query)
+        else:
+            # Latency ablation only (scripts/03_host_ceiling.py). Replaying a selection recorded
+            # from a real pass reproduces that pass exactly -- same blocks, same fetches, same
+            # gathers, same tokens -- while skipping the bound and the host sync that produced it.
+            # The difference in decode time is what a device-side residency decision could recover.
+            chosen = self._replay[(layer_idx, self._step)]
+        if self._record is not None:
+            self._record[(layer_idx, self._step)] = chosen
         c.host_rank_s += time.perf_counter() - tr
         c.selections += 1
         c.selected_pairs += chosen.size
@@ -643,6 +657,12 @@ class TieredCache(Cache):
             "stall_ms": stall_ms,
             "window_ms": window_ms,
         }
+
+    def recorded_selection(self) -> dict[tuple[int, int], np.ndarray]:
+        """The (layer, step) -> chosen-blocks map a `record_selection=True` run captured."""
+        if self._record is None:
+            raise RuntimeError("this cache was not built with record_selection=True")
+        return self._record
 
     def counters_dict(self) -> dict[str, Any]:
         return asdict(self.counters)

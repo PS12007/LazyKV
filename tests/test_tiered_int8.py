@@ -204,3 +204,33 @@ def test_inter_layer_gaps_are_one_per_step_and_larger_under_the_tier(tiny) -> No
     tier = _build(model, full)
     assert gaps(tier) > baseline
     tier.close()
+
+
+@cuda
+def test_replaying_a_recorded_selection_reproduces_the_run_exactly(tiny) -> None:  # noqa: ANN001
+    """The ceiling ablation is only valid if replay changes the timing and nothing else.
+
+    If the replayed pass produced different logits, the measured difference would include a change
+    in the work done, not just the removal of the host sync, and the ceiling would be meaningless.
+    """
+    from lazykv.generate import teacher_forced_decode
+    from lazykv.tiered import TieredCache
+
+    cfg, model = tiny
+    ids, full, pre = _prefilled(model, cfg)
+    cont = ids[:, PROMPT : PROMPT + 30]
+
+    rec = TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="gather", record_selection=True)
+    ref = torch.stack(list(teacher_forced_decode(model, rec, pre.last_logits, cont)))
+    selection = rec.recorded_selection()
+    rec.close()
+    full.truncate(PROMPT)
+    assert selection  # something was recorded
+
+    rep = TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="gather", replay_selection=selection)
+    got = torch.stack(list(teacher_forced_decode(model, rep, pre.last_logits, cont)))
+    # Same fetches, so the same traffic: the ablation removes the decision, not the work.
+    assert rep.counters.fetched_pairs == rec.counters.fetched_pairs
+    rep.close()
+    full.truncate(PROMPT)
+    assert torch.equal(got, ref)
