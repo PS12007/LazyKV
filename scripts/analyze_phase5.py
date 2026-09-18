@@ -184,6 +184,12 @@ def main() -> None:
     div = divergence(q, budgets)
     cap = capacity(tiers, budgets)
     times = host_time(tiers, budgets)
+    # Budgets at which the tier really offloads. Above them the slot count is capped at the candidate
+    # block count, every block stays resident, and the tier degenerates to rung 5 plus bookkeeping --
+    # so a latency span taken over all budgets would be diluted by conditions that move no bytes.
+    # Same definition as Phase 4's `tier_active_budgets`.
+    candidates = cfg["context"] // cfg["block_size"] - 1
+    active = [b for b in budgets if (tiers[QUANT].get(f"{b:g}") or {}).get("n_slots", 0) < candidates]
     sp = {s["label"]: s for s in speed}
     nb = {pol: cond_rows(niah, pol) for pol in policies}
     dvb = {d["budget"]: d for d in div}
@@ -220,6 +226,16 @@ def main() -> None:
         "tf_kl_at": {f"b{round(100 * b)}": {"exact": dvb[b]["tf_mean_kl_exact"], "int8": dvb[b]["tf_mean_kl"]} for b in budgets if b in dvb},
         # Latency: the prediction Phase 4 put on the record, tested.
         "latency_ratio_vs_exact": span([r["ratio_median"] for r in latency if r["ratio_median"] is not None]),
+        "latency_ratio_offloading": span([lat[b]["ratio_median"] for b in active if lat.get(b, {}).get("ratio_median") is not None]),
+        "fetch_ms_delta_offloading": span([h["host_fetch_ms_per_token_delta"] for h in times if h["budget"] in active and h["host_fetch_ms_per_token_delta"] is not None]),
+        "active_budgets": [f"{b:g}" for b in active],
+        "inactive_budgets": [f"{b:g}" for b in budgets if b not in active],
+        # The boundary is the one place the narrower record costs time instead of saving it: the
+        # prompt KV is packed on the GPU before it crosses the link.
+        "boundary_d2h_s": {pol: span([(tiers[pol].get(f"{b:g}") or {}).get("boundary_d2h_s") for b in budgets if (tiers[pol].get(f"{b:g}") or {}).get("boundary_d2h_s") is not None]) for pol in policies},
+        "boundary_d2h_mib": {pol: span([(tiers[pol].get(f"{b:g}") or {}).get("boundary_d2h_mib") for b in budgets if (tiers[pol].get(f"{b:g}") or {}).get("boundary_d2h_mib") is not None]) for pol in policies},
+        # Pooled over every budget: the overall verdict on whether rung 8 changed accuracy at all.
+        "sign_test_p_pooled": sign_test_p(sum(d["answers_broken"] for d in div), sum(d["answers_fixed"] for d in div)),
         "latency_ratio_at": {f"b{round(100 * b)}": lat[b]["ratio_median"] for b in budgets if lat.get(b, {}).get("ratio_median") is not None},
         "latency_delta_ms_at": {f"b{round(100 * b)}": lat[b]["delta_ms_median"] for b in budgets if lat.get(b, {}).get("delta_ms_median") is not None},
         "fetch_ms_delta": span([h["host_fetch_ms_per_token_delta"] for h in times if h["host_fetch_ms_per_token_delta"] is not None]),
