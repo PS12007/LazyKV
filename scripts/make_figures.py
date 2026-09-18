@@ -787,6 +787,50 @@ def fig_p4_blocksize(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p4_blocksize", t)
 
 
+def fig_p5_capacity(a: dict[str, Any], t: Theme) -> None:
+    """What the int8 warm/cold tier saves off-GPU, and what it charges in accuracy and latency.
+
+    Three panels because rung 8 has three separable effects and conflating them is exactly how a
+    capacity result gets mis-sold as a speed one.
+    """
+    cap = a.get("capacity") or []
+    if not cap:
+        return
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.2), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    budgets = [c["budget"] for c in cap]
+    for ax in axes:
+        style_axes(ax, t)
+        _budget_axis(ax, budgets)
+        ax.set_xlabel("Attended budget")
+    for (key, pretty), color in zip((("exact", "bf16 host pool (rung 6)"), ("int8", "int8 host pool (rung 8)")), t.series):
+        axes[0].plot(budgets, [c[f"host_kv_mib_{key}"] for c in cap], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
+    axes[0].set_title("KV held off-GPU, MiB", color=t.ink, fontsize=10, loc="left")
+    axes[0].set_ylim(bottom=0)
+
+    niah = {(r["policy"], r["budget"]): r for r in a["niah"]}
+    deltas = [100 * (niah[("tiered_int8", b)]["accuracy"] - niah[("tiered_sync", b)]["accuracy"]) for b in budgets]
+    axes[1].axhline(0, color=t.muted, linewidth=1)
+    axes[1].bar(range(len(budgets)), deltas, color=[t.series[2] if d >= 0 else t.series[1] for d in deltas], width=0.55)
+    axes[1].set_xticks(range(len(budgets)), [f"{100 * b:g}%" for b in budgets])
+    axes[1].set_xscale("linear")
+    axes[1].set_title("NIAH accuracy against the exact tier, percentage points", color=t.ink, fontsize=10, loc="left")
+
+    lat = {r["budget"]: r["ratio_median"] for r in a["latency_vs_exact"]}
+    ys = [lat[b] for b in budgets if lat.get(b) is not None]
+    if ys:
+        axes[2].axhline(1.0, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        axes[2].plot([b for b in budgets if lat.get(b) is not None], ys, color=t.series[3], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2)
+        axes[2].annotate("slower than rung 6 above this line", (budgets[0], 1.0), xytext=(4, 6), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    axes[2].set_title("Decode latency, x the exact tier", color=t.ink, fontsize=10, loc="left")
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=2, frameon=False, fontsize=9)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, f"int8 warm/cold tier at {a['context']:,} tokens: a capacity result", f"Paired within repeats of {a['speed_runs']} speed runs; accuracy over {a['niah_prompts_per_condition']} NIAH prompts per condition")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.28, wspace=0.24)
+    save(fig, "p5_capacity", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -797,6 +841,8 @@ def main() -> None:
     p3 = json.loads(p3_path.read_text(encoding="utf-8")) if p3_path.exists() else None
     p4_path = RESULTS_DIR / "phase4" / "analysis" / "metrics.json"
     p4 = json.loads(p4_path.read_text(encoding="utf-8")) if p4_path.exists() else None
+    p5_path = RESULTS_DIR / "phase5" / "analysis" / "metrics.json"
+    p5 = json.loads(p5_path.read_text(encoding="utf-8")) if p5_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
     lr = json.loads(lr_path.read_text(encoding="utf-8")) if lr_path.exists() else None
     plt.rcParams["font.family"] = ["Segoe UI", "DejaVu Sans", "sans-serif"]
@@ -823,6 +869,8 @@ def main() -> None:
             fig_p4_tradeoff(p4, t)
             fig_p4_fetch(p4, t)
             fig_p4_blocksize(p4, t)
+        if p5 is not None:
+            fig_p5_capacity(p5, t)
     print("figures written to", FIG_DIR)
 
 
