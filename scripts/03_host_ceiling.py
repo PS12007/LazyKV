@@ -39,6 +39,7 @@ import logging
 import random
 import statistics
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -53,13 +54,43 @@ from harness.results import REPO_ROOT, RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import summarize  # noqa: E402
 from harness.telemetry import TelemetryLogger  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
-from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
+from lazykv.generate import DecodeResult, cache_model_kwargs, greedy_decode, load, prefill  # noqa: E402
 from lazykv.profiling import LayerProfiler  # noqa: E402
 from lazykv.sweep import Condition, build_cache, cache_facts, load_config, make_host_memory, results_subdir  # noqa: E402
 from lazykv.tiered import TieredCache  # noqa: E402
 
 log = logging.getLogger("host_ceiling")
 FAST_STRATEGY = "cudnn_bucketed"
+
+
+@torch.inference_mode()
+def forced_decode(model, cache, token_ids: list[int]) -> DecodeResult:  # noqa: ANN001
+    """Decode a fixed token sequence, timed exactly as `greedy_decode` times a generated one.
+
+    The ablation needs the two passes to do identical work, and greedy decode cannot guarantee that
+    here: the fast kernel is not bit-repeatable for single-query decode (Phase 1), so a near-tie can
+    send the two passes down different token paths, after which they seal different blocks and fetch
+    different pairs. Forcing the tokens cuts that feedback loop -- the selection at each step then
+    depends only on KV that is identical by construction -- while leaving the per-step work, the
+    host sync for the token, and the timing unchanged.
+    """
+    res = DecodeResult(tokens=[token_ids[0]])
+    ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
+    extra = cache_model_kwargs(cache)
+    for tok in token_ids[:-1]:
+        ids.fill_(tok)
+        start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        torch.cuda.synchronize()
+        t0 = time.perf_counter()
+        start.record()
+        out = model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1, **extra)
+        nxt = torch.argmax(out.logits[0, -1])
+        end.record()
+        chosen = int(nxt.item())  # same host sync a real generation pays
+        res.wall_s.append(time.perf_counter() - t0)
+        res.event_s.append(start.elapsed_time(end) / 1e3)
+        res.tokens.append(chosen)
+    return res
 
 
 def main() -> None:
@@ -98,6 +129,9 @@ def main() -> None:
     shared_baseline = process_gpu_memory().shared_bytes
     rng = random.Random(2000 + args.run_id)
 
+    # The continuation both passes decode: the corpus text that follows the prompt, so the token
+    # sequence is fixed by the data rather than by whatever the model happened to sample.
+    forced = tokens[ctx : ctx + n_decode + 1].view(-1).tolist()
     pre = prefill(lm.model, full, tokens[:ctx], chunk)
     for cond in conds:  # plan warmup, outside the timed repeats
         built = build_cache(full, cond, total, bs, None, lm.model, host, tier=tier_opts)
@@ -121,7 +155,7 @@ def main() -> None:
                 if isinstance(built.cache, TieredCache):
                     built.cache._record = {}  # noqa: SLF001  -- record this pass to replay it below
                 # Unprofiled first: the honest latency, with no hooks on the model.
-                dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_decode)
+                dec = forced_decode(lm.model, built.cache, forced)
                 wall = dec.wall_s[sp["warmup_steps"] :]
                 selection = built.cache.recorded_selection() if isinstance(built.cache, TieredCache) else None
                 last = torch.zeros(lm.model.config.vocab_size, device="cuda")
@@ -146,7 +180,7 @@ def main() -> None:
                         full.truncate(ctx)
                     rbuilt = build_cache(full, cond, total, bs, None, lm.model, host, tier=tier_opts)
                     rbuilt.cache._replay = selection  # noqa: SLF001
-                    rdec = greedy_decode(lm.model, rbuilt.cache, pre.last_logits, n_decode)
+                    rdec = forced_decode(lm.model, rbuilt.cache, forced)
                     replay_wall = summarize(rdec.wall_s[sp["warmup_steps"] :]).to_dict()
                     # Not asserted: the fast kernel is not bit-repeatable for single-query decode
                     # (Phase 1; ~1% of calls), so two identical passes can part company on a
