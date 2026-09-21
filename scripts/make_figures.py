@@ -1,7 +1,7 @@
-"""Phase 0-4 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Phase 0-7 figures, rendered in light and dark variants for the README's <picture> tags.
 
 Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json,
-results/phase1/latency_regimes/metrics.json, and results/phase{2,3,4}/analysis/metrics.json.
+results/phase1/latency_regimes/metrics.json, and results/phase{2,3,4,5,7}/analysis/metrics.json.
 Writes docs/figures/*.png.
 Palette: validated categorical slots (fixed order), recessive hairline grid, 2px lines.
 """
@@ -841,6 +841,69 @@ def fig_p5_capacity(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p5_capacity", t)
 
 
+def fig_p7_exactness(a: dict[str, Any], t: Theme) -> None:
+    """What exactness recovers, and what it costs.
+
+    Three panels because the rung has exactly three claims and each needs its own axis: it holds
+    the reference accuracy while the budget falls, it is orders of magnitude closer to the full
+    cache than the rung it replaces, and it is much slower than either.
+    """
+    costs = a.get("price") or []
+    if not costs:
+        return
+    budgets = [c["budget"] for c in costs]
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.2), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    for ax in axes:
+        style_axes(ax, t)
+        _budget_axis(ax, budgets)
+        ax.set_xlabel("Attended budget")
+
+    niah = {(r["policy"], r["budget"]): r for r in a["niah"]}
+    full_acc = 100 * a["full_niah_accuracy"]
+    axes[0].axhline(full_acc, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    axes[0].annotate("full cache", (budgets[0], full_acc), xytext=(4, 5), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    for (pol, pretty), color in zip((("tiered_exact", "rung 9, exact merge"), ("tiered_sync", "rung 6, approximate")), t.series):
+        ys = [100 * niah[(pol, b)]["accuracy"] for b in budgets if (pol, b) in niah]
+        xs = [b for b in budgets if (pol, b) in niah]
+        axes[0].plot(xs, ys, color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
+    axes[0].set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
+    axes[0].set_ylim(0, 100)
+
+    # Log scale: the whole point is the order of magnitude between the two, which a linear axis
+    # would draw as one curve on the floor and one off the top.
+    kl = {(d["policy"], d["budget"]): d["tf_mean_kl"] for d in a.get("distance_from_full", [])}
+    for (pol, pretty), color in zip((("tiered_exact", "rung 9"), ("tiered_sync", "rung 6")), t.series):
+        pts = [(b, kl[(pol, b)]) for b in budgets if kl.get((pol, b))]
+        if pts:
+            axes[1].plot([x for x, _ in pts], [y for _, y in pts], color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=pretty)
+    axes[1].set_yscale("log")
+    axes[1].set_title("Teacher-forced KL from the full cache, nats", color=t.ink, fontsize=10, loc="left")
+
+    full_ms = costs[0].get("full_ms_per_token")
+    if full_ms:
+        axes[2].axhline(full_ms, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        axes[2].annotate("full cache", (budgets[0], full_ms), xytext=(4, 5), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    axes[2].plot(budgets, [c["approx_ms_per_token"] for c in costs], color=t.series[1], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="rung 6")
+    axes[2].plot(budgets, [c["exact_ms_per_token"] for c in costs], color=t.series[0], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="rung 9")
+    # The shaded band is the CPU pass: the part of rung 9's time that buys the exactness.
+    cpu = [c.get("cpu_attention_ms_per_token") for c in costs]
+    if all(v is not None for v in cpu):
+        axes[2].fill_between(budgets, [c["exact_ms_per_token"] - v for c, v in zip(costs, cpu)], [c["exact_ms_per_token"] for c in costs], color=t.series[0], alpha=0.18, linewidth=0, label="of which the CPU pass")
+    axes[2].set_ylim(bottom=0)
+    axes[2].set_title("Decode, ms per token", color=t.ink, fontsize=10, loc="left")
+
+    for ax in axes:
+        leg = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.19), ncol=2, frameon=False, fontsize=8.5)
+        if leg:
+            for text in leg.get_texts():
+                text.set_color(t.ink2)
+    title(fig, t, f"Rung 9 at {a['context']:,} tokens: exactness bought with CPU time",
+          f"{a['niah_prompts_per_condition']} NIAH prompts per condition; latency is the median over {a['speed_runs']} independent runs")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.27, wspace=0.26)
+    save(fig, "p7_exactness", t)
+
+
 def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
     """Brief §B8's headline experiment: every rung on one memory axis, accuracy and speed.
 
@@ -925,6 +988,8 @@ def main() -> None:
     p4 = json.loads(p4_path.read_text(encoding="utf-8")) if p4_path.exists() else None
     p5_path = RESULTS_DIR / "phase5" / "analysis" / "metrics.json"
     p5 = json.loads(p5_path.read_text(encoding="utf-8")) if p5_path.exists() else None
+    p7_path = RESULTS_DIR / "phase7" / "analysis" / "metrics.json"
+    p7 = json.loads(p7_path.read_text(encoding="utf-8")) if p7_path.exists() else None
     ladder_path = RESULTS_DIR / "ladder" / "metrics.json"
     ladder = json.loads(ladder_path.read_text(encoding="utf-8")) if ladder_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
@@ -955,6 +1020,8 @@ def main() -> None:
             fig_p4_blocksize(p4, t)
         if p5 is not None:
             fig_p5_capacity(p5, t)
+        if p7 is not None:
+            fig_p7_exactness(p7, t)
         if ladder is not None:
             fig_ladder_pareto(ladder, t)
     print("figures written to", FIG_DIR)
