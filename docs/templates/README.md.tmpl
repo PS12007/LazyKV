@@ -6,7 +6,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-4%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-6%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -24,15 +24,22 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 5 (int8 warm/cold tier) complete.** Eight rungs of the policy ladder are now
-> measured on the same sweep, at {{ phase5.analysis.context | int }} tokens, with the same prompts and
-> the same quality metrics. KV leaves VRAM, and the warm/cold copy is now
-> {{ phase5.analysis.summary.host_kv_ratio.min | .3f }}× the width of the hot one.
+> **Status: Phase 6 (failure analysis and write-up) complete.** All
+> {{ ladder.summary.rungs }} rungs of the policy ladder are measured on the same sweep, at
+> {{ ladder.summary.context | int }} tokens, with the same prompts and the same quality metrics, and
+> they are now on one frontier. The headline is a clean negative: **no rung retains 99% of
+> full-cache retrieval accuracy at any budget below 100%**, the best being
+> {{ ladder.summary.best_retention_excluding_full.max | pct }} at a
+> {{ ladder.summary.best_retention_budget_excluding_full | pct0 }} budget. Separately, four
+> independent attacks on bytes moved all failed to make decode faster, and removing the host
+> residency decision entirely is worth at most
+> {{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×.
 > **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
 > number, the four negative results and the limitations.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
-> [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md).
+> [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
+> [Phase 6](docs/phases/PHASE_6.md).
 
 ## Where the ladder stands
 
@@ -48,6 +55,7 @@ cache answers ({{ phase3.analysis.full_niah_accuracy | pct }} over
 | 5 | Quest-style query-aware selection | {{ phase3.analysis.headline.quest.best_retention_below_full | pct }} at a {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }} attended budget | none: it attends to less, and frees nothing |
 | 6 | + pinned CPU tier, synchronous fetch | {{ phase4.analysis.headline.tiered_sync.best_retention_below_full | pct }} at a {{ phase4.analysis.headline.tiered_sync.best_retention_budget | pct0 }} budget — **rung 5's answers, bit for bit** | yes: {{ phase4.analysis.summary.spare0.resident_mib_at.tiered_sync.b25 | int }} MiB resident at a 25% budget, against {{ phase4.analysis.summary.resident_mib_at.quest.b25 | int }} MiB |
 | 7 | + layer-ahead speculative prefetch | same answers again | same, and **slower** than rung 6 |
+| 8 | + int8 warm/cold tier | same answers, within noise (sign test p = {{ phase5.analysis.summary.sign_test_p_pooled | .2f }}) | the same blocks off-GPU at {{ phase5.analysis.summary.host_kv_ratio.min | .3f }}× the host bytes |
 
 **No rung yet meets the brief's headline target** of ≥ 99% retention below a 100% budget; query-aware
 selection comes closest and misses it. What Phase 4 changes is not the accuracy column but the last
@@ -95,6 +103,7 @@ Other measured facts from these two phases:
 | Selection churn with VRAM holding exactly the attended set (Phase 4) | up to {{ phase4.analysis.summary.spare0.fetched_pairs_per_token.tiered_sync.max | int }} (head, block) pairs re-fetched per token, {{ phase4.analysis.summary.spare0.thrash_share.tiered_sync.max | pct0 }} of them evicted within the previous 16 steps; doubling the slots cuts that to {{ phase4.analysis.summary.thrash_share.tiered_sync.max | pct0 }} |
 | Four attacks on bytes moved, none of them faster (Phases 4-5) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× its time at a 25% budget |
 | int8 warm/cold tier against the exact tier (Phase 5) | {{ phase5.analysis.summary.answers_differing_total }} NIAH answers changed across all budgets, {{ phase5.analysis.summary.answers_broken_total }} worse against {{ phase5.analysis.summary.answers_fixed_total }} better (exact sign test, p = {{ phase5.analysis.summary.sign_test_p_pooled | .2f }}): quality-neutral, and the apparent gain at the tightest budget is noise |
+| Ceiling on taking the residency decision off the host (Phase 6) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}× faster — still slower than the full cache's {{ phase5.ceiling.summary.full_decode_ms | .1f }} ms/token |
 
 ## Phase 1 in brief
 
