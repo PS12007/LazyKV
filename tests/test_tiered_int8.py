@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import statistics
+
 import pytest
 import torch
 
@@ -182,6 +184,11 @@ def test_inter_layer_gaps_are_one_per_step_and_larger_under_the_tier(tiny) -> No
     The full cache does no residency work, so its gap is the hook-overhead floor; the tier has to
     sync per selecting layer, so its gap must be larger. If that ordering ever failed, the
     measurement would not be measuring what it claims to.
+
+    On a toy model the gap is tens of microseconds and the two distributions overlap heavily, so
+    measuring all of one condition and then all of the other reordered them about two runs in five.
+    The conditions are interleaved and pooled here for the same reason every benchmark in this
+    project interleaves (brief §B6): run order, not the policy, was carrying the comparison.
     """
     from lazykv.generate import greedy_decode
     from lazykv.profiling import LayerProfiler
@@ -189,21 +196,36 @@ def test_inter_layer_gaps_are_one_per_step_and_larger_under_the_tier(tiny) -> No
     cfg, model = tiny
     _, full, pre = _prefilled(model, cfg)
 
-    def gaps(cache) -> float:  # noqa: ANN001
-        with LayerProfiler(model) as prof:
-            greedy_decode(model, cache, pre.last_logits, 2)
-            prof.reset()
-            greedy_decode(model, cache, pre.last_logits, 6)
-            g = prof.step_gaps()
-        assert len(g) == 6  # one total per decode step
-        assert all(x >= 0 for x in g)
-        return sorted(g)[len(g) // 2]
+    steps = 20
 
-    baseline = gaps(full)
-    full.truncate(PROMPT)
-    tier = _build(model, full)
-    assert gaps(tier) > baseline
-    tier.close()
+    def gaps(cache) -> list[float]:  # noqa: ANN001
+        with LayerProfiler(model) as prof:
+            greedy_decode(model, cache, pre.last_logits, 4)
+            prof.reset()
+            greedy_decode(model, cache, pre.last_logits, steps)
+            g = prof.step_gaps()
+        assert len(g) == steps  # one total per decode step
+        assert all(x >= 0 for x in g)
+        return g
+
+    rounds = 5
+    baseline: list[float] = []
+    tiered: list[float] = []
+    wins = 0
+    for _ in range(rounds):
+        b = gaps(full)
+        full.truncate(PROMPT)
+        tier = _build(model, full)
+        t = gaps(tier)
+        tier.close()
+        full.truncate(PROMPT)
+        baseline += b
+        tiered += t
+        wins += statistics.median(t) > statistics.median(b)
+    # Pooled and per round: the pooled medians must order correctly, and the ordering must not rest
+    # on one lucky round. A single round gets it right about six times in seven on this hardware.
+    assert statistics.median(tiered) > statistics.median(baseline), (statistics.median(tiered), statistics.median(baseline))
+    assert wins > rounds // 2, wins
 
 
 @cuda
