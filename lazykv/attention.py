@@ -156,7 +156,7 @@ def lazykv_attention_forward(
         start.record()
     # Query-aware policies replace the key set for this decode step: the selector returns the
     # gathered KV and a mask, or None to attend densely (prefill, dense layers, budget covers all).
-    mask = None
+    mask, chosen = None, None
     selector = kwargs.get("lazykv_selector")
     if selector is not None:
         chosen = selector.select(int(getattr(module, "layer_idx")), query, key, value)
@@ -166,6 +166,13 @@ def lazykv_attention_forward(
     if timer.enabled:
         end.record()
         timer.events.append((getattr(module, "layer_idx", -1), start, end))
+    # Rung 9 (lazykv/exact.py): `out` covers only the blocks the selector gathered. A selector that
+    # also handles the rest -- on the CPU, where they live -- folds them in here with a log-sum-exp
+    # merge. Recorded after the kernel timer so that its GPU work is not charged to the kernel.
+    if chosen is not None:
+        merge = getattr(selector, "merge", None)
+        if merge is not None:
+            out = merge(int(getattr(module, "layer_idx")), query, key, out, scaling, mask)
     # Policies that learn from attention (LRU usage, later H2O scores) need the post-RoPE
     # query, which only exists here. Transformers forwards extra model() kwargs down to this
     # function, so the cache is handed in per call rather than registered globally.

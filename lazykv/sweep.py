@@ -22,12 +22,16 @@ from lazykv.cache import FullGPUCache
 from lazykv.policies import H2O, make_policy
 from lazykv.scoring import PrefillScorer
 from lazykv.selection import QUEST_DENSE_LAYERS, QuestView, blocks_for_budget
+from lazykv.exact import ExactTieredCache, allocate_mirrors
 from lazykv.tiered import TieredCache, allocate_host_pools, allocate_stages
 
 # Policies whose decode cache is a view over the full cache rather than a block pool.
 SELECTORS = ("quest",)
-# Rungs 6-8: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
-TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8")
+# Rungs 6-9: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
+TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8", "tiered_exact")
+# Rung 9 keeps rung 6's tier and adds an exact CPU pass over the blocks VRAM does not hold, so it
+# needs a float32 mirror of the sealed KV in pageable host RAM on top of the pinned pools.
+EXACT = "tiered_exact"
 # Host-pool precision per policy. Rung 8 narrows the warm/cold tier to int8; the VRAM slots stay bf16.
 TIER_QUANT: dict[str, str | None] = {"tiered_int8": "int8"}
 
@@ -74,6 +78,7 @@ class HostMemory:
 
     pools: dict[str | None, list[torch.Tensor]]
     stages: dict[str | None, Any]  # (compute, copy) staging, when tier.fetch is "gather"
+    mirrors: list[Any] | None = None  # rung 9's float32 mirrors, one per selecting layer
 
 
 def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_len: int, total_tokens: int, tier: dict[str, Any] | None = None) -> HostMemory | None:
@@ -91,7 +96,10 @@ def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_le
         if gather or quant is not None:
             slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered if TIER_QUANT.get(cond.policy) == quant)
             stages[quant] = allocate_stages(slots * c.num_key_value_heads, c.num_key_value_heads, head_dim, block_size, model.dtype, quant)
-    return HostMemory(pools, stages)
+    # Allocated once per process for the same reason the pinned pools are: at 32K each mirror is
+    # about 135 MiB, and building them per condition would time the allocation, not the policy.
+    mirrors = allocate_mirrors(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len) if any(cond.policy == EXACT for cond in tiered) else None
+    return HostMemory(pools, stages, mirrors)
 
 
 def n_slots_for(cond: Condition, total_tokens: int, block_size: int, tier: dict[str, Any] | None) -> int:
@@ -153,12 +161,14 @@ def build_cache(
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
         n_slots = n_slots_for(cond, total_tokens, block_size, tier)
         quant = TIER_QUANT.get(cond.policy)
-        cache = TieredCache(
+        kind = ExactTieredCache if cond.policy == EXACT else TieredCache
+        extra = {"mirrors": None if host is None else host.mirrors, "threads": (tier or {}).get("cpu_threads", 8)} if cond.policy == EXACT else {}
+        cache = kind(
             full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch",
             host_pools=None if host is None else host.pools[quant], instrument=instrument, n_slots=n_slots,
             # Rung 8 has nowhere to dequantize in "runs" mode, so it always gathers.
             fetch="gather" if quant else (tier or {}).get("fetch", "runs"),
-            stages=None if host is None else host.stages.get(quant), quant=quant,
+            stages=None if host is None else host.stages.get(quant), quant=quant, **extra,
         )
         torch.cuda.synchronize()
         return Built(cache, time.perf_counter() - t0, n_slots, k)
@@ -208,4 +218,7 @@ def cache_facts(built: Built) -> dict[str, Any]:
         # What those same blocks would cost in the model's dtype: the denominator of rung 8's saving.
         facts["host_kv_logical_bytes"] = cache.host_logical_bytes()
         facts["tier_quant"] = cache.quant or "none"
+        if isinstance(cache, ExactTieredCache):
+            # Rung 9's own cost, kept separate from the tier's so the two are additive.
+            facts.update({f"exact_{k}": v for k, v in cache.exact_counters_dict().items()})
     return facts

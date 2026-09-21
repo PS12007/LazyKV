@@ -474,6 +474,7 @@ class TieredCache(Cache):
         self._replay = replay_selection
         self._step = 0
         self._step_fetched = 0
+        self._last_chosen: np.ndarray | None = None
         self._hooks: list[Any] = []
         self._timed: list[_Timed] = []
         self._copy_events: dict[int, torch.cuda.Event] = {}
@@ -555,6 +556,9 @@ class TieredCache(Cache):
         if self._record is not None:
             self._record[(layer_idx, self._step)] = chosen
         c.host_rank_s += time.perf_counter() - tr
+        # Rung 9 (lazykv/exact.py) needs the same block ids to know which blocks the CPU must
+        # *not* attend to; recomputing them there would be a second source of truth.
+        self._last_chosen = chosen
         c.selections += 1
         c.selected_pairs += chosen.size
         if tier.pending_prefetch is not None:
