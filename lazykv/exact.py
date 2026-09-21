@@ -175,6 +175,11 @@ class ExactTieredCache(TieredCache):
         t = tiers[0]
         if mirrors is None:
             mirrors = [_Mirror.allocate(t.h, t.cap_blocks, t.bs, t.d) for _ in tiers]
+        want = (t.h, t.cap_blocks * t.bs, t.d)
+        if len(mirrors) < len(tiers) or any(tuple(m.keys.shape) != want or m.keys.dtype is not torch.float32 for m in mirrors):
+            # Mirrors are allocated once per process and reused across a sweep's conditions. A
+            # short one would fail on a later seal, long after the condition that caused it.
+            raise ValueError(f"need {len(tiers)} float32 mirrors of shape {want}, got {len(mirrors)} of {tuple(mirrors[0].keys.shape) if mirrors else None}")
         self.mirrors = {i: m for i, m in zip(sorted(self.tiers), mirrors)}
         t0 = time.perf_counter()
         for i, tier in self.tiers.items():
