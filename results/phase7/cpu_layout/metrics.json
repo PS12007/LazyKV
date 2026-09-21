@@ -1,0 +1,318 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-21T17:04:52+00:00",
+    "git_commit": "481af751a95d52c8bc84d3c96c83ebe83eade69e",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "README.md",
+      "docs/FINDINGS.md",
+      "docs/RESEARCH_LOG.md",
+      "docs/figures/ladder_pareto-dark.png",
+      "docs/figures/ladder_pareto-light.png",
+      "docs/phases/PHASE_6.md",
+      "docs/templates/FINDINGS.md.tmpl",
+      "docs/templates/README.md.tmpl",
+      "docs/templates/RESEARCH_LOG.md.tmpl",
+      "results/ladder/metrics.json",
+      "scripts/analyze_phase7.py",
+      "scripts/make_figures.py",
+      "scripts/render_docs.py"
+    ],
+    "argv": [
+      "scripts/04_cpu_layout.py"
+    ],
+    "python": "3.12.10"
+  },
+  "host": {
+    "os": {
+      "Caption": "Microsoft Windows 11 Home",
+      "Version": "10.0.26200",
+      "BuildNumber": "26200"
+    },
+    "cpu": {
+      "Name": "Intel(R) Core(TM) i7-14700HX",
+      "NumberOfCores": 20,
+      "NumberOfLogicalProcessors": 28,
+      "MaxClockSpeed": 2100
+    },
+    "ram_dimms": [
+      {
+        "Capacity": 17179869184,
+        "Speed": 5600,
+        "ConfiguredClockSpeed": 5600,
+        "Manufacturer": "Kingston",
+        "PartNumber": "LV56S46BS8MD-16KI   ",
+        "DeviceLocator": "Controller1-ChannelA-DIMM0"
+      }
+    ],
+    "ram_total_bytes": 17179869184,
+    "ram_dimm_count": 1,
+    "disks": [
+      {
+        "FriendlyName": "SAMSUNG MZAL81T0HFLB-00BL2",
+        "BusType": "NVMe",
+        "MediaType": "SSD",
+        "Size": 1024209543168
+      }
+    ],
+    "battery": [
+      {
+        "BatteryStatus": 2,
+        "EstimatedChargeRemaining": 86
+      }
+    ],
+    "hags_hwschmode": null,
+    "power_plan": "Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)"
+  },
+  "config": {
+    "context": 32768,
+    "capacity": 34816,
+    "block_size": 64,
+    "kv_heads": 8,
+    "groups": 4,
+    "head_dim": 64,
+    "layers": 14,
+    "threads": [
+      4,
+      8,
+      14,
+      20
+    ],
+    "k_blocks": 128,
+    "repeats": 8
+  },
+  "rows": [
+    {
+      "layout": "bf16_in_place",
+      "note": "the tier's pinned pool, attended where it lies",
+      "threads": 4,
+      "ms_per_layer": 127.73239999660291,
+      "ms_per_layer_min": 125.03169995034114,
+      "ms_per_layer_max": 129.34510002378374,
+      "ms_per_token": 1788.2535999524407,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_in_place",
+      "note": "the same layout widened to float32",
+      "threads": 4,
+      "ms_per_layer": 17.250899982172996,
+      "ms_per_layer_min": 16.38519996777177,
+      "ms_per_layer_max": 18.261899997014552,
+      "ms_per_token": 241.51259975042194,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous",
+      "note": "a fresh contiguous float32 matrix per head",
+      "threads": 4,
+      "ms_per_layer": 5.292249988997355,
+      "ms_per_layer_min": 4.996699979528785,
+      "ms_per_layer_max": 5.890400032512844,
+      "ms_per_token": 74.09149984596297,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_mirror_slice",
+      "note": "the mirror as rung 9 holds it: a prefix of a capacity-sized buffer",
+      "threads": 4,
+      "ms_per_layer": 5.282999976770952,
+      "ms_per_layer_min": 4.909699957352132,
+      "ms_per_layer_max": 5.799600039608777,
+      "ms_per_token": 73.96199967479333,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous_per_head_loop",
+      "note": "the first implementation: one KV head at a time",
+      "threads": 4,
+      "ms_per_layer": 7.667350000701845,
+      "ms_per_layer_min": 7.00339995091781,
+      "ms_per_layer_max": 8.84369999403134,
+      "ms_per_token": 107.34290000982583,
+      "repeats": 8
+    },
+    {
+      "layout": "bf16_in_place",
+      "note": "the tier's pinned pool, attended where it lies",
+      "threads": 8,
+      "ms_per_layer": 133.94070000504144,
+      "ms_per_layer_min": 129.90020000142977,
+      "ms_per_layer_max": 142.71420001750812,
+      "ms_per_token": 1875.16980007058,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_in_place",
+      "note": "the same layout widened to float32",
+      "threads": 8,
+      "ms_per_layer": 15.676600014558062,
+      "ms_per_layer_min": 15.150399995036423,
+      "ms_per_layer_max": 16.74659998388961,
+      "ms_per_token": 219.47240020381287,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous",
+      "note": "a fresh contiguous float32 matrix per head",
+      "threads": 8,
+      "ms_per_layer": 4.058349964907393,
+      "ms_per_layer_min": 3.760899999178946,
+      "ms_per_layer_max": 5.791500036139041,
+      "ms_per_token": 56.8168995087035,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_mirror_slice",
+      "note": "the mirror as rung 9 holds it: a prefix of a capacity-sized buffer",
+      "threads": 8,
+      "ms_per_layer": 4.907649999950081,
+      "ms_per_layer_min": 4.030400014016777,
+      "ms_per_layer_max": 5.566100007854402,
+      "ms_per_token": 68.70709999930114,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous_per_head_loop",
+      "note": "the first implementation: one KV head at a time",
+      "threads": 8,
+      "ms_per_layer": 7.765449990984052,
+      "ms_per_layer_min": 7.435700041241944,
+      "ms_per_layer_max": 8.729399996809661,
+      "ms_per_token": 108.71629987377673,
+      "repeats": 8
+    },
+    {
+      "layout": "bf16_in_place",
+      "note": "the tier's pinned pool, attended where it lies",
+      "threads": 14,
+      "ms_per_layer": 154.72214997862466,
+      "ms_per_layer_min": 147.22829998936504,
+      "ms_per_layer_max": 171.72939999727532,
+      "ms_per_token": 2166.110099700745,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_in_place",
+      "note": "the same layout widened to float32",
+      "threads": 14,
+      "ms_per_layer": 18.63539998885244,
+      "ms_per_layer_min": 17.462800024077296,
+      "ms_per_layer_max": 19.37809999799356,
+      "ms_per_token": 260.8955998439342,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous",
+      "note": "a fresh contiguous float32 matrix per head",
+      "threads": 14,
+      "ms_per_layer": 4.913450015010312,
+      "ms_per_layer_min": 4.041899985168129,
+      "ms_per_layer_max": 5.25669998023659,
+      "ms_per_token": 68.78830021014437,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_mirror_slice",
+      "note": "the mirror as rung 9 holds it: a prefix of a capacity-sized buffer",
+      "threads": 14,
+      "ms_per_layer": 4.218150017550215,
+      "ms_per_layer_min": 3.913499996997416,
+      "ms_per_layer_max": 4.729100037366152,
+      "ms_per_token": 59.05410024570301,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous_per_head_loop",
+      "note": "the first implementation: one KV head at a time",
+      "threads": 14,
+      "ms_per_layer": 8.242299983976409,
+      "ms_per_layer_min": 7.8640999854542315,
+      "ms_per_layer_max": 11.97579997824505,
+      "ms_per_token": 115.39219977566972,
+      "repeats": 8
+    },
+    {
+      "layout": "bf16_in_place",
+      "note": "the tier's pinned pool, attended where it lies",
+      "threads": 20,
+      "ms_per_layer": 168.16484997980297,
+      "ms_per_layer_min": 154.27569998428226,
+      "ms_per_layer_max": 176.44989996915683,
+      "ms_per_token": 2354.3078997172415,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_in_place",
+      "note": "the same layout widened to float32",
+      "threads": 20,
+      "ms_per_layer": 18.441849999362603,
+      "ms_per_layer_min": 17.848599993158132,
+      "ms_per_layer_max": 21.47129998775199,
+      "ms_per_token": 258.18589999107644,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous",
+      "note": "a fresh contiguous float32 matrix per head",
+      "threads": 20,
+      "ms_per_layer": 4.600649990607053,
+      "ms_per_layer_min": 4.304200003389269,
+      "ms_per_layer_max": 4.892999946605414,
+      "ms_per_token": 64.40909986849874,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_mirror_slice",
+      "note": "the mirror as rung 9 holds it: a prefix of a capacity-sized buffer",
+      "threads": 20,
+      "ms_per_layer": 4.554050014121458,
+      "ms_per_layer_min": 4.434900009073317,
+      "ms_per_layer_max": 4.771200008690357,
+      "ms_per_token": 63.75670019770041,
+      "repeats": 8
+    },
+    {
+      "layout": "fp32_contiguous_per_head_loop",
+      "note": "the first implementation: one KV head at a time",
+      "threads": 20,
+      "ms_per_layer": 11.894799972651526,
+      "ms_per_layer_min": 11.537799960933626,
+      "ms_per_layer_max": 12.684899964369833,
+      "ms_per_token": 166.52719961712137,
+      "repeats": 8
+    }
+  ],
+  "summary": {
+    "context": 32768,
+    "block_size": 64,
+    "kv_heads": 8,
+    "groups": 4,
+    "head_dim": 64,
+    "layers": 14,
+    "k_blocks": 128,
+    "capacity_tokens": 34816,
+    "best_threads": 14,
+    "best_ms_per_layer": {
+      "bf16_in_place": 127.73239999660291,
+      "fp32_in_place": 15.676600014558062,
+      "fp32_contiguous": 4.058349964907393,
+      "fp32_mirror_slice": 4.218150017550215,
+      "fp32_contiguous_per_head_loop": 7.667350000701845
+    },
+    "best_ms_per_token": {
+      "bf16_in_place": 1788.2535999524407,
+      "fp32_in_place": 219.47240020381287,
+      "fp32_contiguous": 56.8168995087035,
+      "fp32_mirror_slice": 59.05410024570301,
+      "fp32_contiguous_per_head_loop": 107.34290000982583
+    },
+    "over_mirror": {
+      "bf16_in_place": 30.281616221602842,
+      "fp32_in_place": 3.7164633664837265,
+      "fp32_contiguous_per_head_loop": 1.8177044364948474
+    },
+    "mirror_bytes_per_layer": 142606336
+  }
+}

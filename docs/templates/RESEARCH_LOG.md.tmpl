@@ -5,6 +5,72 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-21: Phase 7, rung 9 — the last rung, and the only one that clears the bar
+
+Phases 2-6 measured seven approximating rungs and answered the brief's headline question with
+*none*. Rung 9 was the one rung of the ladder left unbuilt, and `docs/FINDINGS.md` carried it as a
+limitation. It answers the same question differently: instead of not attending to a non-resident
+block, attend to it on the CPU where it already is, and merge the two partial attentions with their
+log-sum-exp normalizers. That is FlashAttention's rescaling identity (arXiv 2205.14135) applied
+across a device boundary, as ring attention (arXiv 2310.01889) applies it across accelerators, and
+it is exact.
+
+### The layout question, settled before any of it was built
+
+Phase 0 §5 timed CPU attention on *contiguous float32*. The tier's pinned pool is bf16 laid out
+`[blocks, heads, 2, block_size, head_dim]`, which is neither. Measuring that gap first was the
+difference between a design and a guess, so it is its own experiment
+(`scripts/04_cpu_layout.py`). At this study's geometry one layer's pass costs
+{{ phase7.cpu_layout.summary.best_ms_per_layer.fp32_mirror_slice | .1f }} ms from the float32 mirror,
+{{ phase7.cpu_layout.summary.over_mirror.fp32_in_place | .1f }}× that from the same values left in
+the pool's layout, and {{ phase7.cpu_layout.summary.over_mirror.bf16_in_place | .0f }}× that in
+bf16, which has no CPU GEMM on a Raptor Lake consumer part. So rung 9 keeps a float32 mirror of the
+sealed KV, contiguous per head, and that mirror is
+{{ phase7.analysis.summary.mirror_mib.max | int }} MiB of host RAM it would not otherwise need.
+
+A second measurement settled the other half: gathering only the cold blocks is the strided case, so
+the pass scores every sealed block and masks the resident ones instead. The consequence is that
+rung 9's CPU cost does not respond to the budget, and §3 of the gate report reports that as a
+finding rather than discovering it later.
+
+A third thing was found by benchmarking rather than by reading: the first implementation looped over
+KV heads, and at a 4K smoke context its Python and small-matrix overhead was larger than the
+arithmetic it wrapped. One batched GEMM over all heads removed it; even at 32K, where the overhead
+is amortized over eight times the work, the loop is still
+{{ phase7.cpu_layout.summary.over_mirror.fp32_contiguous_per_head_loop | .1f }}× the batched pass.
+
+### The answer
+
+**Rung 9 holds the full cache's retrieval accuracy at every budget measured**, including the
+tightest, where rung 6 retains
+{{ phase7.analysis.summary.retention_at.tiered_sync.b6 | pct }}. It is the only rung on the ladder
+that clears the brief's 99% bar below a full budget, and it does so trivially, because being exact
+makes accuracy independent of the budget.
+
+**"Exact" is a claim about the algebra and the measurement says so.** The GPU half runs the bf16
+kernel over the gathered set, the CPU half runs float32 over the rest, and the two are summed in a
+different order and rounded once more, so the teacher-forced KL from the full cache is
+{{ phase7.analysis.summary.tf_mean_kl.tiered_exact.min | .1e }}–{{ phase7.analysis.summary.tf_mean_kl.tiered_exact.max | .1e }}
+nats rather than zero — against
+{{ phase7.analysis.summary.tf_mean_kl.tiered_sync.min | .1e }}–{{ phase7.analysis.summary.tf_mean_kl.tiered_sync.max | .1e }}
+for rung 6 on the same documents. Quoting it as zero would have been the easy version.
+
+**The price is {{ phase7.analysis.summary.over_approx.min | .2f }}–{{ phase7.analysis.summary.over_approx.max | .2f }}×
+rung 6's decode time and
+{{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}×
+the full cache's**, plus the mirror's host RAM. Only
+{{ phase7.analysis.summary.returned_kib_per_token.max | .1f }} KiB per token comes back from the
+CPU, which is brief §B1(c)'s claim confirmed and, once again, evidence that bytes on the wire were
+never this design's constraint.
+
+### What it changes about the study
+
+The headline stops being one sentence. *Skipping* non-resident KV cannot hold the last percent of
+accuracy at any budget measured here. *Computing* it elsewhere holds all of it, and the currency is
+compute rather than memory. For a context that still fits in VRAM — as this one does — nobody should
+take that trade. For the regime the tier exists for, which this study never reached because the 3B
+stress model was never run, it is the only rung that keeps the answers right.
+
 ## 2026-09-18: pricing the redesign before building it
 
 Phase 5 ended with an owner decision: take the residency decision off the host critical path, or
@@ -203,13 +269,13 @@ Phase 2 ended with a mechanical failure mode: a window keeps the end of the prom
 anywhere else is gone. Both Phase 3 rungs break that dependence, and they break it differently.
 
 - **Rung 5 (Quest-style selection)** retains {{ phase3.analysis.headline.quest.best_retention_below_full | pct }}
-  of the full cache's NIAH accuracy at a {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }}
+  of the full cache's NIAH accuracy at a {{ phase3.analysis.headline.quest.best_retention_budget | budget }}
   attended budget and  {{ phase3.analysis.summary.accuracy_at.quest.b25 | pct }} at 25%, against
    {{ phase3.analysis.summary.accuracy_at.window_sink.b25 | pct }} for window + sink at 25%. Paired over the
   same prompts it is {{ phase3.analysis.summary.paired_span.quest.min | pp }} to
   {{ phase3.analysis.summary.paired_span.quest.max | pp }} ahead of window + sink.
 - **Rung 4 (H2O-style eviction)** retains {{ phase3.analysis.headline.h2o.best_retention_below_full | pct }}
-  at {{ phase3.analysis.headline.h2o.best_retention_budget | pct0 }} and is
+  at {{ phase3.analysis.headline.h2o.best_retention_budget | budget }} and is
   {{ phase3.analysis.summary.paired_span.h2o.min | pp }} to {{ phase3.analysis.summary.paired_span.h2o.max | pp }}
   ahead of window + sink. Its weakness is positional: accumulated attention favours early keys, which every
   later query can see, so it keeps the start and the recent window and drops the middle
@@ -261,7 +327,7 @@ At {{ phase2.analysis.context | int }} tokens the full cache answers
 {{ phase2.analysis.full_niah_accuracy | pct }} of {{ phase2.analysis.niah_prompts_per_condition }} needle prompts.
 **No GPU-only eviction policy retains ≥ 99% of that at any budget below 100%.** The best,
 window + sink, keeps {{ phase2.analysis.headline.window_sink.best_retention_below_full | pct0 }} of it at a
-{{ phase2.analysis.headline.window_sink.best_retention_budget | pct0 }} budget, and accuracy falls with the
+{{ phase2.analysis.headline.window_sink.best_retention_budget | budget }} budget, and accuracy falls with the
 budget because a window keeps the last *f* of the prompt: a needle earlier than that is evicted at the
 prefill→decode boundary, before any query exists. That is the mechanism Phase 3's query-aware
 selection has to break, and it is why selection acts per step rather than at a boundary.

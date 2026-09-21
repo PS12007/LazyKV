@@ -884,12 +884,19 @@ def fig_p7_exactness(a: dict[str, Any], t: Theme) -> None:
     if full_ms:
         axes[2].axhline(full_ms, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
         axes[2].annotate("full cache", (budgets[0], full_ms), xytext=(4, 5), textcoords="offset points", color=t.ink2, fontsize=8.5)
-    axes[2].plot(budgets, [c["approx_ms_per_token"] for c in costs], color=t.series[1], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="rung 6")
     axes[2].plot(budgets, [c["exact_ms_per_token"] for c in costs], color=t.series[0], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="rung 9")
-    # The shaded band is the CPU pass: the part of rung 9's time that buys the exactness.
+    axes[2].plot(budgets, [c["approx_ms_per_token"] for c in costs], color=t.series[1], linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label="rung 6")
+    # The shaded band is the CPU pass: the part of rung 9's time that buys the exactness. Labelled
+    # inside the band rather than in the legend, because its lower edge runs close to rung 6's line
+    # and a legend swatch would not say which of the two a reader is looking at.
     cpu = [c.get("cpu_attention_ms_per_token") for c in costs]
     if all(v is not None for v in cpu):
-        axes[2].fill_between(budgets, [c["exact_ms_per_token"] - v for c, v in zip(costs, cpu)], [c["exact_ms_per_token"] for c in costs], color=t.series[0], alpha=0.18, linewidth=0, label="of which the CPU pass")
+        lo = [c["exact_ms_per_token"] - v for c, v in zip(costs, cpu)]
+        hi = [c["exact_ms_per_token"] for c in costs]
+        axes[2].fill_between(budgets, lo, hi, color=t.series[0], alpha=0.16, linewidth=0)
+        mid = len(budgets) // 2
+        axes[2].annotate("the CPU pass:\nwhat exactness costs", (budgets[mid], (lo[mid] + hi[mid]) / 2),
+                         ha="center", va="center", color=t.ink2, fontsize=8.5)
     axes[2].set_ylim(bottom=0)
     axes[2].set_title("Decode, ms per token", color=t.ink, fontsize=10, loc="left")
 

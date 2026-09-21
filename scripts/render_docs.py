@@ -1279,6 +1279,41 @@ def block_p7_headline(ctx: Mapping[str, Any]) -> str:
     return _sweep_headline(ctx, "phase7")
 
 
+def block_p7_layout(ctx: Mapping[str, Any]) -> str:
+    """Why rung 9 keeps a float32 mirror: the same pass, four layouts, at the study's geometry."""
+    rows_in = lookup(ctx, "phase7.cpu_layout.rows")
+    summary = lookup(ctx, "phase7.cpu_layout.summary")
+    if not isinstance(rows_in, list) or not rows_in or not isinstance(summary, Mapping):
+        return f"_{NOT_MEASURED}_"
+    labels = {
+        "bf16_in_place": "bf16, attended in the tier's pinned pool",
+        "fp32_in_place": "float32, same layout",
+        "fp32_contiguous": "float32, contiguous per head",
+        "fp32_mirror_slice": "float32, the mirror as rung 9 holds it",
+        "fp32_contiguous_per_head_loop": "float32 contiguous, per-head Python loop (the first implementation)",
+    }
+    best = summary["best_ms_per_layer"]
+    tok = summary["best_ms_per_token"]
+    ref = best.get("fp32_mirror_slice")
+    rows = []
+    for key, label in labels.items():
+        if best.get(key) is None:
+            continue
+        threads = next((r["threads"] for r in rows_in if r.get("layout") == key and r.get("ms_per_layer") == best[key]), None)
+        rows.append([
+            label,
+            f"{best[key]:.2f}",
+            f"{tok[key]:,.0f}",
+            f"{best[key] / ref:.2f}x" if ref else NOT_MEASURED,
+            str(threads) if threads is not None else NOT_MEASURED,
+        ])
+    return table(
+        ["Layout", "ms per selecting layer", "ms per token", "x the mirror", "at threads"],
+        rows,
+        ["---", "---:", "---:", "---:", "---:"],
+    )
+
+
 def block_p7_threads(ctx: Mapping[str, Any]) -> str:
     """The CPU thread count, measured inside a real decode rather than on an idle machine."""
     rows_in = lookup(ctx, "phase7.analysis.thread_sweep")
@@ -1303,7 +1338,22 @@ def block_p7_threads(ctx: Mapping[str, Any]) -> str:
 
 
 def block_p7_provenance(ctx: Mapping[str, Any]) -> str:
-    return _sweep_provenance(ctx, "phase7")
+    """The sweep's provenance, plus the two supporting experiments, which ran at a later commit."""
+    src = lookup(ctx, "phase7.analysis.sources")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row("Policy quality (NIAH + teacher-forced)", src["policy_quality"])]
+    rows += [_provenance_row(f"Budget speed run {i}", p) for i, p in enumerate(src["budget_speed"], 1)]
+    layout = lookup(ctx, "phase7.cpu_layout.provenance")
+    if isinstance(layout, Mapping):
+        rows.append(_provenance_row("CPU layout benchmark (§1)", layout))
+    phase7 = lookup(ctx, "phase7")
+    if isinstance(phase7, Mapping):
+        for key in sorted(k for k in phase7 if k.startswith("threads_t")):
+            p = lookup(ctx, f"phase7.{key}.run_1.provenance")
+            if isinstance(p, Mapping):
+                rows.append(_provenance_row(f"CPU thread sweep, {key.removeprefix('threads_t').lstrip('0')} threads (§7)", p))
+    return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 def block_p7_distance(ctx: Mapping[str, Any]) -> str:

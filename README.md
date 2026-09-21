@@ -8,7 +8,7 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-6%20complete-2a78d6)
+![phase](https://img.shields.io/badge/phase-7%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -26,22 +26,27 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 6 (failure analysis and write-up) complete.** All
-> 8 rungs of the policy ladder are measured on the same sweep, at
+> **Status: Phase 7 (rung 9, the exact merge) complete.** All
+> 9 rungs of the policy ladder are measured on the same sweep, at
 > 32,768 tokens, with the same prompts and the same quality metrics, and
-> they are now on one frontier. The headline is a clean negative: **no rung retains 99% of
-> full-cache retrieval accuracy at any budget below 100%**, the best being
+> they are on one frontier. **No *approximating* rung retains 99% of full-cache retrieval accuracy at
+> any budget below 100%**, the best being
 > 98.8% at a
-> 75% budget. Separately, four
-> independent attacks on bytes moved all failed to make decode faster, and removing the host
-> residency decision entirely is worth at most
+> 75% budget. The one rung that does not
+> approximate — it attends to the non-resident blocks on the CPU and merges exactly — holds the full
+> cache's accuracy down to a
+> 6.25% budget, and decodes
+> 6.2× slower than keeping the KV in VRAM.
+> Separately, five independent attacks on bytes moved all failed to make decode faster — rung 9
+> moves less KV than any of them and is the slowest of the lot — and removing
+> the host residency decision entirely is worth at most
 > 1.16×.
 > **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
-> number, the four negative results and the limitations.
+> number, the negative results and the limitations.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
-> [Phase 6](docs/phases/PHASE_6.md).
+> [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md).
 
 ## Where the ladder stands
 
@@ -58,10 +63,12 @@ cache answers (88.9% over
 | 6 | + pinned CPU tier, synchronous fetch | 98.8% at a 75% budget — **rung 5's answers, bit for bit** | yes: 415 MiB resident at a 25% budget, against 1,028 MiB |
 | 7 | + layer-ahead speculative prefetch | same answers again | same, and **slower** than rung 6 |
 | 8 | + int8 warm/cold tier | same answers, within noise (sign test p = 0.39) | the same blocks off-GPU at 0.531× the host bytes |
+| 9 | + exact partial attention on the CPU | **100.0%–101.3%: the full cache's answers, at every budget** | same as rung 6, and 1,848 MiB of extra host RAM, at 6.1–6.5× the full cache's decode time |
 
-**No rung yet meets the brief's headline target** of ≥ 99% retention below a 100% budget; query-aware
-selection comes closest and misses it. What Phase 4 changes is not the accuracy column but the last
-one: rungs 6 and 7 attend to exactly what rung 5 attends to, and keep only that in VRAM.
+**No rung that skips KV meets the brief's headline target** of ≥ 99% retention below a 100% budget;
+query-aware selection comes closest and misses it. Rung 9 meets it by not skipping: it computes the
+missing attention on the CPU and merges it back exactly, which is the study's answer that the last
+percent of accuracy is available and the currency for it is compute rather than memory.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p4_tradeoff-dark.png">
@@ -103,9 +110,10 @@ Other measured facts from these two phases:
 | Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
 | The CPU tier against the selection it implements (Phase 4) | 0 of 225 answers differ from rung 5, and the largest teacher-forced KL difference is 0.0e+00 nats |
 | Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,692 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 59% |
-| Four attacks on bytes moved, none of them faster (Phases 4-5) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is 1.14× its time at a 25% budget |
+| Five attacks on bytes moved, none of them faster (Phases 4-5, 7) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is 1.14× its time at a 25% budget |
 | int8 warm/cold tier against the exact tier (Phase 5) | 26 NIAH answers changed across all budgets, 4 worse against 8 better (exact sign test, p = 0.39): quality-neutral, and the apparent gain at the tightest budget is noise |
 | Ceiling on taking the residency decision off the host (Phase 6) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes 1.11–1.16× faster — still slower than the full cache's 21.7 ms/token |
+| The price of exactness (Phase 7) | rung 9 holds the full cache's retrieval accuracy at every budget, for 2.28–4.23× rung 6's decode time; the CPU pass costs 61–69 ms per token and only 113.8 KiB per token comes back |
 
 ## Phase 1 in brief
 

@@ -1,0 +1,304 @@
+# Phase 7 gate report: rung 9, and what exactness costs
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Rung 9 was the one rung of the brief's ladder (§B8) that Phases 2-6 left unbuilt, and
+`docs/FINDINGS.md` carried it as a limitation. It is the other answer to the question the whole
+study is built on. Rungs 2-8 answer "this block is not in VRAM" by **not attending to it**, and the
+accuracy column of every earlier phase is the price of that answer. Rung 9 answers it by
+**attending to the block where it already lives** — on the CPU — and merging the two partial
+attentions with their log-sum-exp normalizers. Softmax is associative under that rescaling, so the
+result is the full cache's attention and only O(head_dim) bytes come back per query head.
+
+The reason it is worth measuring is not that it is likely to be fast. Phase 0 §5 measured CPU
+attention and `docs/IMPLEMENTATION_PLAN.md` §3.3 put the expected outcome on the record before any
+of it was built: (c) "cannot be the main path for long contexts", because its cost scales with
+*all* non-resident tokens and exactness forbids skipping any. The reason to run it is that it is
+the only rung that can clear the brief's headline bar below a full budget, and the study's answer
+to §B8 was **none** until it was measured.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: the merge algebra reconstructs attention over a key set split in
+  two, an empty partial contributes nothing instead of a nan, the merge is not a plain average,
+  per-head exclusion removes exactly the blocks named; end to end, rung 9 reproduces a full cache
+  on the same forced tokens, sits closer to it than rung 6 does, keeps its float32 mirror equal to
+  what a fetch would produce, and refuses a quantized pool or a prefetch. All Phase 0-6 tests pass.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase7.yaml` and
+  `scripts/02_budget_speed.py --config configs/phase7.yaml`
+  ({{ phase7.analysis.speed_runs }} runs), launched detached from a worktree pinned at the commit
+  under test. Two supporting experiments ran afterwards, at a later commit, and §9 says so: the
+  layout benchmark behind §1 (`scripts/04_cpu_layout.py`) and the CPU-thread sweep in §7.
+- [x] **Phase doc written.** This file, re-read against the finished run.
+- [x] **Committed and pushed.**
+
+## What was built
+
+| Piece | Where | Design choice and why |
+|---|---|---|
+| Log-sum-exp merge | `lazykv/exact.py` (`merge_lse`) | FlashAttention's rescaling identity (arXiv 2205.14135) applied across a device boundary, as ring attention (arXiv 2310.01889) applies it across accelerators; both recorded in `docs/RELATED_WORK.md` §6b. Weights are computed by subtracting the *combined* log-sum-exp rather than by exponentiating each one, so a partial over an empty key set passes lse = -inf and contributes zero instead of a nan. That case is not hypothetical: at a budget where the selection covers every sealed block, the CPU side has no columns left. |
+| CPU partial attention | `lazykv/exact.py` (`cpu_partial_attention`) | One batched GEMM over all KV heads, not a loop over them. The loop is {{ phase7.cpu_layout.summary.over_mirror.fp32_contiguous_per_head_loop | .1f }}x the batched pass at this context and far worse at short ones, where its Python and small-matrix overhead is larger than the arithmetic it wraps. Batched, the pass is memory-bound, which is the floor. |
+| float32 mirror, contiguous per head | `lazykv/exact.py` (`_Mirror`) | The tier's pinned pool is bf16 laid out `[blocks, heads, 2, block_size, head_dim]`, so one head's keys are not a matrix there at all. §1 measures what that costs on this geometry; the short version is that attending in place is {{ phase7.cpu_layout.summary.over_mirror.bf16_in_place | .0f }}x slower, and the mirror is the honest price of avoiding it. |
+| Masking, not gathering | `lazykv/exact.py` (`_excluded`) | The CPU pass scores every sealed block and sets the GPU-held ones to -inf. Gathering only the cold blocks would make the pass proportional to the budget, but gathering them *is* the strided case above. The consequence — the CPU cost does not respond to the budget — is a measured finding in §4, not an oversight. |
+| The GPU keeps its own kernel | `lazykv/exact.py` (`_gpu_lse`) | SDPA does not return a log-sum-exp, so the GPU half's is recomputed with one extra query-key product over the *gathered* set only. Rung 9's GPU path is therefore bit-identical to rung 6's, and the two columns differ by the merge and nothing else. |
+| Built on rung 6 | `ExactTieredCache`, which refuses `prefetch` and `quant` | A quantized warm tier would reintroduce the approximation the rung exists to remove. A prefetch changes which blocks are *resident*, not which are *attended* — rung 9 attends to all of them either way — so it would add a variable and buy nothing. Both are refused rather than silently ignored. |
+
+Context, budgets, block size ({{ phase7.analysis.block_size }} tokens), prompts, needle set and
+decode lengths are Phase 4's, so rung 6 is re-measured inside this run and the two rungs are
+compared within one process on identical prefills.
+
+## Headline findings
+
+1. **Rung 9 is the first rung to clear the brief's bar below a full budget.** Its NIAH retention is
+   {{ phase7.analysis.summary.retention.tiered_exact.min | pct }}–{{ phase7.analysis.summary.retention.tiered_exact.max | pct }}
+   across every budget measured, including
+   {{ phase7.analysis.summary.retention_at.tiered_exact.b6 | pct }} at a 6.25% budget where rung 6
+   retains {{ phase7.analysis.summary.retention_at.tiered_sync.b6 | pct }}. Seven rungs and four
+   gates answered §B8 with *none*; this one answers it with a budget.
+
+   **Where that retention reads above 100%, it is rounding, not a gain.** Rung 9 reproduces the full
+   cache; it cannot beat it. A prompt sitting on a near-tie can land either way once the GPU's bf16
+   half and the CPU's float32 half are summed in a different order, and on this sweep one did, in
+   the flattering direction. §3 reports the changed answers in both directions for that reason.
+2. **"Exact" is a claim about the algebra, and the measurement says so.** Rung 9 is not bit-identical
+   to the full cache: the GPU half runs the bf16 kernel over the gathered set, the CPU half runs
+   float32 over the rest, and the two are summed in a different order and rounded once more.
+   Teacher-forced KL from the full cache is
+   {{ phase7.analysis.summary.tf_mean_kl.tiered_exact.min | .1e }}–{{ phase7.analysis.summary.tf_mean_kl.tiered_exact.max | .1e }}
+   nats, against
+   {{ phase7.analysis.summary.tf_mean_kl.tiered_sync.min | .1e }}–{{ phase7.analysis.summary.tf_mean_kl.tiered_sync.max | .1e }}
+   for rung 6 on the same documents — a factor of
+   {{ phase7.analysis.summary.kl_ratio_approx_over_exact.min | .0f }}–{{ phase7.analysis.summary.kl_ratio_approx_over_exact.max | .0f }}.
+   Reporting it as zero would be the gameable version.
+3. **The price is decode latency, and it is large.** Rung 9 decodes
+   {{ phase7.analysis.summary.over_approx.min | .2f }}–{{ phase7.analysis.summary.over_approx.max | .2f }}×
+   rung 6's time and
+   {{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}×
+   the full cache's, adding
+   {{ phase7.analysis.summary.added_ms_per_token.min | .0f }}–{{ phase7.analysis.summary.added_ms_per_token.max | .0f }} ms
+   per token. §4 shows that
+   {{ phase7.analysis.summary.added_explained_share.min | pct0 }}–{{ phase7.analysis.summary.added_explained_share.max | pct0 }}
+   of that lands in the merge, so nothing is hiding elsewhere.
+4. **The price is also host RAM, and that is the part a reader would miss.** The float32 mirror is
+   {{ phase7.analysis.summary.mirror_mib.max | int }} MiB on top of the tier's
+   {{ phase7.analysis.summary.host_pinned_mib.max | int }} MiB of pinned pools, on a machine with
+   {{ phase0.feasibility.run_1.system.host.ram_total_bytes | iec }} in
+   {{ phase0.feasibility.run_1.system.host.ram_dimm_count }} DIMM. Rung 9 frees exactly the VRAM
+   rung 6 frees, and spends
+   {{ phase7.analysis.summary.host_mib_per_vram_mib_saved.min | .1f }}–{{ phase7.analysis.summary.host_mib_per_vram_mib_saved.max | .1f }} MiB
+   of host RAM for each MiB of VRAM it frees against the full cache. The frontier's x axis is
+   GPU-resident KV, so that cost is invisible there and has to be said in words.
+5. **The CPU pass barely responds to the budget, and neither does rung 9's decode.** The pass costs
+   {{ phase7.analysis.summary.cpu_attention_ms_per_token.min | .0f }}–{{ phase7.analysis.summary.cpu_attention_ms_per_token.max | .0f }} ms
+   per token across a twelve-fold range of budgets, a spread of
+   {{ phase7.analysis.summary.cpu_attention_spread_ratio | .2f }}×, and the whole rung decodes at
+   {{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}×
+   the full cache at every one of them. That is the design note in `lazykv/exact.py` meeting the
+   data: the pass masks the resident blocks instead of gathering the cold ones, so exactness costs
+   the same whether VRAM holds a lot or a little. **The practical consequence is the useful one: if
+   you are going to pay for rung 9 at all, take the smallest budget, because the larger ones cost
+   the same and free less VRAM.** The residual upward trend is the masking scatter, which writes
+   K × block_size columns per head and so does grow with the budget — the matmul underneath it does
+   not.
+6. **Only {{ phase7.analysis.summary.returned_kib_per_token.max | .1f }} KiB per token comes back
+   from the CPU.** That is brief §B1(c)'s claim, confirmed: the merge moves O(head_dim) per query
+   head, not O(block_bytes). Rung 6 moves
+   {{ phase4.analysis.summary.fetch_mib_at.tiered_sync.b25 | .1f }} MiB per token at a 25% budget to
+   do a worse job, so rung 9 moves something like two orders of magnitude less data and is
+   {{ phase7.analysis.summary.over_approx.min | .2f }}× slower for it. The bytes on the wire were
+   never the problem with this design. The arithmetic was.
+7. **Phase 0's prediction about this rung held, which is worth noting because the others did not.**
+   `docs/IMPLEMENTATION_PLAN.md` §3.3 costed CPU partial attention over every layer at
+   {{ phase0.analysis.design.rows.3.cpu_partial_attn_all_layers_s | ms }} per decoded token with
+   16,384 non-resident tokens per layer and
+   {{ phase0.analysis.design.rows.4.cpu_partial_attn_all_layers_s | ms }} at 65,536, from a
+   standalone benchmark with no model loaded. This study sits between those two points, and the
+   cost measured inside a real decode is
+   {{ phase7.analysis.summary.cpu_attention_ms_per_token.min | .0f }}–{{ phase7.analysis.summary.cpu_attention_ms_per_token.max | .0f }} ms
+   per token over {{ phase7.analysis.summary.selecting_layers | .0f }} selecting layers. Phases 4, 5 and 6 each found an arithmetic prediction about
+   the *tier* to be wrong; the arithmetic about raw CPU throughput was right, because it was a
+   bandwidth estimate rather than a guess about where time goes.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p7_exactness-dark.png">
+  <img alt="NIAH accuracy, teacher-forced KL from the full cache, and decode latency for rung 6 and rung 9 against budget" src="../figures/p7_exactness-light.png">
+</picture>
+
+## 1. Why the mirror exists
+
+Rung 9's one real memory cost is a float32 copy of the sealed KV, contiguous per KV head, at
+{{ phase7.cpu_layout.summary.mirror_bytes_per_layer | iec }} per selecting layer. Everything else it
+does reuses rung 6's machinery. A cost that large has to be justified by a measurement rather than
+by a sentence about cache lines, so the same pass was timed on the layouts it could have used
+instead, at this study's geometry.
+
+{{> p7_layout }}
+
+Two results, both of which decided a line of code:
+
+- **bf16 has no CPU GEMM on this part.** A Raptor Lake consumer CPU has neither AVX512 nor AMX, so
+  a bf16 matmul is emulated, and attending to the tier's pool in its own dtype costs
+  {{ phase7.cpu_layout.summary.over_mirror.bf16_in_place | .0f }}× what the mirror costs. That is
+  the difference between a rung that is slow and a rung that is not worth running.
+- **Layout matters nearly as much as dtype.** Widening the same pool to float32 and attending in
+  place is still {{ phase7.cpu_layout.summary.over_mirror.fp32_in_place | .1f }}× the mirror,
+  because a KV head's keys are a strided batch of {{ phase7.cpu_layout.summary.block_size }}-row
+  matrices there rather than one matrix, and the GEMM cannot stream them.
+
+The mirror's slice is measured separately from a fresh contiguous allocation because that is what
+rung 9 actually attends to: a prefix of a capacity-sized buffer rather than a tight one. The two
+rows come out within noise of each other, so holding the mirror at the cache's capacity and slicing
+it costs nothing measurable — which is worth knowing, because reallocating per condition would have
+put the allocation inside the timed region.
+
+The mirror row is also the cross-check on the decode measurement. It puts one layer's pass at
+{{ phase7.cpu_layout.summary.best_ms_per_layer.fp32_mirror_slice | .2f }} ms here, with no model
+loaded; section 4 measures
+{{ phase7.analysis.summary.cpu_attention_ms_per_layer.min | .2f }}–{{ phase7.analysis.summary.cpu_attention_ms_per_layer.max | .2f }} ms
+inside a real decode. Two instruments, built for different purposes, agreeing on a quantity neither
+was written to check.
+
+## 2. NIAH retrieval
+
+The same {{ phase7.analysis.niah_prompts_per_condition }} prompts per condition as Phases 2-5, at
+{{ phase7.analysis.context | int }} tokens, scored on the repeatable quality kernel.
+
+{{> p7_niah }}
+
+## 3. Distance from the full cache
+
+Rung 9's distance means nothing on its own — a reader shown "mean KL
+{{ phase7.analysis.summary.tf_mean_kl.tiered_exact.max | .1e }}" cannot tell whether that is close.
+Rung 6 is measured on the same prompts and the same documents, and that is what makes it readable.
+
+{{> p7_distance }}
+
+Three things in this table are worth reading deliberately.
+
+**Rung 9's NIAH column is a partition check that passed.**
+{{ phase7.analysis.summary.answers_differing_from_full.tiered_exact }} of
+{{ phase7.analysis.summary.answers_compared_from_full.tiered_exact }} scored answers differ from the
+full cache, against
+{{ phase7.analysis.summary.answers_differing_from_full.tiered_sync }} for rung 6 on the same prompts.
+A set split that double-counted a block or dropped one would not produce that column; it would
+produce something that looked like a slightly worse policy.
+
+**Rung 9's KL does not move with the budget; rung 6's moves across two decades.** Rung 9 sits
+between {{ phase7.analysis.summary.tf_mean_kl.tiered_exact.min | .1e }} and
+{{ phase7.analysis.summary.tf_mean_kl.tiered_exact.max | .1e }} nats at every budget, because its
+residual is floating-point arithmetic rather than missing information, and arithmetic does not care
+how much VRAM there is. Rung 6 runs from
+{{ phase7.analysis.summary.tf_mean_kl.tiered_sync.min | .1e }} to
+{{ phase7.analysis.summary.tf_mean_kl.tiered_sync.max | .1e }} over the same range, because its
+residual *is* missing information. The flatness is the strongest single piece of evidence in this
+report that rung 9 is doing what it claims.
+
+**The ratio between them is a range, not an order of magnitude.** Rung 6 is
+{{ phase7.analysis.summary.kl_ratio_approx_over_exact.max | .0f }}× further from the full cache at
+the tightest budget and only
+{{ phase7.analysis.summary.kl_ratio_approx_over_exact.min | .0f }}× further at the loosest, where it
+is already attending to most of the sequence. Quoting the larger number alone would be the gameable
+version of this result.
+
+For scale on rung 9's own residual: its top-1 agreement with the full cache is
+{{ phase7.analysis.summary.tf_top1_agreement.tiered_exact.min | pct }}–{{ phase7.analysis.summary.tf_top1_agreement.tiered_exact.max | pct }},
+and Phase 1 measured cuDNN's single-query decode disagreeing *with itself* on identical inputs at
+{{ phase1.analysis.quality_first_run_summary.self_repeat_top1.min | pct }}–{{ phase1.analysis.quality_first_run_summary.self_repeat_top1.max | pct }}
+top-1 agreement. Those are not the same measurement — quality here is scored on the repeatable
+kernel, so rung 9's flips are its own arithmetic and not kernel noise — but they are the same size,
+which is the right way to think about what "exact in the algebra" buys and does not buy.
+
+"Broken / fixed" splits the prompts whose answer changed into those that went from right to wrong
+and those that went the other way. A residual that is *rounding* rather than *damage* produces
+both, in small numbers, and reporting only the net would hide that.
+
+## 4. The price, and where it goes
+
+{{> p7_price }}
+
+{{> p7_cpu }}
+
+The "cold of attended" column is the masking decision, in numbers. The CPU scores every sealed
+block at every budget, and only the cold ones contribute; at a 75% budget three quarters of the work
+is thrown away. Computing and discarding it is still cheaper than gathering the cold blocks out of
+the tier's pinned layout, which is the strided case in "What was built" above. The cost of the
+choice is visible in the other direction too: the pass gets slightly *slower* as the budget grows,
+because the -inf scatter writes K x block_size columns per head while the matmul underneath it does
+not change at all.
+
+The "share of the added time explained" column is the guard on this table: the merge's own counter
+against the wall-clock difference between the two rungs. It runs
+{{ phase7.analysis.summary.added_explained_share.min | .2f }}–{{ phase7.analysis.summary.added_explained_share.max | .2f }},
+so the merge accounts for all of the added time and nothing is hiding elsewhere. (Above 1 is not a
+contradiction: rung 6 and rung 9 are separate conditions in an interleaved sweep, so their wall
+clocks carry independent run-to-run variation that the counter does not.)
+
+**The merge overhead is the one identified inefficiency, and it is not the CPU pass.** Outside the
+CPU attention, the merge costs
+{{ phase7.analysis.summary.merge_overhead_ms_per_token.min | .0f }}–{{ phase7.analysis.summary.merge_overhead_ms_per_token.max | .0f }} ms
+per token: pulling the query to the host, blending, and recomputing the GPU half's log-sum-exp —
+which materializes a float32 copy of the gathered keys, tens of MiB per layer at the larger budgets.
+A kernel that returned its own log-sum-exp would remove most of it. That was not done here because
+it means replacing the pinned attention kernel for rung 9 only, which would cost the property that
+makes this comparison clean: rung 9's GPU path is bit-identical to rung 6's. The cost of keeping
+that property is measured above rather than left implicit.
+
+## 5. Teacher-forced divergence
+
+{{> p7_teacher_forced }}
+
+## 6. Speed
+
+Fast kernel, power throttling opted out, {{ phase7.analysis.speed_runs }} independent runs.
+Conditions that spilled into shared system memory:
+{{ phase7.analysis.summary.conditions_with_spill }}. CPU threads for the partial attention:
+{{ phase7.analysis.summary.cpu_threads | int }}, chosen from a standalone measurement on this
+layout; §7 checks that choice inside a real decode.
+
+{{> p7_speed }}
+
+## 7. How many CPU threads, measured in situ
+
+Phase 0 §5 timed CPU attention standalone and found the knee well below the 28 logical processors on
+this part. It also put a caveat on the record without testing it: rung 9's threads would compete with
+the Python cache manager, which is doing the tier's residency bookkeeping on the same cores at the
+same time. This sweep is that caveat tested — the same condition, decoded at four thread counts.
+
+{{> p7_threads }}
+
+**The caveat was real, and the table shows it in the cleanest possible form.** The fastest *CPU
+pass* is at {{ phase7.analysis.summary.thread_sweep_fastest_cpu_threads | int }} threads, and that
+setting has the slowest *decode* — {{ phase7.analysis.summary.thread_sweep_fastest_cpu_decode_over_best | .2f }}×
+the best. Optimizing the pass in isolation would have picked it. The decode knee is at
+{{ phase7.analysis.summary.thread_sweep_best | int }} threads, which is what
+`configs/phase7.yaml` sets, and §1's standalone benchmark on an idle machine puts its own knee
+somewhere else again ({{ phase7.cpu_layout.summary.best_threads | int }}). Three measurements, three
+answers, and only one of them is measuring the thing that matters.
+
+Worst against best is
+{{ phase7.analysis.summary.thread_sweep_worst_over_best | .2f }}×, so the choice is worth making but
+not worth agonizing over. These runs are an internal comparison and their absolute latencies are not
+comparable with §4's: they ran later, at a different commit, with three conditions instead of twelve,
+so they interleave less and carry their own thermal history.
+
+## 8. What this says, next to the rest of the study
+
+Phases 4, 5 and 6 found this decode to be bound by the host round trip that decides *what* to move,
+not by moving it. Rung 9 does not escape that finding; it adds a second, larger host cost on top of
+it. The two together say something the ladder was not designed to say but which every measurement
+in it supports: **on this machine the scarce resource for a tiered KV cache is host-side work, in
+whatever form, and the PCIe link that the design was built around is not scarce at all.**
+
+What rung 9 buys is a real thing and the brief asked for it specifically: a budget at which
+retrieval accuracy is the full cache's. What it costs is
+{{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}×
+the full cache's decode latency and
+{{ phase7.analysis.summary.mirror_mib.max | int }} MiB of extra host RAM per sweep. For a context
+that still fits in VRAM, as this one does, that is not a trade anyone should take. For a context
+that does not fit — which is the regime the tier exists for and which this study never reached,
+because the 3B stress model was never run — it is the only rung on the ladder that keeps the
+answers right, and that is worth having measured.
+
+## 9. Provenance
+
+{{> p7_provenance }}

@@ -125,19 +125,19 @@ the full cache on latency, and this phase exists so that nobody spends a month d
 
 ## 5. The combined frontier
 
-[`docs/FINDINGS.md`](../FINDINGS.md) puts all 8 rungs on one frontier and
+[`docs/FINDINGS.md`](../FINDINGS.md) puts all 9 rungs on one frontier and
 answers brief §B8. Combining sweeps measured weeks apart in four separate gates is a claim, not a
 formatting choice, so it is licensed by an explicit check:
 17 conditions were measured in more than one phase, and the
 largest accuracy disagreement across all of them is
 **0.00 pp**. Accuracy is reproducible to the
 last prompt. Decode speed is not — the same condition varies by up to
-1.12× between phases, which is thermal and
+1.13× between phases, which is thermal and
 run-to-run variation on a laptop, and is why every latency claim in the study carries a range.
 
 The headline, in the brief's own terms: **no rung retains 99% of full-cache NIAH accuracy at any
 budget below 100%**. The best any policy manages is
-98.8% at a
+101.3% at a
 75% budget. The brief asked for this
 number because it is not gameable, and the honest answer on this task, at this context, with this
 model, is *none*.
@@ -148,4 +148,4 @@ model, is *none*.
 | --- | --- | --- | --- |
 | Replay ablation run | 2026-09-18T19:23:09+00:00 | `bf24c40` | yes: `data/corpus/manifest.json` |
 | Ceiling analysis | 2026-09-18T19:24:34+00:00 | `bf24c40` | yes: `scripts/analyze_ceiling.py` |
-| Ladder analysis | 2026-09-21T15:51:03+00:00 | `05ecb9c` | yes: `scripts/analyze_ladder.py`, `scripts/render_docs.py` |
+| Ladder analysis | 2026-09-21T17:05:39+00:00 | `481af75` | yes: `README.md`, `docs/FINDINGS.md`, `docs/RESEARCH_LOG.md`, `docs/figures/ladder_pareto-dark.png`, `docs/figures/ladder_pareto-light.png`, `docs/phases/PHASE_6.md`, `docs/templates/FINDINGS.md.tmpl`, `docs/templates/README.md.tmpl`, `docs/templates/RESEARCH_LOG.md.tmpl`, `results/ladder/metrics.json`, `scripts/analyze_phase7.py`, `scripts/make_figures.py`, `scripts/render_docs.py` |

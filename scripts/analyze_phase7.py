@@ -264,10 +264,19 @@ def main() -> None:
         "cold_share_of_cpu_tokens": span([e["cold_share_of_cpu_tokens"] for e in exact.values() if e.get("cold_share_of_cpu_tokens") is not None]),
         "merge_overhead_ms_per_token": span([e["merge_overhead_ms_per_token"] for e in exact.values() if e.get("merge_overhead_ms_per_token") is not None]),
         "cpu_threads": next((e["threads"] for e in exact.values() if e.get("threads") is not None), None),
+        "selecting_layers": next((e["selecting_layers"] for e in exact.values() if e.get("selecting_layers") is not None), None),
         # The in-situ thread knee, against the standalone one Phase 0 measured.
         "thread_sweep_best": min(threads, key=lambda r: r["decode_ms_per_token"])["threads"] if threads else None,
         "thread_sweep_best_cpu_ms": min((r["cpu_attention_ms_per_token"] for r in threads), default=None),
         "thread_sweep_worst_over_best": _ratio(max((r["decode_ms_per_token"] for r in threads), default=None), min((r["decode_ms_per_token"] for r in threads), default=None)),
+        # The caveat Phase 0 stated but did not test: the thread count with the *fastest CPU pass*
+        # need not be the one with the fastest decode, because those threads compete with the
+        # Python cache manager. If these two disagree, the competition is real.
+        "thread_sweep_fastest_cpu_threads": min(threads, key=lambda r: r["cpu_attention_ms_per_token"])["threads"] if threads else None,
+        "thread_sweep_fastest_cpu_decode_over_best": _ratio(
+            next((r["decode_ms_per_token"] for r in threads if r["cpu_attention_ms_per_token"] == min(x["cpu_attention_ms_per_token"] for x in threads)), None),
+            min((r["decode_ms_per_token"] for r in threads), default=None),
+        ) if threads else None,
         "dense_layers": next((r["dense_layers"] for r in q["niah"] if r["policy"] in (APPROX, EXACT)), None),
         "rung9_meets_target": any(
             (nb.get(EXACT, {}).get(b) or {}).get("retention", 0) >= 0.99 for b in budgets

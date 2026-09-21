@@ -7,6 +7,72 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-21: Phase 7, rung 9 — the last rung, and the only one that clears the bar
+
+Phases 2-6 measured seven approximating rungs and answered the brief's headline question with
+*none*. Rung 9 was the one rung of the ladder left unbuilt, and `docs/FINDINGS.md` carried it as a
+limitation. It answers the same question differently: instead of not attending to a non-resident
+block, attend to it on the CPU where it already is, and merge the two partial attentions with their
+log-sum-exp normalizers. That is FlashAttention's rescaling identity (arXiv 2205.14135) applied
+across a device boundary, as ring attention (arXiv 2310.01889) applies it across accelerators, and
+it is exact.
+
+### The layout question, settled before any of it was built
+
+Phase 0 §5 timed CPU attention on *contiguous float32*. The tier's pinned pool is bf16 laid out
+`[blocks, heads, 2, block_size, head_dim]`, which is neither. Measuring that gap first was the
+difference between a design and a guess, so it is its own experiment
+(`scripts/04_cpu_layout.py`). At this study's geometry one layer's pass costs
+4.2 ms from the float32 mirror,
+3.7× that from the same values left in
+the pool's layout, and 30× that in
+bf16, which has no CPU GEMM on a Raptor Lake consumer part. So rung 9 keeps a float32 mirror of the
+sealed KV, contiguous per head, and that mirror is
+1,848 MiB of host RAM it would not otherwise need.
+
+A second measurement settled the other half: gathering only the cold blocks is the strided case, so
+the pass scores every sealed block and masks the resident ones instead. The consequence is that
+rung 9's CPU cost does not respond to the budget, and §3 of the gate report reports that as a
+finding rather than discovering it later.
+
+A third thing was found by benchmarking rather than by reading: the first implementation looped over
+KV heads, and at a 4K smoke context its Python and small-matrix overhead was larger than the
+arithmetic it wrapped. One batched GEMM over all heads removed it; even at 32K, where the overhead
+is amortized over eight times the work, the loop is still
+1.8× the batched pass.
+
+### The answer
+
+**Rung 9 holds the full cache's retrieval accuracy at every budget measured**, including the
+tightest, where rung 6 retains
+43.1%. It is the only rung on the ladder
+that clears the brief's 99% bar below a full budget, and it does so trivially, because being exact
+makes accuracy independent of the budget.
+
+**"Exact" is a claim about the algebra and the measurement says so.** The GPU half runs the bf16
+kernel over the gathered set, the CPU half runs float32 over the rest, and the two are summed in a
+different order and rounded once more, so the teacher-forced KL from the full cache is
+1.1e-03–1.2e-03
+nats rather than zero — against
+3.3e-03–1.3e-01
+for rung 6 on the same documents. Quoting it as zero would have been the easy version.
+
+**The price is 2.28–4.23×
+rung 6's decode time and
+6.1–6.5×
+the full cache's**, plus the mirror's host RAM. Only
+113.8 KiB per token comes back from the
+CPU, which is brief §B1(c)'s claim confirmed and, once again, evidence that bytes on the wire were
+never this design's constraint.
+
+### What it changes about the study
+
+The headline stops being one sentence. *Skipping* non-resident KV cannot hold the last percent of
+accuracy at any budget measured here. *Computing* it elsewhere holds all of it, and the currency is
+compute rather than memory. For a context that still fits in VRAM — as this one does — nobody should
+take that trade. For the regime the tier exists for, which this study never reached because the 3B
+stress model was never run, it is the only rung that keeps the answers right.
+
 ## 2026-09-18: pricing the redesign before building it
 
 Phase 5 ended with an owner decision: take the residency decision off the host critical path, or

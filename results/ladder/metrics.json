@@ -1,11 +1,22 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-21T15:51:03+00:00",
-    "git_commit": "05ecb9c1ac2db96f8e59f67e2ad4dbd4ed3c8d64",
+    "generated_at_utc": "2026-09-21T17:05:39+00:00",
+    "git_commit": "481af751a95d52c8bc84d3c96c83ebe83eade69e",
     "git_dirty": true,
     "git_dirty_files": [
-      "scripts/analyze_ladder.py",
+      "README.md",
+      "docs/FINDINGS.md",
+      "docs/RESEARCH_LOG.md",
+      "docs/figures/ladder_pareto-dark.png",
+      "docs/figures/ladder_pareto-light.png",
+      "docs/phases/PHASE_6.md",
+      "docs/templates/FINDINGS.md.tmpl",
+      "docs/templates/README.md.tmpl",
+      "docs/templates/RESEARCH_LOG.md.tmpl",
+      "results/ladder/metrics.json",
+      "scripts/analyze_phase7.py",
+      "scripts/make_figures.py",
       "scripts/render_docs.py"
     ],
     "argv": [
@@ -33,6 +44,12 @@
       "full_niah_accuracy": 0.8888888888888888
     },
     "phase5": {
+      "context": 32768,
+      "block_size": 64,
+      "prompts": 45,
+      "full_niah_accuracy": 0.8888888888888888
+    },
+    "phase7": {
       "context": 32768,
       "block_size": 64,
       "prompts": 45,
@@ -617,6 +634,86 @@
       "tokens_per_s": 16.518400260422737
     },
     {
+      "rung": 9,
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "phase": "phase7",
+      "slots": "2x attended",
+      "budget": 0.75,
+      "accuracy": 0.9,
+      "accuracy_ci95": [
+        0.8333333333333334,
+        0.9555555555555556
+      ],
+      "retention": 1.0125000000000002,
+      "resident_mib": 1108.3633422851562,
+      "tokens_per_s": 8.352104688056915
+    },
+    {
+      "rung": 9,
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "phase": "phase7",
+      "slots": "2x attended",
+      "budget": 0.5,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "resident_mib": 1103.1133422851562,
+      "tokens_per_s": 8.550267879307107
+    },
+    {
+      "rung": 9,
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "phase": "phase7",
+      "slots": "2x attended",
+      "budget": 0.25,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "resident_mib": 651.6133422851562,
+      "tokens_per_s": 8.087585312337906
+    },
+    {
+      "rung": 9,
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "phase": "phase7",
+      "slots": "2x attended",
+      "budget": 0.125,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "resident_mib": 427.61334228515625,
+      "tokens_per_s": 8.32444005778754
+    },
+    {
+      "rung": 9,
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "phase": "phase7",
+      "slots": "2x attended",
+      "budget": 0.0625,
+      "accuracy": 0.8888888888888888,
+      "accuracy_ci95": [
+        0.8222222222222222,
+        0.95
+      ],
+      "retention": 1.0,
+      "resident_mib": 315.61334228515625,
+      "tokens_per_s": 8.370417770220417
+    },
+    {
       "rung": 6,
       "policy": "tiered_sync",
       "name": "CPU tier, synchronous fetch",
@@ -785,22 +882,25 @@
         "phase2",
         "phase3",
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase2": 0.8888888888888888,
         "phase3": 0.8888888888888888,
         "phase4": 0.8888888888888888,
-        "phase5": 0.8888888888888888
+        "phase5": 0.8888888888888888,
+        "phase7": 0.8888888888888888
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase2": 51.52607348811104,
         "phase3": 52.81964469779176,
         "phase4": 51.15207253217841,
-        "phase5": 50.835610335383485
+        "phase5": 50.835610335383485,
+        "phase7": 52.95151759272628
       },
-      "tokens_per_s_max_ratio": 1.0390284359589426
+      "tokens_per_s_max_ratio": 1.0416225406439164
     },
     {
       "policy": "full",
@@ -809,20 +909,23 @@
         "phase2",
         "phase3",
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase2": 0.8888888888888888,
         "phase3": 0.8888888888888888,
         "phase4": 0.8888888888888888,
-        "phase5": 0.8888888888888888
+        "phase5": 0.8888888888888888,
+        "phase7": 0.8888888888888888
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase2": 53.92594350680557,
         "phase3": 48.15726234805469,
         "phase4": 51.96316849037812,
-        "phase5": 52.277741171119764
+        "phase5": 52.277741171119764,
+        "phase7": 52.541842970218624
       },
       "tokens_per_s_max_ratio": 1.1197883948854477
     },
@@ -921,90 +1024,105 @@
       "budget": 0.0625,
       "phases": [
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase4": 0.38333333333333336,
-        "phase5": 0.38333333333333336
+        "phase5": 0.38333333333333336,
+        "phase7": 0.38333333333333336
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase4": 18.598803351566907,
-        "phase5": 18.745424948689948
+        "phase5": 18.745424948689948,
+        "phase7": 19.09683431479063
       },
-      "tokens_per_s_max_ratio": 1.007883388750959
+      "tokens_per_s_max_ratio": 1.0267775809986057
     },
     {
       "policy": "tiered_sync",
       "budget": 0.125,
       "phases": [
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase4": 0.6444444444444445,
-        "phase5": 0.6444444444444445
+        "phase5": 0.6444444444444445,
+        "phase7": 0.6444444444444445
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase4": 19.28058358239146,
-        "phase5": 19.188094170024055
+        "phase5": 19.188094170024055,
+        "phase7": 19.52980050538268
       },
-      "tokens_per_s_max_ratio": 1.0048201458439732
+      "tokens_per_s_max_ratio": 1.0178082477775434
     },
     {
       "policy": "tiered_sync",
       "budget": 0.25,
       "phases": [
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase4": 0.7444444444444445,
-        "phase5": 0.7444444444444445
+        "phase5": 0.7444444444444445,
+        "phase7": 0.7444444444444445
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase4": 18.593235782293355,
-        "phase5": 19.204215707550507
+        "phase5": 19.204215707550507,
+        "phase7": 19.66835225366427
       },
-      "tokens_per_s_max_ratio": 1.0328603333175066
+      "tokens_per_s_max_ratio": 1.0578229891751691
     },
     {
       "policy": "tiered_sync",
       "budget": 0.5,
       "phases": [
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase4": 0.8444444444444444,
-        "phase5": 0.8444444444444444
+        "phase5": 0.8444444444444444,
+        "phase7": 0.8444444444444444
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase4": 34.4897160186252,
-        "phase5": 32.910163469115595
+        "phase5": 32.910163469115595,
+        "phase7": 30.600925656015967
       },
-      "tokens_per_s_max_ratio": 1.0479958888989394
+      "tokens_per_s_max_ratio": 1.12708080815342
     },
     {
       "policy": "tiered_sync",
       "budget": 0.75,
       "phases": [
         "phase4",
-        "phase5"
+        "phase5",
+        "phase7"
       ],
       "accuracy_by_phase": {
         "phase4": 0.8777777777777778,
-        "phase5": 0.8777777777777778
+        "phase5": 0.8777777777777778,
+        "phase7": 0.8777777777777778
       },
       "accuracy_max_gap_pp": 0.0,
       "tokens_per_s_by_phase": {
         "phase4": 34.85729423550135,
-        "phase5": 35.26292033528033
+        "phase5": 35.26292033528033,
+        "phase7": 35.333566548302805
       },
-      "tokens_per_s_max_ratio": 1.0116367638015304
+      "tokens_per_s_max_ratio": 1.0136634906193145
     },
     {
       "policy": "window_sink",
@@ -1105,7 +1223,10 @@
       "best_retention_budget": 1.0,
       "resident_mib_at_best": 1028.15625,
       "tokens_per_s_at_best": 52.277741171119764,
-      "min_budget_meeting_target": 1.0
+      "min_budget_meeting_target": 1.0,
+      "retention_at_min_budget_meeting_target": 1.0,
+      "resident_mib_at_min_budget_meeting_target": 1028.15625,
+      "tokens_per_s_at_min_budget_meeting_target": 52.277741171119764
     },
     "2": {
       "policy": "window_sink",
@@ -1114,7 +1235,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 768.15625,
       "tokens_per_s_at_best": 51.487738199556844,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "3": {
       "policy": "lru",
@@ -1123,7 +1247,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 768.15625,
       "tokens_per_s_at_best": 32.233109854334,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "4": {
       "policy": "h2o",
@@ -1132,7 +1259,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 768.15625,
       "tokens_per_s_at_best": 42.63446912189192,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "5": {
       "policy": "quest",
@@ -1141,7 +1271,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 1028.15625,
       "tokens_per_s_at_best": 35.907803116601585,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "6": {
       "policy": "tiered_sync",
@@ -1150,7 +1283,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 864.6054077148438,
       "tokens_per_s_at_best": 18.227585991950107,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "7": {
       "policy": "tiered_prefetch",
@@ -1159,7 +1295,10 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 912.5037841796875,
       "tokens_per_s_at_best": 10.829584041066827,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
     },
     "8": {
       "policy": "tiered_int8",
@@ -1168,7 +1307,22 @@
       "best_retention_budget": 0.75,
       "resident_mib_at_best": 1078.3047485351562,
       "tokens_per_s_at_best": 35.38708159445317,
-      "min_budget_meeting_target": null
+      "min_budget_meeting_target": null,
+      "retention_at_min_budget_meeting_target": null,
+      "resident_mib_at_min_budget_meeting_target": null,
+      "tokens_per_s_at_min_budget_meeting_target": null
+    },
+    "9": {
+      "policy": "tiered_exact",
+      "name": "CPU tier + exact partial-attention merge",
+      "best_retention": 1.0125000000000002,
+      "best_retention_budget": 0.75,
+      "resident_mib_at_best": 1108.3633422851562,
+      "tokens_per_s_at_best": 8.352104688056915,
+      "min_budget_meeting_target": 0.0625,
+      "retention_at_min_budget_meeting_target": 1.0,
+      "resident_mib_at_min_budget_meeting_target": 315.61334228515625,
+      "tokens_per_s_at_min_budget_meeting_target": 8.370417770220417
     }
   },
   "summary": {
@@ -1180,22 +1334,25 @@
       "phase2",
       "phase3",
       "phase4",
-      "phase5"
+      "phase5",
+      "phase7"
     ],
     "sweeps_comparable": true,
-    "rungs": 8,
+    "rungs": 9,
     "overlapping_conditions": 17,
     "repeatability_accuracy_max_gap_pp": 0.0,
-    "repeatability_tokens_per_s_max_ratio": 1.1249798024737103,
-    "rungs_meeting_target_below_full": [],
-    "any_rung_meeting_target_below_full": false,
+    "repeatability_tokens_per_s_max_ratio": 1.12708080815342,
+    "rungs_meeting_target_below_full": [
+      "9"
+    ],
+    "any_rung_meeting_target_below_full": true,
     "best_retention_overall": {
       "min": 0.29375,
-      "max": 1.0
+      "max": 1.0125000000000002
     },
     "best_retention_excluding_full": {
       "min": 0.29375,
-      "max": 0.9875
+      "max": 1.0125000000000002
     },
     "best_retention_budget_excluding_full": 0.75,
     "approximate_rungs": [
@@ -1213,8 +1370,11 @@
     },
     "best_retention_budget_approximate": 0.75,
     "approximate_rungs_meeting_target": [],
-    "exact_rung_min_budget_meeting_target": null,
-    "exact_rung_tokens_per_s": null,
-    "exact_rung_over_full_tokens_per_s": null
+    "exact_rung_min_budget_meeting_target": 0.0625,
+    "exact_rung_tokens_per_s": 8.370417770220417,
+    "exact_rung_resident_mib": 315.61334228515625,
+    "exact_rung_over_full_tokens_per_s": 6.245535480571736,
+    "exact_rung_best_retention": 1.0125000000000002,
+    "exact_rung_best_retention_budget": 0.75
   }
 }
