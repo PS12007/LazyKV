@@ -38,6 +38,7 @@ from harness.stats import summarize  # noqa: E402
 from harness.telemetry import TelemetryLogger  # noqa: E402
 from lazykv.blocks import BlockPoolCache  # noqa: E402
 from lazykv.cache import FullGPUCache  # noqa: E402
+from lazykv.exact import ExactTieredCache  # noqa: E402
 from lazykv.generate import greedy_decode, load, prefill  # noqa: E402
 from lazykv.selection import QuestView  # noqa: E402
 from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_memory, make_scorer, results_subdir  # noqa: E402
@@ -167,7 +168,12 @@ def main() -> None:
                 if isinstance(built.cache, TieredCache):
                     tc = built.cache.counters
                     # Everything the tier does on the host: select (incl. on-demand fetch launch), prefetch, seal.
-                    row["manager_host_s_per_token"] = (tc.host_select_s + tc.host_prefetch_s + tc.host_seal_s) / n_decode
+                    host_s = tc.host_select_s + tc.host_prefetch_s + tc.host_seal_s
+                    # Rung 9's exact merge is host work too -- the CPU pass over the cold blocks and
+                    # the blend -- and leaving it out would make the rung look free where it is not.
+                    if isinstance(built.cache, ExactTieredCache):
+                        host_s += built.cache.exact.host_merge_s + built.cache.exact.mirror_s
+                    row["manager_host_s_per_token"] = host_s / n_decode
                     row["tier"] = cache_facts(built)
                     row["host_pinned_bytes"] = built.cache.host_pinned_bytes()
                 mem = process_gpu_memory()

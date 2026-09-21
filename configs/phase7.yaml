@@ -1,0 +1,50 @@
+# Phase 7 gate: rung 9, exact partial attention with a log-sum-exp merge, against rung 6 on the
+# Phase 4/5 sweep. Everything except `phase` and `policies` is Phase 4's, so rung 9 is measured on
+# identical prompts, budgets and block size and the comparison is within one run.
+#
+# `tiered_sync` (rung 6) is the approximate tier rung 9 makes exact: same selection, same slots,
+# same fetches, so the difference between the two columns is the price of exactness and nothing
+# else. The run's `full` condition carries the full-cache reference that rung 9 should reproduce.
+#
+# Rung 9 attends to *every* sealed block each step, on the CPU, so its decode is slower than any
+# other rung by a wide margin. `speed.decode_tokens` and `niah.samples` are Phase 4's anyway: the
+# comparison is only meaningful on the same prompts, and a cheaper sweep would not be on the
+# frontier the other seven rungs are on.
+phase: phase7
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [tiered_sync, tiered_exact]
+
+tier:
+  fetch: gather
+  spare: 1.0
+  # Phase 0 §5 found CPU attention stops improving well before the logical core count, and a
+  # re-measurement on this layout put the knee at 8: more threads lose on a single-channel DIMM.
+  cpu_threads: 8
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
