@@ -62,6 +62,7 @@ def main() -> None:
     p.add_argument("--block-size", type=int, help="override config block_size (the Phase 4 block-size sweep)")
     p.add_argument("--fetch", choices=["runs", "gather"], help="override config tier.fetch")
     p.add_argument("--spare", type=float, help="override config tier.spare")
+    p.add_argument("--cpu-threads", type=int, help="override config tier.cpu_threads (rung 9's CPU partial attention)")
     p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
     p.add_argument("--policies", nargs="+", help="override config policies")
     p.add_argument("--out", default="budget_speed")
@@ -74,6 +75,8 @@ def main() -> None:
         cfg.setdefault("tier", {})["fetch"] = args.fetch
     if args.spare is not None:
         cfg.setdefault("tier", {})["spare"] = args.spare
+    if args.cpu_threads is not None:
+        cfg.setdefault("tier", {})["cpu_threads"] = args.cpu_threads
     if args.budgets:
         cfg["budgets"] = args.budgets
     if args.policies:

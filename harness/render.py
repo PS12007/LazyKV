@@ -55,6 +55,9 @@ def _named_formatters() -> dict[str, Callable[[Any], str]]:
         "int": lambda v: f"{int(round(v)):,}",
         "pct": lambda v: f"{100 * v:.1f}%",
         "pct0": lambda v: f"{100 * v:.0f}%",
+        # Budgets: 0.0625 is "6.25%", not "6%". pct0 would round a sweep point into a different
+        # one, and the sweep has both 6.25% and 12.5% in it.
+        "budget": lambda v: f"{100 * v:g}%",
         "x": lambda v: f"{v:.1f}×",
         # Percentage points, signed: a difference between two accuracies, never a ratio.
         "pp": lambda v: f"{100 * v:+.1f} pp",

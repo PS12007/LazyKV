@@ -45,7 +45,7 @@ lengths are Phase 2's, so the two phases are directly comparable.
 
 1. **Query-aware selection is worth far more than any eviction rule, and still misses the target.**
    Attending only to the blocks the current query scores highest, under a
-   {{ phase3.analysis.headline.quest.best_retention_budget | pct0 }} attended budget, retains
+   {{ phase3.analysis.headline.quest.best_retention_budget | budget }} attended budget, retains
    {{ phase3.analysis.headline.quest.best_retention_below_full | pct }} of the full cache's NIAH accuracy,
    against {{ phase3.analysis.headline.window_sink.best_retention_below_full | pct }} for window + sink at the same
    budget. It is the closest any rung has come to the brief's ≥ 99% target and it does not reach it:

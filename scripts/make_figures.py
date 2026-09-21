@@ -904,6 +904,9 @@ def fig_p7_exactness(a: dict[str, Any], t: Theme) -> None:
     save(fig, "p7_exactness", t)
 
 
+LADDER_DASHES = ("-", (0, (4, 2)), (0, (1, 1.6)))
+
+
 def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
     """Brief §B8's headline experiment: every rung on one memory axis, accuracy and speed.
 
@@ -937,16 +940,19 @@ def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
         rs = sorted((r for r in by_rung[rung] if r["resident_mib"] is not None), key=lambda r: r["resident_mib"])
         if not rs:
             continue
+        # Four colours and nine rungs, so the dash pattern has to carry the third cycle: without
+        # it rungs 1, 5 and 9 would share a colour and rungs 5 and 9 a dash as well, which would
+        # make the reference and the exact rung indistinguishable in the one figure that matters.
         color = t.series[i % len(t.series)]
-        dash = "-" if i < len(t.series) else (0, (4, 2))
-        marker = "o" if rung != 1 else "*"
+        dash = LADDER_DASHES[(i // len(t.series)) % len(LADDER_DASHES)]
+        marker = {1: "*", 9: "s"}.get(rung, "o")
         name = rs[0]["name"]
         # The slot variant belongs in the legend: rungs 6 and 7 are shown with VRAM holding exactly
         # the attended set, rung 8 was only ever run at twice it, and without the label the memory
         # axis would quietly mean two different things.
         variant = rs[0]["slots"]
         axes[0].plot([r["resident_mib"] for r in rs], [100 * r["accuracy"] for r in rs], color=color, linestyle=dash,
-                     linewidth=2, marker=marker, markersize=6 if rung != 1 else 12, markeredgecolor=t.surface,
+                     linewidth=2, marker=marker, markersize=12 if rung == 1 else 6, markeredgecolor=t.surface,
                      markeredgewidth=1.2, label=f"{rung}. {name}" + (f" (slots {variant})" if variant else ""))
         # Rung 5 is a vertical line, and that is the finding rather than a drawing error.
         if rung == 5 and len({round(r["resident_mib"]) for r in rs}) == 1:
@@ -960,7 +966,7 @@ def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
         sp = [r for r in rs if r["tokens_per_s"] is not None]
         if sp:
             axes[1].plot([r["resident_mib"] for r in sp], [r["tokens_per_s"] for r in sp], color=color, linestyle=dash,
-                         linewidth=2, marker=marker, markersize=6 if rung != 1 else 12, markeredgecolor=t.surface, markeredgewidth=1.2)
+                         linewidth=2, marker=marker, markersize=12 if rung == 1 else 6, markeredgecolor=t.surface, markeredgewidth=1.2)
     axes[0].set_title("NIAH accuracy, %", color=t.ink, fontsize=10, loc="left")
     axes[0].set_ylim(0, 100)
     axes[1].set_title("Decode tokens/s", color=t.ink, fontsize=10, loc="left")

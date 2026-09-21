@@ -72,5 +72,11 @@ def test_iec(n: int, expected: str) -> None:
 
 def test_named_formatters() -> None:
     assert render("{{ v | pct }}", {"v": 0.1234}) == "12.3%"
+    # A sweep budget is not a rounded percentage: the ladder has both 6.25% and 12.5% in it, and
+    # pct0 would print two different conditions as the same one.
+    assert render("{{ v | budget }}", {"v": 0.0625}) == "6.25%"
+    assert render("{{ v | budget }}", {"v": 0.125}) == "12.5%"
+    assert render("{{ v | budget }}", {"v": 0.75}) == "75%"
+    assert render("{{ v | pct0 }}", {"v": 0.0625}) == "6%"
     assert render("{{ v | gbps }}", {"v": 12.5e9}) == "12.50 GB/s"
     assert math.isfinite(float(render("{{ v | .3f }}", {"v": 2.0})))

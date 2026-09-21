@@ -34,7 +34,7 @@ counts against the budget. Block size is {{ phase2.analysis.block_size }} tokens
 1. **No GPU-only policy reaches the brief's headline target.** None retains ≥ 99% of the full
    cache's NIAH accuracy at any budget below 100%. The best is window + sink, at
    {{ phase2.analysis.headline.window_sink.best_retention_below_full | pct0 }} retention with a
-   {{ phase2.analysis.headline.window_sink.best_retention_budget | pct0 }} budget.
+   {{ phase2.analysis.headline.window_sink.best_retention_budget | budget }} budget.
 2. **Without the attention sink, the model breaks.** The no-sink window agrees with the full cache on
    {{ phase2.analysis.summary.window_tf_top1.min | pct }}–{{ phase2.analysis.summary.window_tf_top1.max | pct }}
    of teacher-forced tokens at every budget, even the largest. Window + sink keeps

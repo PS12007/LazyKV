@@ -164,10 +164,41 @@ def full_resident_minus(sp: dict[str, Any], tier: dict[str, Any]) -> float | Non
     return saved if saved > 0 else None
 
 
+def thread_sweep(base: Path, budget: float) -> list[dict[str, Any]]:
+    """Rung 9's CPU thread count, measured *in situ* rather than on an idle machine.
+
+    Phase 0 §5 timed CPU attention standalone and found the knee well below the logical core count.
+    It also flagged, without testing it, that rung 9's threads would compete with the Python cache
+    manager on the same cores. That caveat is what this sweep tests: if the in-situ knee sits lower
+    than the standalone one, the competition is real and the standalone number was optimistic.
+    """
+    out = []
+    for d in sorted(base.glob("threads_t*")):
+        runs = [json.loads(f.read_text(encoding="utf-8")) for f in sorted(d.glob("run_*/metrics.json"))]
+        if not runs:
+            continue
+        rows = [r for run in runs for r in run["results"] if r["policy"] == EXACT and r["budget"] == budget]
+        if not rows:
+            continue
+        cfg = runs[0]["config"]["speed"]
+        n_decode = cfg["warmup_steps"] + cfg["decode_tokens"]
+        threads = rows[0]["tier"]["exact_threads"]
+        out.append({
+            "threads": threads,
+            "budget": budget,
+            "repeats": len(rows),
+            "decode_ms_per_token": 1e3 * statistics.median(r["decode_wall_s"]["median"] for r in rows),
+            "cpu_attention_ms_per_token": 1e3 * statistics.median(r["tier"]["exact_cpu_attention_s"] for r in rows) / n_decode,
+            "merge_ms_per_token": 1e3 * statistics.median(r["tier"]["exact_host_merge_s"] for r in rows) / n_decode,
+        })
+    return sorted(out, key=lambda r: r["threads"])
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--quality", default="policy_quality")
     p.add_argument("--speed", default="budget_speed")
+    p.add_argument("--thread-budget", type=float, default=0.25, help="budget the thread sweep was run at")
     args = p.parse_args()
     base = RESULTS_DIR / "phase7"
     q = json.loads((base / args.quality / "metrics.json").read_text(encoding="utf-8"))
@@ -186,6 +217,7 @@ def main() -> None:
 
     dist = distance_from_full(q, budgets, policies)
     costs = price(tiers, exact, speed, budgets) if speed else []
+    threads = thread_sweep(base, args.thread_budget)
 
     sp = {s["label"]: s for s in speed}
     nb = {pol: cond_rows(niah, pol) for pol in policies}
@@ -230,9 +262,13 @@ def main() -> None:
         "cold_share_of_cpu_tokens": span([e["cold_share_of_cpu_tokens"] for e in exact.values() if e.get("cold_share_of_cpu_tokens") is not None]),
         "merge_overhead_ms_per_token": span([e["merge_overhead_ms_per_token"] for e in exact.values() if e.get("merge_overhead_ms_per_token") is not None]),
         "cpu_threads": next((e["threads"] for e in exact.values() if e.get("threads") is not None), None),
+        # The in-situ thread knee, against the standalone one Phase 0 measured.
+        "thread_sweep_best": min(threads, key=lambda r: r["decode_ms_per_token"])["threads"] if threads else None,
+        "thread_sweep_best_cpu_ms": min((r["cpu_attention_ms_per_token"] for r in threads), default=None),
+        "thread_sweep_worst_over_best": _ratio(max((r["decode_ms_per_token"] for r in threads), default=None), min((r["decode_ms_per_token"] for r in threads), default=None)),
         "dense_layers": next((r["dense_layers"] for r in q["niah"] if r["policy"] in (APPROX, EXACT)), None),
         "rung9_meets_target": any(
-            nb[EXACT][b]["retention"] is not None and nb[EXACT][b]["retention"] >= 0.99 for b in budgets if b in nb[EXACT]
+            (nb.get(EXACT, {}).get(b) or {}).get("retention", 0) >= 0.99 for b in budgets
         ),
         "rung9_min_budget_meeting_target": head.get(EXACT, {}).get("min_budget_meeting_target"),
     }
@@ -261,6 +297,7 @@ def main() -> None:
             "exact": exact,
             "distance_from_full": dist,
             "price": costs,
+            "thread_sweep": threads,
             "summary": summary,
         },
     )

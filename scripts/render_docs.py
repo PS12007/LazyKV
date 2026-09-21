@@ -1279,6 +1279,29 @@ def block_p7_headline(ctx: Mapping[str, Any]) -> str:
     return _sweep_headline(ctx, "phase7")
 
 
+def block_p7_threads(ctx: Mapping[str, Any]) -> str:
+    """The CPU thread count, measured inside a real decode rather than on an idle machine."""
+    rows_in = lookup(ctx, "phase7.analysis.thread_sweep")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    best = min(r["decode_ms_per_token"] for r in rows_in)
+    rows = []
+    for r in rows_in:
+        mark = " **(best)**" if r["decode_ms_per_token"] == best else ""
+        rows.append([
+            f"{int(r['threads'])}{mark}",
+            f"{r['cpu_attention_ms_per_token']:.2f}",
+            f"{r['merge_ms_per_token']:.2f}",
+            f"{r['decode_ms_per_token']:.2f}",
+            f"{r['decode_ms_per_token'] / best:.2f}x",
+        ])
+    return table(
+        ["torch CPU threads", "CPU pass, ms/token", "Merge total, ms/token", "Decode, ms/token", "x the best"],
+        rows,
+        ["---:", "---:", "---:", "---:", "---:"],
+    )
+
+
 def block_p7_provenance(ctx: Mapping[str, Any]) -> str:
     return _sweep_provenance(ctx, "phase7")
 
