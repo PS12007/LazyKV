@@ -36,6 +36,7 @@ OUTPUTS = {
     "PHASE_4.md.tmpl": "docs/phases/PHASE_4.md",
     "PHASE_5.md.tmpl": "docs/phases/PHASE_5.md",
     "PHASE_6.md.tmpl": "docs/phases/PHASE_6.md",
+    "PHASE_7.md.tmpl": "docs/phases/PHASE_7.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -741,6 +742,7 @@ POLICY_NAMES = {
     "tiered_sync": "CPU tier, sync fetch (rung 6)",
     "tiered_prefetch": "CPU tier + prefetch (rung 7)",
     "tiered_int8": "CPU tier, int8 warm/cold (rung 8)",
+    "tiered_exact": "CPU tier + exact CPU merge (rung 9)",
 }
 
 
@@ -1256,6 +1258,110 @@ def block_p5_tier(ctx: Mapping[str, Any]) -> str:
         "H2D transfers / token", "Thrash",
     ]
     return table(header, rows, ["---", "---:"] + ["---:"] * 11)
+
+
+# -- Phase 7: rung 9, the exact merge (docs/phases/PHASE_7.md) --------------------------------
+
+
+def block_p7_niah(ctx: Mapping[str, Any]) -> str:
+    return _sweep_niah(ctx, "phase7")
+
+
+def block_p7_teacher_forced(ctx: Mapping[str, Any]) -> str:
+    return _sweep_teacher_forced(ctx, "phase7")
+
+
+def block_p7_speed(ctx: Mapping[str, Any]) -> str:
+    return _sweep_speed(ctx, "phase7")
+
+
+def block_p7_headline(ctx: Mapping[str, Any]) -> str:
+    return _sweep_headline(ctx, "phase7")
+
+
+def block_p7_provenance(ctx: Mapping[str, Any]) -> str:
+    return _sweep_provenance(ctx, "phase7")
+
+
+def block_p7_distance(ctx: Mapping[str, Any]) -> str:
+    """How far each rung's output sits from the full cache's, on the same prompts."""
+    rows_in = lookup(ctx, "phase7.analysis.distance_from_full")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["policy"] != "tiered_exact", -r["budget"])):
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            f"{r['answers_differing']} of {r['prompts']}",
+            f"{r['answers_broken']} / {r['answers_fixed']}",
+            f"{100 * r['score_delta_mean']:+.1f} pp",
+            f"{r['tf_mean_kl']:.2e}" if r["tf_mean_kl"] is not None else NOT_MEASURED,
+            f"{100 * r['tf_top1_agreement']:.1f}%" if r["tf_top1_agreement"] is not None else NOT_MEASURED,
+        ])
+    header = [
+        "Rung", "Budget", "NIAH answers differing from the full cache", "of which broken / fixed",
+        "Mean NIAH score change", "Teacher-forced KL", "Top-1 agreement",
+    ]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:"])
+
+
+def block_p7_price(ctx: Mapping[str, Any]) -> str:
+    """What rung 9 costs against the rung it replaces and against the cache it reproduces."""
+    rows_in = lookup(ctx, "phase7.analysis.price")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    f2 = lambda v: NOT_MEASURED if v is None else f"{v:.2f}"  # noqa: E731
+    rows = []
+    for r in sorted(rows_in, key=lambda r: -r["budget"]):
+        rows.append([
+            _pct_budget(r["budget"]),
+            f2(r["approx_ms_per_token"]),
+            f2(r["exact_ms_per_token"]),
+            f2(r["added_ms_per_token"]),
+            f"**{r['over_approx']:.2f}x**" if r["over_approx"] is not None else NOT_MEASURED,
+            f"{r['over_full']:.2f}x" if r["over_full"] is not None else NOT_MEASURED,
+            f"{r['resident_mib_exact']:,.0f}" if r["resident_mib_exact"] is not None else NOT_MEASURED,
+            f"{r['host_pinned_mib']:,.0f}" if r["host_pinned_mib"] is not None else NOT_MEASURED,
+            f"{r['mirror_mib']:,.0f}" if r["mirror_mib"] is not None else NOT_MEASURED,
+        ])
+    header = [
+        "Budget", "Rung 6, ms/token", "Rung 9, ms/token", "Added, ms", "x rung 6", "x the full cache",
+        "Resident KV, MiB", "Pinned host, MiB", "float32 mirror, MiB",
+    ]
+    return table(header, rows, ["---:"] + ["---:"] * 8)
+
+
+def block_p7_cpu(ctx: Mapping[str, Any]) -> str:
+    """Where rung 9's added time goes, and whether the CPU pass responds to the budget."""
+    rows_in = lookup(ctx, "phase7.analysis.exact")
+    prices = lookup(ctx, "phase7.analysis.price")
+    if not isinstance(rows_in, Mapping) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    added = {f"{r['budget']:g}": r for r in prices} if isinstance(prices, list) else {}
+    f2 = lambda v: NOT_MEASURED if v is None else f"{v:.2f}"  # noqa: E731
+    rows = []
+    for key in sorted(rows_in, key=lambda k: -float(k)):
+        r = rows_in[key]
+        if not r:
+            continue
+        a = added.get(key, {})
+        rows.append([
+            _pct_budget(float(key)),
+            f2(r.get("cpu_attention_ms_per_token")),
+            f2(r.get("cpu_attention_ms_per_layer")),
+            f2(r.get("merge_overhead_ms_per_token")),
+            f2(r.get("mirror_ms_per_token")),
+            f"{a['added_explained_share']:.0%}" if a.get("added_explained_share") is not None else NOT_MEASURED,
+            f"{r['cold_tokens_per_merge']:,.0f} of {r['cpu_tokens_per_merge']:,.0f}" if r.get("cpu_tokens_per_merge") else NOT_MEASURED,
+            f2(r.get("returned_kib_per_token")),
+        ])
+    header = [
+        "Budget", "CPU pass, ms/token", "ms per selecting layer", "Merge overhead, ms/token",
+        "Mirror write, ms/token", "Share of the added time explained", "Cold of attended token-heads per merge",
+        "Returned from the CPU, KiB/token",
+    ]
+    return table(header, rows, ["---:"] + ["---:"] * 7)
 
 
 # -- Phase 6: the replay ablation (docs/phases/PHASE_6.md) -------------------------------------

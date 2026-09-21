@@ -48,8 +48,15 @@ LADDER: list[tuple[int, str, str, str]] = [
     (8, "tiered_int8", "phase5", "CPU tier, int8 warm/cold"),
     (9, "tiered_exact", "phase7", "CPU tier + exact partial-attention merge"),
 ]
+# Rungs that answer "how far does approximation get". Rung 1 is the reference and rung 9 is exact,
+# so neither belongs in a statement about the approximate ladder.
+APPROXIMATE = {"2", "3", "4", "5", "6", "7", "8"}
 # Which VRAM-slot variant each phase's headline tier numbers come from.
 SLOT_VARIANT = {"phase4": "2x attended", "phase5": "2x attended", "phase7": "2x attended"}
+
+
+def _ratio(a: float | None, b: float | None) -> float | None:
+    return None if a is None or not b else a / b
 
 
 def load(phase: str) -> dict[str, Any] | None:
@@ -196,6 +203,16 @@ def main() -> None:
         # achieved" would overstate the ladder by the exact amount the study is trying to measure.
         "best_retention_excluding_full": span([v["best_retention"] for k, v in best.items() if k != "1" and v["best_retention"] is not None]),
         "best_retention_budget_excluding_full": max(((v["best_retention"], v["best_retention_budget"]) for k, v in best.items() if k != "1" and v["best_retention"] is not None), default=(None, None))[1],
+        # Rung 9 is exact, so it retains the reference by construction and answers a different
+        # question from rungs 2-8. Every statement about "how far approximation gets" is quoted
+        # from this narrower set, or rung 9 would silently answer for the approximate rungs too.
+        "approximate_rungs": sorted(APPROXIMATE & set(best)),
+        "best_retention_approximate": span([v["best_retention"] for k, v in best.items() if k in APPROXIMATE and v["best_retention"] is not None]),
+        "best_retention_budget_approximate": max(((v["best_retention"], v["best_retention_budget"]) for k, v in best.items() if k in APPROXIMATE and v["best_retention"] is not None), default=(None, None))[1],
+        "approximate_rungs_meeting_target": [k for k, v in best.items() if k in APPROXIMATE and v["min_budget_meeting_target"] is not None],
+        "exact_rung_min_budget_meeting_target": (best.get("9") or {}).get("min_budget_meeting_target"),
+        "exact_rung_tokens_per_s": (best.get("9") or {}).get("tokens_per_s_at_best"),
+        "exact_rung_over_full_tokens_per_s": _ratio((best.get("1") or {}).get("tokens_per_s_at_best"), (best.get("9") or {}).get("tokens_per_s_at_best")),
     }
     write_metrics(RESULTS_DIR / "ladder", {"shape": shape, "rows": rows, "repeatability": rep, "best": best, "summary": summary})
     print("wrote", RESULTS_DIR / "ladder" / "metrics.json")

@@ -148,4 +148,4 @@ model, is *none*.
 | --- | --- | --- | --- |
 | Replay ablation run | 2026-09-18T19:23:09+00:00 | `bf24c40` | yes: `data/corpus/manifest.json` |
 | Ceiling analysis | 2026-09-18T19:24:34+00:00 | `bf24c40` | yes: `scripts/analyze_ceiling.py` |
-| Ladder analysis | 2026-09-18T22:07:13+00:00 | `c6beb2e` | yes: `scripts/make_figures.py`, `scripts/render_docs.py` |
+| Ladder analysis | 2026-09-21T15:51:03+00:00 | `05ecb9c` | yes: `scripts/analyze_ladder.py`, `scripts/render_docs.py` |
