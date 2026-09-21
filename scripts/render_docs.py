@@ -35,6 +35,7 @@ OUTPUTS = {
     "PHASE_3.md.tmpl": "docs/phases/PHASE_3.md",
     "PHASE_4.md.tmpl": "docs/phases/PHASE_4.md",
     "PHASE_5.md.tmpl": "docs/phases/PHASE_5.md",
+    "PHASE_6.md.tmpl": "docs/phases/PHASE_6.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1255,6 +1256,73 @@ def block_p5_tier(ctx: Mapping[str, Any]) -> str:
         "H2D transfers / token", "Thrash",
     ]
     return table(header, rows, ["---", "---:"] + ["---:"] * 11)
+
+
+# -- Phase 6: the replay ablation (docs/phases/PHASE_6.md) -------------------------------------
+
+
+def block_p6_ceiling(ctx: Mapping[str, Any]) -> str:
+    """Per condition: what the replay removed, and what it was worth."""
+    rows_in = lookup(ctx, "phase5.ceiling.conditions")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    f2 = lambda v: NOT_MEASURED if v is None else f"{v:.2f}"  # noqa: E731
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["policy"] != "full", r["policy"], -r["budget"])):
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            f2(r["decode_ms"]),
+            f2(r["replay_ms"]),
+            f2(r["saved_ms"]),
+            f"**{r['ceiling_speedup']:.2f}x**" if r["ceiling_speedup"] is not None else "-",
+            f2(r.get("rank_ms_counted")),
+            f2(r.get("saved_vs_counted_rank_ms")),
+            f"{r['fetched_pairs']:,.0f} = {r['replay_fetched_pairs']:,.0f}" if r["fetched_pairs_match"] else ("-" if r["fetched_pairs"] is None else "**differ**"),
+            f"{100 * r['token_agreement']:.1f}%" if r["token_agreement"] is not None else "-",
+        ])
+    header = [
+        "Condition", "Budget", "Decode, ms/token", "Replay, ms/token", "Saved, ms", "Ceiling",
+        "Rank+sync counted, ms", "Saved - counted, ms", "Pairs fetched", "Replay token agreement",
+    ]
+    return table(header, rows, ["---", "---:"] + ["---:"] * 8)
+
+
+def block_p6_gap(ctx: Mapping[str, Any]) -> str:
+    """The instrument that did not work, kept because it says where the stall is."""
+    rows_in = lookup(ctx, "phase5.ceiling.conditions")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["policy"] != "full", r["policy"], -r["budget"])):
+        excess = r["inter_layer_gap_excess_ms"]
+        saved = r["saved_ms"]
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            f"{r['inter_layer_gap_ms']:.3f}" if r["inter_layer_gap_ms"] is not None else NOT_MEASURED,
+            f"{excess:.3f}" if excess is not None else NOT_MEASURED,
+            f"{100 * excess / saved:.0f}%" if excess is not None and saved else "-",
+        ])
+    return table(
+        ["Condition", "Budget", "Inter-layer GPU gap, ms/token", "Excess over the full cache, ms", "Share of the saving it explains"],
+        rows,
+        ["---", "---:", "---:", "---:", "---:"],
+    )
+
+
+def block_p6_provenance(ctx: Mapping[str, Any]) -> str:
+    rows = []
+    for p in lookup(ctx, "phase5.ceiling.sources") or []:
+        if isinstance(p, Mapping):
+            rows.append(_provenance_row("Replay ablation run", p))
+    for label, key in (("Ceiling analysis", "phase5.ceiling.provenance"), ("Ladder analysis", "ladder.provenance")):
+        p = lookup(ctx, key)
+        if isinstance(p, Mapping):
+            rows.append(_provenance_row(label, p))
+    if not rows:
+        return f"_{NOT_MEASURED}_"
+    return table(["Artifact", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 # -- The consolidated ladder (docs/FINDINGS.md) ------------------------------------------------

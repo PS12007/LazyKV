@@ -1,0 +1,129 @@
+# Phase 6 gate report: failure analysis, and the price of the only redesign the data points at
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Phases 2 to 5 built the ladder and measured it. This phase does the two things the brief reserves
+for the end: put the whole study on one frontier with the headline number the brief specified
+(§B8), and explain the one result nobody's arithmetic predicted — that **four separate attacks on
+bytes moved all failed to make decode faster**. Explaining it meant measuring what fixing it could
+possibly be worth, before any of it was built.
+
+The consolidated study is [`docs/FINDINGS.md`](../FINDINGS.md). This report is the gate for the work
+that produced it.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: the replay ablation's guards (identical fetched pairs, agreement
+  reported and not asserted, the arithmetic bound kept above the measured one), the combined
+  frontier's two ways of misleading — the reference rung answering a question about the others, and
+  a rung quoted at the slot count that frees no VRAM — and the repeatability check refusing to score
+  a condition only one phase measured. All Phase 0-5 tests still pass.
+- [x] **Real experiment run.** `scripts/03_host_ceiling.py` ({{ phase5.ceiling.summary.runs }} run,
+  {{ phase5.ceiling.conditions.1.repeats }} repeats per condition), then `scripts/analyze_ceiling.py`
+  and `scripts/analyze_ladder.py`. Provenance in §6.
+- [x] **Phase doc written.** This file, re-read against the finished run.
+- [x] **Committed and pushed.**
+
+## 1. The question this phase had to answer
+
+Phase 5 closed with two candidate directions and a rule-8 note that choosing between them was the
+owner's call. One of them — taking the residency decision off the host critical path — is a redesign
+rather than a rung: it means keeping the top-K on the device and driving the gather from device
+memory, so no layer has to synchronize to decide what it needs.
+
+Building it first and measuring it second would have been the wrong order. So this phase prices it
+first: **what is the largest speedup a perfect device-side residency decision could possibly
+deliver?** If the answer had been 3×, the redesign would be the obvious next phase. §3 has it.
+
+## 2. The instrument that did not work, and why it is kept
+
+The obvious probe is the gap on the GPU stream between consecutive decoder layers: if the host has
+to think between layers, the GPU should be starved and the gap should open up. It does open up, and
+by nothing like enough.
+
+{{> p6_gap }}
+
+The full cache's gap is {{ phase5.ceiling.summary.full_inter_layer_gap_ms | .3f }} ms per token, and
+the tier's excess over it is
+{{ phase5.ceiling.summary.inter_layer_gap_excess_ms.min | .2f }}–{{ phase5.ceiling.summary.inter_layer_gap_excess_ms.max | .2f }} ms —
+a few percent of what §3 goes on to measure. The reason is structural rather than mysterious:
+`select()` runs *inside* the attention module, so the stall it causes falls within a layer's span,
+not between layers. An inter-layer probe cannot see it.
+
+This is recorded rather than deleted because the negative result is the argument for the instrument
+that replaced it. A reader who asks "why not just measure the bubble?" gets the number.
+
+## 3. The replay ablation
+
+Pass one decodes normally and records, for every layer at every step, which blocks the selection
+chose. Pass two decodes the same prompt again driven by that record: the min/max bound never runs,
+the host sync that brings the top-K indices back to the CPU never happens, and the blocks chosen,
+the pairs fetched and the gathers performed stay identical. The difference in wall time is the
+decision cost, isolated.
+
+{{> p6_ceiling }}
+
+**The ceiling is {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×**,
+or {{ phase5.ceiling.summary.saved_ms.min | .1f }}–{{ phase5.ceiling.summary.saved_ms.max | .1f }} ms
+off a {{ phase5.ceiling.summary.decode_ms.min | .0f }}–{{ phase5.ceiling.summary.decode_ms.max | .0f }} ms
+token. Two independent readings agree on it: the replay's measured saving lands within
+{{ phase5.ceiling.summary.saved_vs_counted_rank_ms.max | .1f }} ms of the rank-and-sync time that the
+tier's own Phase 5 counters attribute to the same work, and those counters were not built to check
+this.
+
+### Why the ablation is trustworthy, in the terms it can fail
+
+A ceiling is worth exactly as much as the evidence that the ablation changed only the decision:
+
+| Guard | Why it matters | Result |
+|---|---|---|
+| Fetched pairs identical between passes | If replay moved different bytes it changed the work, and the difference would not be the decision cost | **{{ phase5.ceiling.summary.all_fetched_pairs_match }}** at every condition |
+| Token agreement reported, not asserted | The fast kernel is not bit-repeatable for single-query decode (Phase 1), so two identical passes can legitimately part on a near-tie | {{ phase5.ceiling.summary.token_agreement.min | pct }}–{{ phase5.ceiling.summary.token_agreement.max | pct }}; a collapse would have meant something structural, a few late flips do not |
+| Token sequence forced from the corpus | Without it one flipped token sends the passes down different paths, after which they seal different blocks and the comparison is meaningless | Both passes are teacher-forced on the same tokens |
+
+Two attempts at this ablation were wrong before it was right, and **both were caught by the guards
+rather than by inspection**. Greedy decode let the passes part on a near-tie, after which they
+sealed different blocks; a dict-ordering slip let post-profiling counters overwrite the fetch count,
+which made a clean ablation look broken. Each is a commit in the history, and each is the reason the
+corresponding guard exists.
+
+## 4. What the ceiling means, stated against the alternative
+
+The replay still runs `admit`'s residency bookkeeping on the host, so it removes roughly half the
+tier's host cost. A device-side design could attack the rest. If **all** of the tier's host select
+time ({{ phase5.ceiling.summary.host_select_ms.min | .0f }}–{{ phase5.ceiling.summary.host_select_ms.max | .0f }} ms
+per token) vanished, decode would fall by
+{{ phase5.ceiling.summary.arithmetic_ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.arithmetic_ceiling_speedup.max | .2f }}×.
+**That figure is arithmetic, not a measurement.** Phases 4 and 5 each found an arithmetic prediction
+about this system to be wrong — prefetch that hid every copy was slower, and halving the bytes was
+slower — so it is an optimistic bound and is quoted as one.
+
+Even the optimistic bound does not change the decision. The full cache decodes a token in
+{{ phase5.ceiling.summary.full_decode_ms | .1f }} ms; a tier with every scrap of host decision time
+removed would still be near thirty. **A device-side residency decision closes part of the gap the
+tier pays for its own mechanism, and never the gap to keeping KV in VRAM** at a context that still
+fits there. The redesign is worth doing to make the memory win cheaper. It is not a route to beating
+the full cache on latency, and this phase exists so that nobody spends a month discovering that.
+
+## 5. The combined frontier
+
+[`docs/FINDINGS.md`](../FINDINGS.md) puts all {{ ladder.summary.rungs }} rungs on one frontier and
+answers brief §B8. Combining sweeps measured weeks apart in four separate gates is a claim, not a
+formatting choice, so it is licensed by an explicit check:
+{{ ladder.summary.overlapping_conditions }} conditions were measured in more than one phase, and the
+largest accuracy disagreement across all of them is
+**{{ ladder.summary.repeatability_accuracy_max_gap_pp | .2f }} pp**. Accuracy is reproducible to the
+last prompt. Decode speed is not — the same condition varies by up to
+{{ ladder.summary.repeatability_tokens_per_s_max_ratio | .2f }}× between phases, which is thermal and
+run-to-run variation on a laptop, and is why every latency claim in the study carries a range.
+
+The headline, in the brief's own terms: **no rung retains 99% of full-cache NIAH accuracy at any
+budget below 100%**. The best any policy manages is
+{{ ladder.summary.best_retention_excluding_full.max | pct }} at a
+{{ ladder.summary.best_retention_budget_excluding_full | pct0 }} budget. The brief asked for this
+number because it is not gameable, and the honest answer on this task, at this context, with this
+model, is *none*.
+
+## 6. Provenance
+
+{{> p6_provenance }}
