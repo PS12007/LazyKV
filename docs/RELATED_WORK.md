@@ -423,6 +423,37 @@ same teacher-forced KL as eviction (§B7).
 - **Tradeoff:** unmodified attention kernels; depends on platform VMM support.
 - **LazyKV note:** PyTorch's `expandable_segments` allocator is built on the same CUDA VMM facility. Phase 0 recorded that it **is not supported on this Windows platform** (see `SYSTEM_INFO.md`). A vAttention-style design is therefore unlikely to be available here, and LazyKV should plan for explicit block tables with preallocated pools.
 
+## 6b. The partial-attention merge (rung 9's primitive)
+
+Added in Phase 7, when rung 9 was built. These two are not KV-cache systems and were not on the
+brief's §B5 list; they are where the *algebra* rung 9 depends on comes from, so they are recorded
+here rather than cited from code with no provenance. **Both verified by a live lookup on
+2026-09-21**, by fetching the `arxiv.org/abs/<id>` page and reading the title and abstract.
+
+### FlashAttention
+*arXiv [2205.14135](https://arxiv.org/abs/2205.14135): FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness*
+
+- **Problem:** attention's memory traffic between HBM and on-chip SRAM, not its arithmetic.
+- **Mechanism:** tiling, so attention is computed block by block and never materializes the full
+  score matrix. The abstract's claim that matters here is **exact**: block-by-block softmax with
+  running rescaling is not an approximation.
+- **What LazyKV borrows:** the rescaling identity, not the kernel. Two partial attentions over
+  disjoint key sets combine exactly when each carries its log-sum-exp. Rung 9 applies it across a
+  *device boundary* rather than across SRAM tiles: `lazykv/exact.py` (`merge_lse`).
+
+### Ring Attention with Blockwise Transformers
+*arXiv [2310.01889](https://arxiv.org/abs/2310.01889): Ring Attention with Blockwise Transformers for Near-Infinite Context*
+
+- **Problem:** context length limited by one device's memory.
+- **Mechanism:** blockwise attention distributed across devices, with key-value block communication
+  overlapped by blockwise compute, and no approximation.
+- **What LazyKV borrows:** the idea that the partials can live on *different* processors and be
+  merged. Rung 9's two processors are one GPU and one CPU rather than a ring of accelerators, and
+  the asymmetry is the whole result: the CPU half is the slow half, and Phase 7 measures by how much.
+- **LazyKV differs:** ring attention moves KV blocks between devices; rung 9 moves nothing, because
+  the cold blocks are already on the host that attends to them. Only O(head_dim) per query head
+  comes back.
+
 ## 7. Evaluation
 
 | Benchmark | Source | What LazyKV uses it for |
@@ -441,7 +472,7 @@ same teacher-forced KL as eviction (§B7).
 - **Block-level query-aware selection** already exists: Quest's min/max bounds, ArkVale's bounding-volume digests.
 - **CPU backup with recall** already exists: ArkVale, InfiniGen, ShadowKV, PQCache.
 - **Next-layer speculative prefetch** already exists: InfiniGen. **Layer-wise pre-loading that overlaps transfer with compute** already exists too: CachedAttention.
-- **Attention on the CPU** already exists: FlexGen's computation delegation, MagicPIG, RetrievalAttention.
+- **Attention on the CPU** already exists: FlexGen's computation delegation, MagicPIG, RetrievalAttention. **Merging partial attentions exactly** is FlashAttention's rescaling identity applied across a device boundary, as ring attention does across accelerators (§6b).
 - **Mixed-precision KV** already exists: KIVI, KVQuant, Atom, GEAR, LMDeploy, llama.cpp.
 - **Tiered KV offload** is shipped in production: TensorRT-LLM, NVIDIA Dynamo, LMCache, Mooncake.
 

@@ -1,15 +1,15 @@
 """The whole policy ladder on one axis: the brief's headline experiment (§B8).
 
-Reads   results/phase{2,3,4,5}/analysis/metrics.json
+Reads   results/phase{2,3,4,5,7}/analysis/metrics.json
 Writes  results/ladder/metrics.json
 
-No rung is re-run here. Phases 2-5 each swept the same budgets at the same context and block size
-over the same 45 NIAH prompts, so the rungs can in principle be put on one frontier -- but "in
+No rung is re-run here. Phases 2-5 and 7 each swept the same budgets at the same context and block
+size over the same 45 NIAH prompts, so the rungs can in principle be put on one frontier -- but "in
 principle" is not a measurement, so this script tests it before doing it.
 
 **The repeatability check comes first.** Adjacent phases deliberately overlap: `window_sink` was
-measured in Phases 2 and 3, `quest` in 3 and 4, `tiered_sync` in 4 and 5, and the full cache in all
-four. Every overlapping condition is compared across the phases that measured it, and the largest
+measured in Phases 2 and 3, `quest` in 3 and 4, `tiered_sync` in 4, 5 and 7, and the full cache in all
+five. Every overlapping condition is compared across the phases that measured it, and the largest
 disagreement is reported next to the frontier. If those disagreements were large, the combined
 frontier would be an artifact of when each rung happened to be run, and the right response would be
 to say so rather than to publish the picture.
@@ -46,9 +46,10 @@ LADDER: list[tuple[int, str, str, str]] = [
     (6, "tiered_sync", "phase5", "CPU tier, synchronous fetch"),
     (7, "tiered_prefetch", "phase4", "CPU tier + layer-ahead prefetch"),
     (8, "tiered_int8", "phase5", "CPU tier, int8 warm/cold"),
+    (9, "tiered_exact", "phase7", "CPU tier + exact partial-attention merge"),
 ]
 # Which VRAM-slot variant each phase's headline tier numbers come from.
-SLOT_VARIANT = {"phase4": "2x attended", "phase5": "2x attended"}
+SLOT_VARIANT = {"phase4": "2x attended", "phase5": "2x attended", "phase7": "2x attended"}
 
 
 def load(phase: str) -> dict[str, Any] | None:
@@ -87,7 +88,7 @@ def repeatability(phases: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def main() -> None:
-    phases = {n: a for n in ("phase2", "phase3", "phase4", "phase5") if (a := load(n)) is not None}
+    phases = {n: a for n in ("phase2", "phase3", "phase4", "phase5", "phase7") if (a := load(n)) is not None}
     if not phases:
         raise SystemExit("no phase analyses found")
     ref = phases.get("phase5") or next(iter(phases.values()))

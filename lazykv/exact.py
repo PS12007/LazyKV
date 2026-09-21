@@ -5,7 +5,8 @@ the model's output, which is what the whole accuracy column of this study measur
 other answer from the brief's §B1(c): attend to the non-resident blocks **on the CPU**, where they
 already are, and merge the two partial outputs with their log-sum-exp normalizers. Softmax is
 associative under that rescaling, so the result is the full cache's attention, and only
-O(head_dim) bytes come back instead of O(block_bytes).
+O(head_dim) bytes come back instead of O(block_bytes). The identity is FlashAttention's
+(`docs/RELATED_WORK.md` §6b); what is new here is only which two processors hold the halves.
 
 The set split, per selecting layer and decode step:
 
@@ -69,8 +70,9 @@ def merge_lse(out_a: torch.Tensor, lse_a: torch.Tensor, out_b: torch.Tensor, lse
     """Combine two partial softmax attentions into the attention over their union.
 
     `out_*` are [..., d] already divided by their own normalizer; `lse_*` are [...] log-sum-exp of
-    the scores each one covered. This is the FlashAttention / ring-attention merge, and it is exact
-    for disjoint key sets. A partial with an empty key set passes lse = -inf and contributes
+    the scores each one covered. This is FlashAttention's rescaling identity (arXiv 2205.14135),
+    applied across a device boundary rather than across SRAM tiles, as ring attention (arXiv
+    2310.01889) applies it across accelerators. It is exact for disjoint key sets. A partial with an empty key set passes lse = -inf and contributes
     nothing, which is why the weights are computed by subtracting the combined lse rather than by
     exponentiating each one.
     """
