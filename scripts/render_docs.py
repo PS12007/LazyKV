@@ -1478,6 +1478,38 @@ def block_ladder_headline(ctx: Mapping[str, Any]) -> str:
     return table(header, rows, ["---:", "---", "---:", "---:", "---:", "---:", "---:"])
 
 
+def block_ladder_operating_point(ctx: Mapping[str, Any]) -> str:
+    """For any rung that meets the brief's target: the smallest budget that does, and its cost.
+
+    The §B8 question is about the *smallest* budget, so this is the row that answers it. The
+    "best retention" column above is decided by whichever budget happened to score highest, which
+    for an exact rung is one or two prompts of rounding noise.
+    """
+    best = lookup(ctx, "ladder.best")
+    if not isinstance(best, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for key in sorted(best, key=int):
+        v = best[key]
+        if key == "1" or v.get("min_budget_meeting_target") is None:
+            continue
+        rows.append([
+            key,
+            v["name"],
+            _pct_budget(v["min_budget_meeting_target"]),
+            f"{100 * v['retention_at_min_budget_meeting_target']:.1f}%" if v.get("retention_at_min_budget_meeting_target") is not None else NOT_MEASURED,
+            f"{v['resident_mib_at_min_budget_meeting_target']:,.0f}" if v.get("resident_mib_at_min_budget_meeting_target") is not None else NOT_MEASURED,
+            f"{v['tokens_per_s_at_min_budget_meeting_target']:.1f}" if v.get("tokens_per_s_at_min_budget_meeting_target") is not None else NOT_MEASURED,
+        ])
+    if not rows:
+        return "_No rung below a 100% budget retains 99% of the full cache's accuracy._"
+    return table(
+        ["Rung", "Policy", "Smallest budget meeting the target", "Retention there", "Resident KV, MiB", "Tokens/s"],
+        rows,
+        ["---:", "---", "---:", "---:", "---:", "---:"],
+    )
+
+
 def block_ladder_table(ctx: Mapping[str, Any]) -> str:
     """Every rung at every budget: the frontier as numbers."""
     rows_in = lookup(ctx, "ladder.rows")

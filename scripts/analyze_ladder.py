@@ -172,6 +172,11 @@ def main() -> None:
         top = max(rs, key=lambda r: r["retention"] or 0)
         # Brief §B8: smallest budget retaining >= 99% of the full cache, and the speed there.
         passing = sorted((r for r in rs if (r["retention"] or 0) >= 0.99), key=lambda r: r["budget"])
+        # "Best retention" picks the budget with the highest score, which for an exact rung is
+        # decided by one or two prompts flipping on bf16 rounding rather than by the budget. Where
+        # a rung meets the target, the operating point worth quoting is the *smallest* budget that
+        # does -- the point of the whole study is how little VRAM a policy needs.
+        meets = passing[0] if passing else None
         best[str(rung)] = {
             "policy": policy,
             "name": pretty,
@@ -179,7 +184,10 @@ def main() -> None:
             "best_retention_budget": top["budget"],
             "resident_mib_at_best": top["resident_mib"],
             "tokens_per_s_at_best": top["tokens_per_s"],
-            "min_budget_meeting_target": passing[0]["budget"] if passing else None,
+            "min_budget_meeting_target": meets["budget"] if meets else None,
+            "retention_at_min_budget_meeting_target": meets["retention"] if meets else None,
+            "resident_mib_at_min_budget_meeting_target": meets["resident_mib"] if meets else None,
+            "tokens_per_s_at_min_budget_meeting_target": meets["tokens_per_s"] if meets else None,
         }
 
     summary = {
@@ -211,8 +219,13 @@ def main() -> None:
         "best_retention_budget_approximate": max(((v["best_retention"], v["best_retention_budget"]) for k, v in best.items() if k in APPROXIMATE and v["best_retention"] is not None), default=(None, None))[1],
         "approximate_rungs_meeting_target": [k for k, v in best.items() if k in APPROXIMATE and v["min_budget_meeting_target"] is not None],
         "exact_rung_min_budget_meeting_target": (best.get("9") or {}).get("min_budget_meeting_target"),
-        "exact_rung_tokens_per_s": (best.get("9") or {}).get("tokens_per_s_at_best"),
-        "exact_rung_over_full_tokens_per_s": _ratio((best.get("1") or {}).get("tokens_per_s_at_best"), (best.get("9") or {}).get("tokens_per_s_at_best")),
+        "exact_rung_tokens_per_s": (best.get("9") or {}).get("tokens_per_s_at_min_budget_meeting_target"),
+        "exact_rung_resident_mib": (best.get("9") or {}).get("resident_mib_at_min_budget_meeting_target"),
+        "exact_rung_over_full_tokens_per_s": _ratio((best.get("1") or {}).get("tokens_per_s_at_best"), (best.get("9") or {}).get("tokens_per_s_at_min_budget_meeting_target")),
+        # Above 1.0 means the exact rung scored higher than the cache it reproduces, which cannot be
+        # an improvement: it is one or two prompts flipping on bf16 rounding, and the prose says so.
+        "exact_rung_best_retention": (best.get("9") or {}).get("best_retention"),
+        "exact_rung_best_retention_budget": (best.get("9") or {}).get("best_retention_budget"),
     }
     write_metrics(RESULTS_DIR / "ladder", {"shape": shape, "rows": rows, "repeatability": rep, "best": best, "summary": summary})
     print("wrote", RESULTS_DIR / "ladder" / "metrics.json")

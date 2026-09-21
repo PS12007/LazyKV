@@ -254,6 +254,8 @@ def main() -> None:
         "resident_mib_at": {pol: {f"b{round(100 * b)}": sp[label(pol, b)]["gpu_resident_kv_bytes"]["median"] / MIB for b in budgets if label(pol, b) in sp} for pol in policies},
         "mirror_mib": span([e["mirror_mib"] for e in exact.values() if e.get("mirror_mib") is not None]),
         "host_pinned_mib": span([c["host_pinned_mib"] for c in costs if c["host_pinned_mib"] is not None]),
+        # The trade in one number: host RAM spent per MiB of VRAM freed, against the full cache.
+        "host_mib_per_vram_mib_saved": span([c["host_mib_per_vram_mib_saved"] for c in costs if c["host_mib_per_vram_mib_saved"] is not None]),
         "returned_kib_per_token": span([e["returned_kib_per_token"] for e in exact.values() if e.get("returned_kib_per_token") is not None]),
         # 3. The design note, tested: the CPU pass should not respond to the budget.
         "cpu_attention_ms_per_token": span(cpu_ms),
