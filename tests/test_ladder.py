@@ -68,3 +68,28 @@ def test_the_combined_frontier_is_only_published_because_the_sweeps_match() -> N
     assert a["summary"]["overlapping_conditions"] > 0
     shapes = {(v["context"], v["block_size"], v["prompts"]) for v in a["shape"].values()}
     assert len(shapes) == 1
+
+
+@needs_ladder
+def test_the_exact_rung_reproduces_the_reference_rather_than_beating_it() -> None:
+    """Rung 9 computes the full cache's attention in two places, so its retention should sit at
+    1.0. A retention meaningfully *above* it would not be a win, it would mean the two halves are
+    not a partition of the same key set -- and a 'best retention' column would report it as a win
+    without anyone noticing."""
+    a = json.loads(LADDER_METRICS.read_text(encoding="utf-8"))
+    nine = a["best"].get("9")
+    if nine is None:
+        pytest.skip("rung 9 not in the ladder yet")
+    assert nine["best_retention"] == pytest.approx(1.0, abs=0.05)
+    others = [v["best_retention"] for k, v in a["best"].items() if k not in ("1", "9")]
+    assert nine["best_retention"] > max(others)
+
+
+@needs_ladder
+def test_a_rung_meeting_the_bar_below_a_full_budget_is_an_exact_one() -> None:
+    """The study's headline is that approximation cannot hold the last percent of accuracy. Any
+    rung that clears the 99% bar below a full budget must therefore be one that does not
+    approximate; if an approximate rung ever appears here, the headline is wrong and the prose in
+    docs/FINDINGS.md has to change with it."""
+    a = json.loads(LADDER_METRICS.read_text(encoding="utf-8"))
+    assert set(a["summary"]["rungs_meeting_target_below_full"]) <= {"9"}
