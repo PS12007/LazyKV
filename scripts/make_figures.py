@@ -1,4 +1,4 @@
-"""Phase 0-7 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Phase 0-8 figures, rendered in light and dark variants for the README's <picture> tags.
 
 Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json,
 results/phase1/latency_regimes/metrics.json, and results/phase{2,3,4,5,7}/analysis/metrics.json.
@@ -25,6 +25,7 @@ from matplotlib.ticker import FuncFormatter  # noqa: E402
 
 from harness.render import iec  # noqa: E402
 from harness.results import REPO_ROOT, RESULTS_DIR  # noqa: E402
+from lazykv.selection import blocks_for_budget  # noqa: E402
 
 FIG_DIR = REPO_ROOT / "docs" / "figures"
 
@@ -914,6 +915,99 @@ def fig_p7_exactness(a: dict[str, Any], t: Theme) -> None:
 LADDER_DASHES = ("-", (0, (4, 2)), (0, (1, 1.6)))
 
 
+P8_PRETTY = {
+    "window_sink": "Window + sink (rung 2)",
+    "quest": "Quest-style (rung 5)",
+    "tiered_sync": "CPU tier (rung 6)",
+    "tiered_exact": "Exact merge (rung 9)",
+}
+# The approximating rung the collapse panels are drawn for. Rung 6 reproduces rung 5's selection
+# bit for bit (Phase 4), and rung 9 is flat by construction, so one approximating curve per context
+# says everything a panel of all four would and stays readable at four contexts.
+P8_COLLAPSE_POLICY = "quest"
+
+
+def fig_p8_context(a: dict[str, Any], t: Theme) -> None:
+    """The same retentions plotted against the budget fraction and against the blocks attended.
+
+    The two left panels are the same numbers twice. If quality is governed by the fraction, the
+    per-context curves lie on top of each other in the first panel and fan out in the second; if it
+    is governed by how many blocks are actually attended, the reverse. Drawing both is the point:
+    a single panel would let the eye confirm whichever hypothesis the axis was chosen for.
+
+    The right panel is the scaling half -- decode latency against context -- because the cost of
+    reading more is what decides whether any of the left panels matters in practice.
+    """
+    per_ctx = a.get("per_context") or {}
+    if not per_ctx:
+        return
+    contexts = sorted(int(c) for c in per_ctx)
+    block_size = a["block_size"]
+    fig, axes = plt.subplots(1, 3, figsize=(12.6, 4.2), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    for ax in axes:
+        style_axes(ax, t)
+
+    budgets = sorted(a["budgets"])
+    for ctx, color in zip(contexts, t.series):
+        rows = sorted(
+            (r for r in per_ctx[str(ctx)]["niah"] if r["policy"] == P8_COLLAPSE_POLICY and r["retention"] is not None),
+            key=lambda r: r["budget"],
+        )
+        if not rows:
+            continue
+        ret = [100 * r["retention"] for r in rows]
+        axes[0].plot([r["budget"] for r in rows], ret, color=color, linewidth=2, marker="o", markersize=5,
+                     markeredgecolor=t.surface, markeredgewidth=1.2, label=f"{ctx // 1024}K")
+        ks = [blocks_for_budget(r["budget"], ctx, block_size) for r in rows]
+        axes[1].plot(ks, ret, color=color, linewidth=2, marker="o", markersize=5,
+                     markeredgecolor=t.surface, markeredgewidth=1.2)
+
+    _budget_axis(axes[0], budgets)
+    axes[0].set_xlabel("GPU KV budget")
+    axes[0].set_title("Retention vs budget fraction, %", color=t.ink, fontsize=10, loc="left")
+    axes[1].set_xscale("log", base=2)
+    axes[1].set_xlabel(f"Blocks attended, K ({block_size} tokens each)")
+    axes[1].set_title("The same points vs blocks attended, %", color=t.ink, fontsize=10, loc="left")
+    for ax in axes[:2]:
+        ax.set_ylim(0, 105)
+        ax.axhline(99, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    axes[0].annotate("99% target", (budgets[0], 99), xytext=(2, -11), textcoords="offset points",
+                     ha="left", color=t.ink2, fontsize=8.5)
+
+    # Right: decode latency against context, at the smallest budget each policy was swept at, so
+    # the tier rungs are shown where they are actually saving VRAM rather than where they are not.
+    smallest = min(budgets)
+    series = a.get("scaling", {}).get("series", [])
+    for (policy, pretty), color in zip(P8_PRETTY.items(), t.series):
+        s_ = next((x for x in series if x["policy"] == policy and x["budget"] == smallest), None)
+        if s_ is None:
+            continue
+        axes[2].plot([p["context"] for p in s_["points"]], [p["decode_ms_per_token"] for p in s_["points"]],
+                     color=color, linewidth=2, marker="o", markersize=5, markeredgecolor=t.surface,
+                     markeredgewidth=1.2, label=pretty)
+    ref = next((x for x in series if x["policy"] == "full"), None)
+    if ref is not None:
+        axes[2].plot([p["context"] for p in ref["points"]], [p["decode_ms_per_token"] for p in ref["points"]],
+                     color=t.muted, linewidth=1.6, linestyle=(0, (4, 3)), marker="o", markersize=4,
+                     markeredgecolor=t.surface, markeredgewidth=1.0, label="Full GPU KV (rung 1)")
+    axes[2].set_xscale("log", base=2)
+    axes[2].set_xticks(contexts, [f"{c // 1024}K" for c in contexts])
+    axes[2].xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
+    axes[2].set_xlabel("Context, tokens")
+    axes[2].set_ylim(bottom=0)
+    axes[2].set_title(f"Decode ms/token at a {100 * smallest:g}% budget", color=t.ink, fontsize=10, loc="left")
+
+    for ax, ncol in ((axes[0], len(contexts)), (axes[2], 3)):
+        leg = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.19), ncol=ncol, frameon=False, fontsize=8.5)
+        for text in leg.get_texts():
+            text.set_color(t.ink2)
+    title(fig, t, "The ladder across context length",
+          f"{P8_PRETTY[P8_COLLAPSE_POLICY]} on the left, the same retentions against two different x axes; {block_size}-token blocks throughout")
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.30, wspace=0.22)
+    save(fig, "p8_context", t)
+
+
 def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
     """Brief §B8's headline experiment: every rung on one memory axis, accuracy and speed.
 
@@ -1003,6 +1097,8 @@ def main() -> None:
     p5 = json.loads(p5_path.read_text(encoding="utf-8")) if p5_path.exists() else None
     p7_path = RESULTS_DIR / "phase7" / "analysis" / "metrics.json"
     p7 = json.loads(p7_path.read_text(encoding="utf-8")) if p7_path.exists() else None
+    p8_path = RESULTS_DIR / "phase8" / "analysis" / "metrics.json"
+    p8 = json.loads(p8_path.read_text(encoding="utf-8")) if p8_path.exists() else None
     ladder_path = RESULTS_DIR / "ladder" / "metrics.json"
     ladder = json.loads(ladder_path.read_text(encoding="utf-8")) if ladder_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
@@ -1035,6 +1131,8 @@ def main() -> None:
             fig_p5_capacity(p5, t)
         if p7 is not None:
             fig_p7_exactness(p7, t)
+        if p8 is not None:
+            fig_p8_context(p8, t)
         if ladder is not None:
             fig_ladder_pareto(ladder, t)
     print("figures written to", FIG_DIR)
