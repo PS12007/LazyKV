@@ -167,3 +167,43 @@ def test_the_exact_rung_is_not_evidence_about_which_parameterization_governs() -
     assert out["summary_by_budget"]["mean_spread_pp"] == pytest.approx(30.0)
     # The exact rung is still reported, just separately.
     assert out["exact_summary_by_budget"]["mean_spread_pp"] == pytest.approx(0.0)
+
+
+@needs_phase8
+def test_the_budget_fraction_predicts_retention_better_than_the_blocks_attended() -> None:
+    """Phase 8's verdict. Quest parameterizes its budget as a constant K and LazyKV's brief states
+    its headline as a fraction; the two agree at exactly one context, so one of them travels and
+    the other does not. If this ever inverts, the brief's headline is the wrong shape and the gate
+    report says the opposite of what the data says."""
+    m = json.loads(PHASE8_METRICS.read_text(encoding="utf-8"))
+    s = m["summary"]
+    assert s["collapse_groups_by_k"] >= 4, "too few matched K groups to compare the two collapses"
+    assert s["collapse_fraction_over_k"] < 1.0
+    # The exact rung must not be what is carrying that, and must not be in the verdict at all.
+    assert "tiered_exact" not in s["collapse_over_policies"]
+
+
+@needs_phase8
+def test_the_exact_rung_is_flat_across_context_under_either_grouping() -> None:
+    """Rung 9 reproduces the full cache, so context must not move its retention. This is the
+    context-sweep version of Phase 7's exactness check."""
+    m = json.loads(PHASE8_METRICS.read_text(encoding="utf-8"))
+    s = m["summary"]
+    assert s["collapse_exact_mean_spread_by_budget_pp"] < 2.0
+    assert s["collapse_exact_mean_spread_by_k_pp"] < 2.0
+
+
+@needs_phase8
+def test_the_99_percent_bar_is_not_resolvable_for_the_query_aware_rungs() -> None:
+    """The finding that stops this phase reporting a context dependence it cannot support.
+
+    quest and tiered_sync land within about one prompt of the bar at every context, and which
+    side they land on alternates. Any sentence claiming the verdict *changes with context* would
+    be reading sampling noise as a trend, so the guard is on the margin, not on the verdict."""
+    m = json.loads(PHASE8_METRICS.read_text(encoding="utf-8"))
+    margins = m["summary"]["headline_margin_prompts_by_context"]
+    for policy in ("quest", "tiered_sync"):
+        for context, margin in margins[policy].items():
+            assert abs(margin) < 1.0, f"{policy} at {context} is {margin:.2f} prompts from the bar"
+    # The cheap baseline is nowhere near it, so the test above is not vacuously true of everything.
+    assert all(v < -5.0 for v in margins["window_sink"].values())
