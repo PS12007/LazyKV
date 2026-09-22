@@ -65,6 +65,7 @@ def main() -> None:
     p.add_argument("--cpu-threads", type=int, help="override config tier.cpu_threads (rung 9's CPU partial attention)")
     p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
     p.add_argument("--policies", nargs="+", help="override config policies")
+    p.add_argument("--skip-block-full", action="store_true", help="drop the 100%% block-pool control (it is a second full-size KV copy; see lazykv.sweep.conditions)")
     p.add_argument("--out", default="budget_speed")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -85,7 +86,7 @@ def main() -> None:
     ctx = args.context or cfg["context"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
     n_decode = sp["warmup_steps"] + sp["decode_tokens"]
-    conds = conditions(cfg)
+    conds = conditions(cfg, skip_block_full=args.skip_block_full)
 
     set_power_throttling(opt_out=True)
     lm = load(cfg["model"]["repo"], cfg["model"]["revision"], strategy=FAST_STRATEGY)

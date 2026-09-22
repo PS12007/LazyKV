@@ -50,8 +50,19 @@ def load_config(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
-def conditions(cfg: dict[str, Any]) -> list[Condition]:
-    out = [Condition("full", 1.0), Condition("block_full", 1.0)]
+def conditions(cfg: dict[str, Any], skip_block_full: bool = False) -> list[Condition]:
+    """The sweep's conditions: the reference, the 100%-budget block-pool control, then the policies.
+
+    `skip_block_full` drops the control only. It exists for one measured reason: the control is a
+    second full-size copy of the KV, so at 64K it and the reference together are ~4 GiB on top of
+    the weights and the run dies in `BlockPoolCache.from_full` before any policy is reached. The
+    reference is not optional -- every retention and latency figure in this study is relative to it
+    -- but the control is, and dropping it is what lets a 64K point exist at all. A run that uses
+    this flag is measuring policies against the full cache without the block-pool overhead control.
+    """
+    out = [Condition("full", 1.0)]
+    if not skip_block_full:
+        out.append(Condition("block_full", 1.0))
     out += [Condition(p, b) for p in cfg["policies"] for b in cfg["budgets"]]
     return out
 
