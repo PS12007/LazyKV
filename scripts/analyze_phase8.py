@@ -46,6 +46,11 @@ from harness.sweep_analysis import RETENTION_TARGET, across, headline, label, ni
 from lazykv.selection import blocks_for_budget  # noqa: E402
 
 FULL = "full"
+# Rung 9 reproduces the full cache instead of approximating it, so its retention is flat under
+# *both* groupings and it carries no information about which one governs quality. Averaging it
+# into the verdict would halve whichever spread it was added to. `analyze_ladder` scopes its
+# claims to the approximate rungs for the same reason; this is that convention.
+EXACT_POLICIES = ("tiered_exact",)
 MIB = 2**20
 MS = 1e3
 
@@ -137,17 +142,32 @@ def collapse(per_ctx: dict[int, dict[str, Any]], policies: list[str], block_size
             "max_spread_pp": max(spreads) if spreads else None,
         }
 
-    fr, kk = summarize(by_budget), summarize(by_k)
+    approx = [p for p in policies if p not in EXACT_POLICIES]
+    keep = lambda rows: [r for r in rows if r["policy"] in approx]  # noqa: E731
+    fr, kk = summarize(keep(by_budget)), summarize(keep(by_k))
+    ex_fr, ex_kk = summarize([r for r in by_budget if r["policy"] in EXACT_POLICIES]), summarize([r for r in by_k if r["policy"] in EXACT_POLICIES])
     return {
         "points": points,
         "by_budget": by_budget,
         "by_k_blocks": by_k,
+        "approximate_policies": approx,
         "summary_by_budget": fr,
         "summary_by_k_blocks": kk,
-        # >1 means grouping by K holds retention tighter than grouping by fraction does, i.e. the
-        # absolute blocks attended govern quality and the brief's fraction-shaped headline is a
-        # statement about 32K rather than about the policy.
+        # Reported, not averaged in: rung 9 flat under both groupings is a check that the exact rung
+        # is exact at every context, which is a different claim from the one the ratio makes.
+        "exact_summary_by_budget": ex_fr,
+        "exact_summary_by_k_blocks": ex_kk,
+        # <1 means grouping by the budget fraction holds retention tighter than grouping by the
+        # blocks attended does, i.e. the fraction is the better cross-context parameterization and
+        # the brief's fraction-shaped headline is the right shape. >1 means the opposite.
         "fraction_over_k_mean_spread": _ratio(fr["mean_spread_pp"], kk["mean_spread_pp"]),
+        "per_policy": {
+            pol: {
+                "mean_spread_by_budget_pp": summarize([r for r in by_budget if r["policy"] == pol])["mean_spread_pp"],
+                "mean_spread_by_k_pp": summarize([r for r in by_k if r["policy"] == pol])["mean_spread_pp"],
+            }
+            for pol in policies
+        },
     }
 
 
@@ -380,6 +400,10 @@ def main() -> None:
         "collapse_max_spread_by_k_pp": col["summary_by_k_blocks"]["max_spread_pp"],
         "collapse_fraction_over_k": col["fraction_over_k_mean_spread"],
         "collapse_groups_by_k": col["summary_by_k_blocks"]["groups"],
+        "collapse_over_policies": col["approximate_policies"],
+        "collapse_exact_mean_spread_by_budget_pp": col["exact_summary_by_budget"]["mean_spread_pp"],
+        "collapse_exact_mean_spread_by_k_pp": col["exact_summary_by_k_blocks"]["mean_spread_pp"],
+        "collapse_per_policy": col["per_policy"],
         # 2. What scales.
         "full_decode_ms_by_context": {str(p["context"]): p["decode_ms_per_token"] for p in full_series["points"]} if full_series else None,
         "full_decode_first_to_last": full_series["decode_ms_first_to_last"] if full_series else None,

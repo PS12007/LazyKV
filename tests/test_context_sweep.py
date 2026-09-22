@@ -150,3 +150,20 @@ def test_the_margin_is_counted_in_prompts_so_a_thin_verdict_reads_as_thin() -> N
 
 def test_a_condition_under_the_bar_reports_a_negative_margin() -> None:
     assert _margin_prompts({"accuracy": 0.9}, full_acc=1.0, n_prompts=45) < 0
+
+
+def test_the_exact_rung_is_not_evidence_about_which_parameterization_governs() -> None:
+    """Rung 9 reproduces the full cache, so its retention is flat whichever way the points are
+    grouped. Letting it into the verdict would pull both spreads toward zero and halve the ratio
+    the phase turns on -- and it would do so while looking like corroboration."""
+    rows = [("quest", 0.5, 0.90), ("tiered_exact", 0.5, 1.0)]
+    per_ctx = {
+        4096: _ctx(4096, rows),
+        8192: _ctx(8192, [("quest", 0.5, 0.60), ("tiered_exact", 0.5, 1.0)]),
+    }
+    out = collapse(per_ctx, ["quest", "tiered_exact"], BS)
+    assert out["approximate_policies"] == ["quest"]
+    # The verdict sees only quest's 30 pp, not the average of 30 pp and 0 pp.
+    assert out["summary_by_budget"]["mean_spread_pp"] == pytest.approx(30.0)
+    # The exact rung is still reported, just separately.
+    assert out["exact_summary_by_budget"]["mean_spread_pp"] == pytest.approx(0.0)
