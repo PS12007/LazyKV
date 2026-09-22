@@ -12,7 +12,10 @@ degrades gracefully and predictably with the budget, and the best *approximating
 98.8% of the full cache's retrieval accuracy at a
 75% budget — but **no approximating policy on
 the ladder retains 99% of full-cache accuracy at any budget below 100%**, which was the bar the brief
-set. Memory can be bought back almost linearly; the last percent of accuracy cannot be, by skipping.
+set. That miss is inside this study's resolution rather than safely beyond it:
+[Phase 8](phases/PHASE_8.md) puts the best rungs within one prompt of the bar at four separate
+context lengths, landing on either side. Memory can be bought back almost linearly; the last percent
+of accuracy cannot be, by skipping.
 
 It can be bought another way. Rung 9 does not skip the non-resident blocks: it attends to them on the
 CPU and merges the two partial attentions exactly, so it reproduces the full cache at a
@@ -28,7 +31,7 @@ by moving it — and rung 9 is that finding again, at a larger scale.
 Individual gate reports carry the detail and the provenance:
 [Phase 0](phases/PHASE_0.md) · [Phase 1](phases/PHASE_1.md) · [Phase 2](phases/PHASE_2.md) ·
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
-[Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md).
+[Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -53,6 +56,15 @@ Individual gate reports carry the detail and the provenance:
 about a percentage point, on 45 prompts, which is one or two prompts'
 worth. The brief asked for this number specifically because it is not gameable, and reporting it as
 "near-perfect retention at 75%" would be the gameable version.
+
+**That miss is not resolvable at this prompt count, and [Phase 8](phases/PHASE_8.md) measured how
+far from resolvable.** Repeating the sweep at four context lengths puts the query-aware rungs within
+one prompt of the bar at *every* context — the closest
+0.07 prompts — while which side
+they land on alternates. So the sentence above should be read as "this study cannot place these
+rungs relative to the 99% bar", not as "these rungs fall short of it". The two rungs that *are*
+resolvable stay resolvable at every context: the window with a sink misses by 13 to 17 prompts, and
+rung 9 clears at the smallest budget swept.
 
 **One rung clears it, and it is the one that does not approximate.** Rung 9 computes attention over
 the non-resident blocks where they already live — on the CPU — and merges the two partial results
@@ -199,6 +211,13 @@ The last row is the argument's end point. Rung 9 moves no KV at all — only
 
 The cause is the same each time. Every selecting layer must bring its top-K block indices to the CPU
 before it can decide what to fetch, and that round trip costs more than the transfer it authorizes.
+**[Phase 8](phases/PHASE_8.md) sharpens what that means**: sweeping the context from 4K to 64K shows
+the round trip is a per-layer *constant*, not a function of the blocks ranked —
+76%–120%
+of the selecting rungs' manager cost sits at zero blocks, and sixteen times the blocks to rank does
+not measurably cost more. So "host-bound" here means bound by a fixed cost each selecting layer pays
+once per token, which is why no shorter context buys the tier back and why its gap to keeping KV in
+VRAM is flat across the whole range.
 At a 25% budget the tier moves
 4.5 MiB per token — under a millisecond of
 link time at the Phase 0 pinned-H2D asymptote — while host select time is
@@ -255,10 +274,16 @@ claim in this study is quoted with a range over independent runs.
 
 ## 6. Limitations
 
-- **One model, one context, one task.** Llama-3.2-1B at 32,768 tokens,
-  scored on needle-in-a-haystack with 45 prompts per condition. The 3B
-  stress model in the brief was never run, so nothing here speaks to a regime where KV dominates
-  VRAM more aggressively.
+- **One model and one task.** Llama-3.2-1B, scored on needle-in-a-haystack with
+  45 prompts per condition. The 3B stress model in the brief was never
+  run, so nothing here speaks to a regime where KV dominates VRAM more aggressively.
+- **One context, for everything except [Phase 8](phases/PHASE_8.md).** The frontier above is at
+  32,768 tokens. Phase 8 swept
+  4 contexts for four of the nine rungs and
+  found the budget *fraction* to be the parameterization that travels, by a factor of
+  2.7 over a constant token budget — so
+  these curves are expected to hold shape at other lengths, but only rungs 2, 5, 6 and 9 were
+  checked.
 - **45 prompts is a wide confidence interval.** The per-condition CIs in
   §3 span several percentage points. Differences smaller than that are not resolvable, which is why
   Phase 5's apparent int8 improvement is reported as noise with a paired test rather than as a win.
