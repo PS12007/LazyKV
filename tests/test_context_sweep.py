@@ -13,7 +13,7 @@ import json
 import pytest
 
 from harness.results import RESULTS_DIR
-from scripts.analyze_phase8 import _fit, collapse
+from scripts.analyze_phase8 import _fit, _margin_prompts, collapse
 
 PHASE8_METRICS = RESULTS_DIR / "phase8" / "analysis" / "metrics.json"
 BS = 64
@@ -132,3 +132,21 @@ def test_the_32k_column_reproduces_the_phase_it_overlaps() -> None:
         pytest.skip("phase 7 analysis absent")
     assert agree["conditions"] > 0
     assert agree["max_accuracy_gap_pp"] == pytest.approx(0.0, abs=1e-9)
+
+
+# ---- _margin_prompts --------------------------------------------------------------------
+
+
+def test_a_condition_sitting_exactly_on_the_bar_has_no_margin() -> None:
+    assert _margin_prompts({"accuracy": 0.99}, full_acc=1.0, n_prompts=45) == pytest.approx(0.0)
+
+
+def test_the_margin_is_counted_in_prompts_so_a_thin_verdict_reads_as_thin() -> None:
+    """One prompt scoring 1.0 instead of 0.0 moves accuracy by 1/n, so it must move the margin by
+    exactly one. Phase 8's headline flips between contexts on about this much, and a percentage
+    point is not a unit that says so."""
+    assert _margin_prompts({"accuracy": 0.99 + 1 / 45}, full_acc=1.0, n_prompts=45) == pytest.approx(1.0)
+
+
+def test_a_condition_under_the_bar_reports_a_negative_margin() -> None:
+    assert _margin_prompts({"accuracy": 0.9}, full_acc=1.0, n_prompts=45) < 0

@@ -210,6 +210,19 @@ def scaling(per_ctx: dict[int, dict[str, Any]], policies: list[str], budgets: li
 # ---- 3. the headline, per context -------------------------------------------------------
 
 
+def _margin_prompts(row: dict[str, Any], full_acc: float, n_prompts: int) -> float | None:
+    """How many prompts' worth of score separates a condition from the 99% bar.
+
+    Retention differences of a point or two are the ones this phase turns on -- whether an
+    approximating rung clears the bar is decided by about that much -- and a percentage point is
+    not a unit anyone can judge. Each prompt contributes 1/n of the accuracy, so expressing the
+    margin in prompts says plainly how thin the claim is. Positive means above the bar.
+    """
+    if row.get("accuracy") is None or not full_acc:
+        return None
+    return (row["accuracy"] - RETENTION_TARGET * full_acc) * n_prompts
+
+
 def headline_by_context(per_ctx: dict[int, dict[str, Any]], policies: list[str]) -> dict[str, Any]:
     """Brief §B8's number, recomputed at every context rather than quoted from 32K."""
     out: dict[str, Any] = {"retention_target": RETENTION_TARGET, "by_policy": {}}
@@ -217,11 +230,18 @@ def headline_by_context(per_ctx: dict[int, dict[str, Any]], policies: list[str])
         per = {}
         for ctx, d in sorted(per_ctx.items()):
             h = d["headline"].get(policy, {})
+            full_acc, n = d["full_niah_accuracy"], d["niah_prompts_per_condition"]
+            best = max((r for r in d["niah"] if r["policy"] == policy and r["retention"] is not None),
+                       key=lambda r: r["retention"], default=None)
             per[str(ctx)] = {
                 "min_budget_meeting_target": h.get("min_budget_meeting_target"),
                 "best_retention_below_full": h.get("best_retention_below_full"),
                 "best_retention_budget": h.get("best_retention_budget"),
                 "tokens_per_s_at_that_budget": h.get("tokens_per_s_at_that_budget"),
+                # How thin the verdict is, in prompts, at the budget that scored best.
+                "best_margin_prompts": _margin_prompts(best, full_acc, n) if best else None,
+                "best_accuracy_ci95": best["accuracy_ci95"] if best else None,
+                "prompts": n,
             }
         met = [c for c, v in per.items() if v["min_budget_meeting_target"] is not None]
         out["by_policy"][policy] = {
@@ -370,6 +390,13 @@ def main() -> None:
         # 3. The headline, per context.
         "headline_meets_target_at_every_context": [p_ for p_ in policies if head["by_policy"][p_]["meets_target_at_every_context"]],
         "headline_meets_target_at_no_context": [p_ for p_ in policies if head["by_policy"][p_]["meets_target_at_no_context"]],
+        "headline_min_budget_by_context": {p_: {c: v["min_budget_meeting_target"] for c, v in head["by_policy"][p_]["by_context"].items()} for p_ in policies},
+        # The verdict flips between contexts for at least one rung; this says by how little.
+        "headline_margin_prompts_by_context": {p_: {c: v["best_margin_prompts"] for c, v in head["by_policy"][p_]["by_context"].items()} for p_ in policies},
+        "headline_smallest_abs_margin_prompts": min(
+            (abs(v["best_margin_prompts"]) for p_ in policies for v in head["by_policy"][p_]["by_context"].values() if v["best_margin_prompts"] is not None),
+            default=None,
+        ),
         # 4. The overlap with Phase 7.
         "phase7_max_accuracy_gap_pp": agree.get("max_accuracy_gap_pp"),
         "phase7_max_tokens_per_s_ratio": agree.get("max_tokens_per_s_ratio"),
