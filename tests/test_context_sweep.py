@@ -207,3 +207,22 @@ def test_the_99_percent_bar_is_not_resolvable_for_the_query_aware_rungs() -> Non
             assert abs(margin) < 1.0, f"{policy} at {context} is {margin:.2f} prompts from the bar"
     # The cheap baseline is nowhere near it, so the test above is not vacuously true of everything.
     assert all(v < -5.0 for v in margins["window_sink"].values())
+
+
+@needs_phase8
+def test_the_64k_point_is_kept_out_of_the_four_context_sweep() -> None:
+    """It is one run, three budgets, no block-pool control, no rung 9, and a later commit. Folding
+    it into the main analysis would let a reader take a spread across rows that are not comparable,
+    and would silently change what §1 and §2 are computed over."""
+    m = json.loads(PHASE8_METRICS.read_text(encoding="utf-8"))
+    k64 = m["context_65536"]
+    if not k64.get("ran"):
+        pytest.skip("64K not run")
+    assert 65536 not in [int(c) for c in m["per_context"]]
+    assert m["summary"]["contexts"] == [4096, 8192, 16384, 32768]
+    # The claim the section actually makes: the reference's decode is flat over the whole span.
+    assert k64["context_span"] >= 16
+    assert 0.8 < k64["full_decode_64k_over_smallest"] < 1.25
+    # And the memory result the tier exists for, with nothing quietly spilling to shared memory.
+    assert k64["tier_vram_saving"] > 2.0
+    assert not k64["any_spill"]

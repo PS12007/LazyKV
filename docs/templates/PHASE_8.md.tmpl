@@ -1,0 +1,257 @@
+# Phase 8 gate report: the ladder across context length
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Every number in Phases 2-7 was measured at 32,768 tokens. `docs/FINDINGS.md` §6 listed that as a
+limitation, and brief §B8 asks for 4K, 8K, 16K, 32K "and 64K if it runs", so the axis was always
+scheduled. What made it worth the machine time rather than a box to tick is that two of the study's
+load-bearing claims are stated in a form that a single context cannot test.
+
+The first is the headline itself. The brief asks for the "minimum GPU KV **budget**" retaining 99%
+of baseline accuracy, and a budget here is a *fraction* of the sequence's KV, because a fraction is
+what a VRAM budget is. Quest — whose selection criterion rung 5 uses — states the same quantity as a
+**constant number of tokens**: `docs/RELATED_WORK.md` §4 records that it selects top-K pages "where
+K is a preset constant (e.g. 128, 256)", and that its own sweeps move that constant up with context
+(32-512 tokens at 10K, 256-4096 at 100K). Those two shapes agree at exactly one context and diverge
+everywhere else. Until this phase, this study had only ever measured at that one context, so it had
+no basis for preferring either.
+
+The second is "this decode is host-bound", the result Phases 4-7 arrived at after five separate
+attacks on bytes moved all failed to reduce latency. That diagnosis has a prediction: the manager
+ranks every block on every step, so its cost should grow with the block count, which is to say with
+context. §3 tests it.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`: `collapse()` is tested against both hypotheses injected as ground
+  truth, so the metric cannot be one that always favours K; against a singleton group, which has
+  zero spread by construction and would otherwise flatter whichever collapse is sparser; and with
+  the exact rung present, which must not enter the verdict. `_fit()` refuses two points, because any
+  two fit a line exactly and the intercept is the quantity being claimed. `_margin_prompts()` counts
+  one prompt as one. Three guards then hold the findings, including one that guards *against*
+  overreading the headline. All Phase 0-7 tests still pass.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py` and `scripts/02_budget_speed.py` with
+  `--config configs/phase8.yaml --context <c>`, once per context for quality and
+  {{ phase8.analysis.summary.speed_runs_per_context.32768 | int }} times per context for speed,
+  launched detached from a worktree pinned at the commit under test. The 64K addendum in §4 ran
+  afterwards at a later commit, from a second worktree, and the provenance table says so.
+- [x] **Phase doc written.** This file, re-read against the finished run.
+- [x] **Committed and pushed.**
+
+## What was measured
+
+| Axis | Setting | Why |
+|---|---|---|
+| Context | 4,096 · 8,192 · 16,384 · 32,768 tokens | Powers of two, so the budget grid's K values recur across contexts (below). 65,536 is addressed in §4. |
+| Policies | Rungs 2, 5, 6 and 9 | The four distinct shapes on the Phase 7 frontier: the strong cheap baseline, the best approximating policy, the tier that turns rung 5's budget into a memory budget, and the exact rung. Rungs 3, 4, 7 and 8 were each measured dominated by one of these at 32K, and eight rungs across four contexts costs more than the question is worth. |
+| Budgets | 75% · 50% · 25% · 12.5% · 6.25% | Phases 4-7's sweep, unchanged, so the 32,768 column overlaps them and can be checked against them (§5). |
+| Block size | {{ phase8.analysis.block_size | int }} tokens | Phase 4's chosen value, held fixed. This is what makes the block *count* proportional to context, which is what §1 is about. |
+| Prompts | {{ phase8.analysis.summary.niah_prompts_per_condition | int }} NIAH prompts per condition | Phases 2-7's set, same book, depths, kinds and seed. |
+
+**The matched design falls out of the budget grid rather than being built.** The selected blocks are
+`K = floor(budget x context / block_size) - 2`, so halving the budget as the context doubles leaves K
+unchanged: K=30 occurs at all four contexts, K=14 and K=62 at three each. The same retentions can
+therefore be grouped two ways — by budget fraction and by K — with
+{{ phase8.analysis.collapse.summary_by_budget.groups | int }} groups each way, and no extra runs.
+
+## 1. Which parameterization travels
+
+Grouped by budget fraction, across the approximating rungs
+({{> p8_approximate_rungs }}):
+
+{{> p8_collapse_budget }}
+
+Grouped by the blocks actually attended:
+
+{{> p8_collapse_k }}
+
+**The budget fraction is the better predictor, by a factor of
+{{ phase8.analysis.summary.collapse_k_over_fraction | .1f }}.** Mean spread within a group is
+{{ phase8.analysis.summary.collapse_mean_spread_by_budget_pp | .1f }} pp by fraction against
+{{ phase8.analysis.summary.collapse_mean_spread_by_k_pp | .1f }} pp by K, and the worst group follows
+the same order ({{ phase8.analysis.summary.collapse_max_spread_by_budget_pp | .1f }} pp against
+{{ phase8.analysis.summary.collapse_max_spread_by_k_pp | .1f }} pp). So the brief's fraction-shaped
+headline is the right shape, and a constant token budget is the one that does not travel across
+context.
+
+**That comparison is handicapped in favour of the losing side, which is why it is worth believing.**
+Every by-fraction group spans all four contexts
+({{ phase8.analysis.collapse.summary_by_budget.comparisons | int }} points over
+{{ phase8.analysis.collapse.summary_by_budget.groups | int }} groups), while the by-K groups span
+{{ phase8.analysis.collapse.summary_by_k_blocks.comparisons | int }} points over the same number of
+groups — fewer contexts per group. A spread is a max minus a min, so a group with more members can
+only ever have a larger one. The fraction collapse wins while carrying that penalty.
+
+**Neither is an invariant, and the residual is structured rather than noise.** The by-fraction
+spread is small at generous budgets and grows as the budget tightens, which is what one would expect
+if the fraction governs *until the absolute count gets small*: at a 6.25% budget, 4K selects two
+blocks. So the honest statement is that the fraction is the better parameterization by a wide margin,
+and that at the tight end of the sweep the absolute block count starts to reassert itself. Both
+effects are visible in the left two panels of the figure, which are the same points against the two
+axes.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p8_context-dark.png">
+  <img alt="NIAH retention against budget fraction and against blocks attended, one curve per context, and decode latency against context" src="../figures/p8_context-light.png">
+</picture>
+
+**Rung 9 is flat under both groupings**, at
+{{ phase8.analysis.summary.collapse_exact_mean_spread_by_budget_pp | .1f }} pp by fraction and
+{{ phase8.analysis.summary.collapse_exact_mean_spread_by_k_pp | .1f }} pp by K. That is not evidence
+for either parameterization — an exact rung has no reason to respond to either — and it is excluded
+from the verdict above for that reason. It is reported because it is the context-sweep version of
+Phase 7's exactness check: whatever the context, rung 9 reproduces the full cache.
+
+## 2. The headline at every context, and why that is not a context dependence
+
+{{> p8_headline }}
+
+The margin column is the one that matters, and it is why this section does not say what the budget
+column appears to say. Read alone, the budget column says the query-aware rungs clear the brief's
+99% bar at 4K and 16K and miss it at 8K and 32K — a context dependence. They do not. **At every
+context those rungs land within one prompt of the bar**, the closest being
+{{ phase8.analysis.summary.headline_smallest_abs_margin_prompts | .2f }} prompts, out of
+{{ phase8.analysis.summary.niah_prompts_per_condition | int }}. Which side of the line they fall on
+is decided by less than a single prompt changing its answer, and it alternates.
+
+So the finding is not that the answer to §B8 changes with context. It is that **for the query-aware
+rungs the §B8 bar is not resolvable at this sample size**, and four contexts is enough to demonstrate
+that rather than merely suspect it. `docs/FINDINGS.md` already said the 32K miss was "one or two
+prompts' worth"; this phase turns that caveat into a measurement by showing the verdict flipping
+twice across contexts on less than one prompt each time.
+
+The two rungs that *are* resolvable stay resolvable everywhere. The sliding window with a sink misses
+the bar by 13 to 17 prompts at every context, and rung 9 clears it at the smallest budget swept at
+every context. Those are the two statements this study can make about §B8 without a larger prompt
+set.
+
+## 3. What scales with context
+
+{{> p8_scaling }}
+
+**The full cache does not notice the context at all.** Its decode is
+{{ phase8.analysis.summary.full_decode_ms_by_context.4096 | .1f }} ms/token at 4K and
+{{ phase8.analysis.summary.full_decode_ms_by_context.32768 | .1f }} ms/token at 32K — a ratio of
+{{ phase8.analysis.summary.full_decode_first_to_last | .2f }} for eight times the KV, which is to say
+no change. On a memory-bandwidth-bound view of decode that ratio should be near eight. It is not,
+because at this model size the per-layer fixed costs — kernel launches, Python, the cache's own
+bookkeeping — dominate the KV reads across this entire range.
+
+**The selecting rungs' manager cost is a constant, not a function of the blocks it ranks.** This is
+the sharper version of the study's central result and the one thing here that changes how Phases 4-7
+should be read. Their host-bound diagnosis was that the selection's round trip costs more than the
+transfer it authorizes, and the natural reading of that is that ranking more blocks costs more, so
+the problem grows with context. It does not. Fitting manager host time against block count puts
+{{ phase8.analysis.summary.manager_intercept_share.min | pct0 }}-{{ phase8.analysis.summary.manager_intercept_share.max | pct0 }}
+of the cost at *zero blocks*, and the per-block slope runs from
+{{ phase8.analysis.summary.manager_us_per_block.min | .1f }} to
+{{ phase8.analysis.summary.manager_us_per_block.max | .1f }} µs — a range that straddles zero, so
+this sweep cannot even establish its sign. Eight times the blocks to rank does not measurably cost
+more.
+
+**The consequence is that the tier's gap never closes.** At the tightest budget, rung 6 decodes
+{{ phase8.analysis.summary.over_full_span_at_smallest_budget.tiered_sync.min | .2f }}x to
+{{ phase8.analysis.summary.over_full_span_at_smallest_budget.tiered_sync.max | .2f }}x the full
+cache's latency, and that penalty is the same at 4K as at 32K
+({{ phase8.analysis.summary.over_full_first_to_last_at_smallest_budget.tiered_sync | .2f }}x across
+the whole range). **There is no short-context regime where the tiering is free, and no crossover.**
+A constant per-layer overhead is the one shape a smaller context cannot help with and a better
+eviction policy cannot avoid, because every selecting layer pays it once per token whatever it
+selects. This is also why Phase 6's replay ablation — removing the per-layer host sync entirely —
+was worth only 1.11-1.16x: it was attacking the right term, and that term is most of what is left.
+
+**Rung 9 is the exception, and the contrast is what makes the paragraph above a measurement rather
+than an adjective.** Its CPU pass attends to every non-resident block, so its cost *must* be
+proportional to the block count, and it is:
+{{ phase8.analysis.summary.manager_us_per_block_exact.min | .0f }}-{{ phase8.analysis.summary.manager_us_per_block_exact.max | .0f }} µs
+per block at an r² of at least
+{{ phase8.analysis.summary.manager_fit_r2_exact.min | .3f }}, with only
+{{ phase8.analysis.summary.manager_intercept_share_exact.min | pct0 }}-{{ phase8.analysis.summary.manager_intercept_share_exact.max | pct0 }}
+of it constant. Its penalty against the full cache therefore *grows* with context, from
+{{ phase8.analysis.summary.over_full_span_at_smallest_budget.tiered_exact.min | .1f }}x to
+{{ phase8.analysis.summary.over_full_span_at_smallest_budget.tiered_exact.max | .1f }}x
+({{ phase8.analysis.summary.over_full_first_to_last_at_smallest_budget.tiered_exact | .2f }}x across
+the sweep), where every other rung's is flat.
+
+So the ladder splits cleanly in two along this axis, and the split is the trade rung 9 makes stated
+in its own terms: the approximating rungs buy a constant-bound cost and pay for it in accuracy,
+while the exact rung buys the accuracy back and pays a cost proportional to the context. Phase 7
+measured that price at one length and called it 6.2x. It is 6.2x *at 32K*; it is
+{{ phase8.analysis.summary.over_full_span_at_smallest_budget.tiered_exact.min | .1f }}x at 4K and
+rising with the context, which is the caveat the single-context measurement could not carry.
+
+## 4. 64K, and what had to be dropped to reach it
+
+Brief §B8 asks for "64K if it runs". It does, but not with the sweep as it stands, and the reason is
+worth more than the datum.
+
+**The first attempt died in the control, not in the policy.** Every sweep condition is derived from
+a `full` reference cache, and the sweep also builds a `block_full` control: a block pool at a 100%
+budget, which isolates the pool's own overhead from any eviction. At 64K each of those is a
+full-size copy of the KV — about 2 GiB — and together with the weights they exceed the allocator's
+allowance before any policy is reached. The run raised `torch.OutOfMemoryError` inside
+`BlockPoolCache.from_full` with 190 MiB free of a 6.59 GiB cap. So what does not fit at 64K on this
+GPU is not the tier. It is *the experiment's own control*, which is a more specific statement than
+"64K does not run" and a more useful one.
+
+Dropping the control and keeping the reference (`--skip-block-full`, added for this) fits:
+
+{{> p8_64k }}
+
+**The two scaling claims of §3 survive another doubling.** The reference decodes
+{{ phase8.analysis.context_65536.full_decode_ms_per_token | .1f }} ms/token at 64K against
+{{ phase8.analysis.context_65536.full_decode_ms_at_smallest_context | .1f }} ms/token at 4K — a ratio
+of {{ phase8.analysis.summary.full_decode_64k_over_smallest | .2f }} across a
+{{ phase8.analysis.summary.context_span_measured | .0f }}x span of context. The selecting rungs'
+manager cost stays where it was rather than tracking the block count, which has now grown sixteenfold
+since 4K.
+
+**And the tier does what it is for.** At a
+{{ phase8.analysis.context_65536.tier_budget | budget }} budget it holds
+{{ phase8.analysis.context_65536.tier_resident_mib | ,.0f }} MiB of KV against the reference's
+{{ phase8.analysis.context_65536.full_resident_mib | ,.0f }} MiB, a
+{{ phase8.analysis.summary.tier_vram_saving_at_64k | .1f }}x reduction, with no condition spilling to
+shared memory. That is the memory result the whole tier exists to produce, at the longest context
+this machine can hold — and §3's latency finding is the price of it.
+
+**What this run is not.** One run rather than three, so it carries no spread; three budgets rather
+than five; no block-pool control, by construction; and rung 9 omitted, because its float32 mirror is
+sized from the sequence and would be roughly 3.7 GiB of host RAM at this length. It was also measured
+at a later commit than the four-context sweep, which the provenance table records. It is quoted as
+one more point on the context axis and nothing more; none of §1's or §2's conclusions rest on it.
+
+## 5. Why this sweep can be spliced onto the ladder
+
+The 32,768 column re-measures conditions Phases 4, 5 and 7 already published. That overlap is
+deliberate: without it, a context sweep would be a separate study whose 32K point merely resembled
+the one the rest of the ladder is built on.
+
+{{> p8_phase7_agreement }}
+
+Accuracy reproduces to
+{{ phase8.analysis.summary.phase7_max_accuracy_gap_pp | .2f }} pp across
+{{ phase8.analysis.summary.phase7_conditions_compared | int }} overlapping conditions — the same
+result to the last prompt, which is what `docs/FINDINGS.md` §5 found across every earlier pair of
+phases and is what licenses putting them on one axis.
+
+## 6. Limitations
+
+- **One model and one task, still.** This phase moves context and nothing else. Llama-3.2-1B on
+  needle-in-a-haystack remains the whole evidence base, and the 3B stress model in the brief is
+  still unrun.
+- **{{ phase8.analysis.summary.niah_prompts_per_condition | int }} prompts is why §2 exists.** The
+  per-condition confidence intervals span several percentage points, which is wider than the
+  differences §1 and §2 turn on. §1 survives that because it compares *spreads across fifteen
+  groups* rather than single conditions; §2 does not survive it, and says so.
+- **Full-cache accuracy is not monotonic in context** — it is
+  {{ phase8.analysis.summary.full_accuracy_by_context.16384 | pct }} at 16K against
+  {{ phase8.analysis.summary.full_accuracy_by_context.32768 | pct }} at 32K. Retention normalizes
+  each condition against the full cache *at its own context*, so this does not bias the comparison,
+  but it is a direct reminder of the interval width above.
+- **Block size is held at {{ phase8.analysis.block_size | int }} tokens**, so "blocks attended" and
+  "tokens attended" differ only by that constant here. A context sweep crossed with a block-size
+  sweep would separate them; this one does not.
+
+## Provenance
+
+{{> p8_provenance }}

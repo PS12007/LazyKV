@@ -915,11 +915,13 @@ def fig_p7_exactness(a: dict[str, Any], t: Theme) -> None:
 LADDER_DASHES = ("-", (0, (4, 2)), (0, (1, 1.6)))
 
 
+# Short forms: the right panel's legend carries five entries on one axes and the long names
+# overflow it, clipping the reference out of the figure entirely.
 P8_PRETTY = {
-    "window_sink": "Window + sink (rung 2)",
-    "quest": "Quest-style (rung 5)",
-    "tiered_sync": "CPU tier (rung 6)",
-    "tiered_exact": "Exact merge (rung 9)",
+    "window_sink": "Window + sink (2)",
+    "quest": "Quest-style (5)",
+    "tiered_sync": "CPU tier (6)",
+    "tiered_exact": "Exact merge (9)",
 }
 # The approximating rung the collapse panels are drawn for. Rung 6 reproduces rung 5's selection
 # bit for bit (Phase 4), and rung 9 is flat by construction, so one approximating curve per context
@@ -990,7 +992,7 @@ def fig_p8_context(a: dict[str, Any], t: Theme) -> None:
     if ref is not None:
         axes[2].plot([p["context"] for p in ref["points"]], [p["decode_ms_per_token"] for p in ref["points"]],
                      color=t.muted, linewidth=1.6, linestyle=(0, (4, 3)), marker="o", markersize=4,
-                     markeredgecolor=t.surface, markeredgewidth=1.0, label="Full GPU KV (rung 1)")
+                     markeredgecolor=t.surface, markeredgewidth=1.0, label="Full GPU KV (1)")
     axes[2].set_xscale("log", base=2)
     axes[2].set_xticks(contexts, [f"{c // 1024}K" for c in contexts])
     axes[2].xaxis.set_minor_formatter(FuncFormatter(lambda v, _: ""))
@@ -998,13 +1000,15 @@ def fig_p8_context(a: dict[str, Any], t: Theme) -> None:
     axes[2].set_ylim(bottom=0)
     axes[2].set_title(f"Decode ms/token at a {100 * smallest:g}% budget", color=t.ink, fontsize=10, loc="left")
 
-    for ax, ncol in ((axes[0], len(contexts)), (axes[2], 3)):
+    # Two columns on the right: five entries across three columns overflow one axes' width and
+    # clip the reference entry off the figure.
+    for ax, ncol in ((axes[0], len(contexts)), (axes[2], 2)):
         leg = ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.19), ncol=ncol, frameon=False, fontsize=8.5)
         for text in leg.get_texts():
             text.set_color(t.ink2)
     title(fig, t, "The ladder across context length",
           f"{P8_PRETTY[P8_COLLAPSE_POLICY]} on the left, the same retentions against two different x axes; {block_size}-token blocks throughout")
-    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.30, wspace=0.22)
+    fig.subplots_adjust(left=0.055, right=0.985, top=0.82, bottom=0.34, wspace=0.22)
     save(fig, "p8_context", t)
 
 

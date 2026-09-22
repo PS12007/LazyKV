@@ -321,6 +321,54 @@ def phase7_agreement(per_ctx: dict[int, dict[str, Any]], context: int = 32768) -
     }
 
 
+# ---- 5. the 64K attempt -----------------------------------------------------------------
+
+
+def context_64k(base: Path, main: dict[int, dict[str, Any]]) -> dict[str, Any]:
+    """The 64K run, kept separate from the four-context sweep rather than folded into it.
+
+    It is one run rather than three, it drops the block-pool control, it omits rung 9, and it was
+    measured at a later commit. Any one of those would make it a different experiment; together
+    they make pooling it with the main sweep a category error. What it *can* do is extend the two
+    scaling claims by one more doubling, which is the only thing claimed from it here.
+    """
+    runs = [json.loads(p_.read_text(encoding="utf-8")) for p_ in sorted((base / "budget_speed_ctx65536").glob("run_*/metrics.json"))]
+    if not runs:
+        return {"ran": False, "reason": "no 64K results"}
+    speed = speed_table(runs)
+    by = {s_["policy"]: s_ for s_ in speed}
+    full = by.get(FULL)
+    smallest_ctx = min(main) if main else None
+    full_small = next((s_ for s_ in main[smallest_ctx]["speed"] if s_["policy"] == FULL), None) if smallest_ctx else None
+    tier = min((s_ for s_ in speed if s_["policy"] == "tiered_sync"), key=lambda s_: s_["budget"], default=None)
+    return {
+        "ran": True,
+        "context": 65536,
+        "runs": len(runs),
+        "block_pool_control_dropped": True,
+        "policies": sorted({s_["policy"] for s_ in speed}),
+        "speed": speed,
+        "any_spill": any(s_["any_spill"] for s_ in speed),
+        "full_decode_ms_per_token": MS * full["decode_wall_median_s"]["median"] if full else None,
+        # The headline the 64K point adds: the reference's decode across the widest span measured.
+        "full_decode_ms_at_smallest_context": MS * full_small["decode_wall_median_s"]["median"] if full_small else None,
+        "full_decode_64k_over_smallest": _ratio(
+            full["decode_wall_median_s"]["median"] if full else None,
+            full_small["decode_wall_median_s"]["median"] if full_small else None,
+        ),
+        "context_span": _ratio(65536, smallest_ctx) if smallest_ctx else None,
+        "manager_ms_per_token": {s_["policy"]: MS * s_["manager_host_s_per_token"]["median"] for s_ in speed if s_["manager_host_s_per_token"].get("n_runs")},
+        "full_resident_mib": full["gpu_resident_kv_bytes"]["median"] / MIB if full else None,
+        "tier_resident_mib": tier["gpu_resident_kv_bytes"]["median"] / MIB if tier else None,
+        "tier_vram_saving": _ratio(
+            full["gpu_resident_kv_bytes"]["median"] if full else None,
+            tier["gpu_resident_kv_bytes"]["median"] if tier else None,
+        ),
+        "tier_budget": tier["budget"] if tier else None,
+        "provenance": [r["provenance"] for r in runs],
+    }
+
+
 # ---- driver -----------------------------------------------------------------------------
 
 
@@ -374,6 +422,7 @@ def main() -> None:
     scale = scaling(per_ctx, policies, budgets, block_size)
     head = headline_by_context(per_ctx, policies)
     agree = phase7_agreement(per_ctx)
+    k64 = context_64k(base, per_ctx)
 
     contexts = sorted(per_ctx)
     by_label = {s["label"]: s for s in scale["series"]}
@@ -399,6 +448,9 @@ def main() -> None:
         "collapse_max_spread_by_budget_pp": col["summary_by_budget"]["max_spread_pp"],
         "collapse_max_spread_by_k_pp": col["summary_by_k_blocks"]["max_spread_pp"],
         "collapse_fraction_over_k": col["fraction_over_k_mean_spread"],
+        # The same comparison the other way up, so prose can say "tighter by a factor of N" with
+        # N > 1 instead of quoting a ratio below one as if it were an improvement.
+        "collapse_k_over_fraction": _ratio(col["summary_by_k_blocks"]["mean_spread_pp"], col["summary_by_budget"]["mean_spread_pp"]),
         "collapse_groups_by_k": col["summary_by_k_blocks"]["groups"],
         "collapse_over_policies": col["approximate_policies"],
         "collapse_exact_mean_spread_by_budget_pp": col["exact_summary_by_budget"]["mean_spread_pp"],
@@ -408,8 +460,49 @@ def main() -> None:
         "full_decode_ms_by_context": {str(p["context"]): p["decode_ms_per_token"] for p in full_series["points"]} if full_series else None,
         "full_decode_first_to_last": full_series["decode_ms_first_to_last"] if full_series else None,
         "full_decode_intercept_share": full_series["decode_intercept_share_at_max_ctx"] if full_series else None,
-        "manager_intercept_share": span([s["manager_intercept_share_at_max_ctx"] for s in scale["series"] if s["manager_intercept_share_at_max_ctx"] is not None]),
+        # Scoped the same way the collapse verdict is, and for a stronger reason: rung 9 attends to
+        # every non-resident block on the CPU, so its cost *must* grow with the block count. Pooling
+        # it with the selecting rungs would turn "the manager is bound by a constant" into a span
+        # wide enough to mean nothing, by mixing in the one rung built to behave the other way.
+        "manager_intercept_share": span([
+            x["manager_intercept_share_at_max_ctx"] for x in scale["series"]
+            if x["manager_intercept_share_at_max_ctx"] is not None and x["policy"] not in EXACT_POLICIES and x["policy"] != FULL
+        ]),
+        "manager_intercept_share_exact": span([
+            x["manager_intercept_share_at_max_ctx"] for x in scale["series"]
+            if x["manager_intercept_share_at_max_ctx"] is not None and x["policy"] in EXACT_POLICIES
+        ]),
+        "manager_us_per_block": span([
+            1e3 * x["manager_fit"]["slope"] for x in scale["series"]
+            if x.get("manager_fit") and x["policy"] not in EXACT_POLICIES and x["policy"] != FULL
+        ]),
+        "manager_us_per_block_exact": span([
+            1e3 * x["manager_fit"]["slope"] for x in scale["series"]
+            if x.get("manager_fit") and x["policy"] in EXACT_POLICIES
+        ]),
+        # Rung 9's cost is the one on the ladder that is genuinely proportional to context, and its
+        # fit says so with no ambiguity. Quoted so the contrast is a measurement, not an adjective.
+        "manager_fit_r2_exact": span([
+            x["manager_fit"]["r2"] for x in scale["series"]
+            if x.get("manager_fit") and x["policy"] in EXACT_POLICIES
+        ]),
         "over_full_by_context": {s["label"]: s["over_full_by_context"] for s in scale["series"] if s["policy"] != FULL},
+        # Per policy at the tightest budget, with keys a dotted template lookup can address (a
+        # "policy@budget" label contains a dot and would be split into two path segments).
+        "over_full_at_smallest_budget": {
+            x["policy"]: {c: v for c, v in x["over_full_by_context"].items()}
+            for x in scale["series"] if x["policy"] != FULL and x["budget"] == min(budgets)
+        },
+        # The shape of each rung's penalty across context, which is the section's whole point: a
+        # flat span means no context buys the rung back, a growing one means the cost is the context.
+        "over_full_span_at_smallest_budget": {
+            x["policy"]: span([v for v in x["over_full_by_context"].values() if v is not None])
+            for x in scale["series"] if x["policy"] != FULL and x["budget"] == min(budgets)
+        },
+        "over_full_first_to_last_at_smallest_budget": {
+            x["policy"]: _ratio(list(x["over_full_by_context"].values())[-1], list(x["over_full_by_context"].values())[0])
+            for x in scale["series"] if x["policy"] != FULL and x["budget"] == min(budgets)
+        },
         "tokens_per_s_by_context_at_smallest_budget": tps,
         # 3. The headline, per context.
         "headline_meets_target_at_every_context": [p_ for p_ in policies if head["by_policy"][p_]["meets_target_at_every_context"]],
@@ -426,6 +519,11 @@ def main() -> None:
         "phase7_max_tokens_per_s_ratio": agree.get("max_tokens_per_s_ratio"),
         "phase7_accuracy_reproduces": agree.get("accuracy_reproduces"),
         "phase7_conditions_compared": agree.get("conditions"),
+        # 5. The 64K attempt.
+        "ran_at_65536": k64.get("ran"),
+        "full_decode_64k_over_smallest": k64.get("full_decode_64k_over_smallest"),
+        "context_span_measured": k64.get("context_span"),
+        "tier_vram_saving_at_64k": k64.get("tier_vram_saving"),
     }
 
     write_metrics(
@@ -440,6 +538,7 @@ def main() -> None:
             "scaling": scale,
             "headline_by_context": head,
             "phase7_agreement": agree,
+            "context_65536": k64,
             "summary": summary,
         },
     )

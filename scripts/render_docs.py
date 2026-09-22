@@ -1607,6 +1607,19 @@ def _ctx_label(c: str | int) -> str:
     return f"{int(c) // 1024}K"
 
 
+def block_p8_approximate_rungs(ctx: Mapping[str, Any]) -> str:
+    """The rungs the collapse verdict is computed over, named rather than printed as a list.
+
+    Which rungs these are is a decision the analysis makes (the exact rung is excluded), so the
+    doc reads it back from the results rather than restating it in prose and risking drift.
+    """
+    pols = lookup(ctx, "phase8.analysis.summary.collapse_over_policies")
+    if not isinstance(pols, list) or not pols:
+        return NOT_MEASURED
+    names = [POLICY_NAMES.get(p, p) for p in pols]
+    return ", ".join(names[:-1]) + (" and " + names[-1] if len(names) > 1 else "")
+
+
 def block_p8_headline(ctx: Mapping[str, Any]) -> str:
     """Brief §B8's number at every context, with how thin each verdict is.
 
@@ -1673,12 +1686,18 @@ def block_p8_scaling(ctx: Mapping[str, Any]) -> str:
         pts = {p["context"]: p for p in s["points"]}
         cells = [f"{pts[c]['decode_ms_per_token']:.1f}" if c in pts else NOT_MEASURED for c in contexts]
         mgr = s.get("manager_intercept_share_at_max_ctx")
+        # The reference has no manager at all, which is different from one that was not measured:
+        # its manager time is recorded, and it is zero, so the share is undefined rather than absent.
+        if mgr is not None:
+            mgr_cell = f"{100 * mgr:.0f}%"
+        else:
+            mgr_cell = "no manager" if s["policy"] == "full" else NOT_MEASURED
         rows.append([
             POLICY_NAMES.get(s["policy"], s["policy"]),
             _pct_budget(s["budget"]),
             *cells,
             f"{s['decode_ms_first_to_last']:.2f}x" if s.get("decode_ms_first_to_last") is not None else NOT_MEASURED,
-            f"{100 * mgr:.0f}%" if mgr is not None else NOT_MEASURED,
+            mgr_cell,
         ])
     header = ["Policy", "Budget", *[f"{_ctx_label(c)} ms" for c in contexts], f"{_ctx_label(contexts[-1])} / {_ctx_label(contexts[0])}", "Manager cost at zero blocks"]
     return table(header, rows, ["---", "---:"] + ["---:"] * (len(contexts) + 2))
@@ -1701,6 +1720,30 @@ def block_p8_phase7_agreement(ctx: Mapping[str, Any]) -> str:
     return table(["Condition", "Phase 8 accuracy", "Phase 7 accuracy", "Gap", "Tokens/s ratio"], rows, ["---", "---:", "---:", "---:", "---:"])
 
 
+def block_p8_64k(ctx: Mapping[str, Any]) -> str:
+    """The 64K run, which is one run at a later commit and so is reduced separately from the sweep.
+
+    Kept out of the §3 scaling table deliberately: it measures three policies at three budgets
+    without the block-pool control, so pooling it there would put differently-shaped rows in one
+    table and invite reading a spread across them.
+    """
+    rows_in = lookup(ctx, "phase8.analysis.context_65536.speed")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["policy"], -r["budget"])):
+        mgr = r["manager_host_s_per_token"]
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            _pct_budget(r["budget"]),
+            f"{1e3 * r['decode_wall_median_s']['median']:.1f}",
+            f"{1e3 * mgr['median']:.1f}" if mgr.get("n_runs") and mgr["median"] else "no manager",
+            f"{r['gpu_resident_kv_bytes']['median'] / 2**20:,.0f}",
+            "yes" if r["any_spill"] else "no",
+        ])
+    return table(["Policy", "Budget", "Decode ms/token", "Manager ms/token", "Resident KV, MiB", "Spilled"], rows, ["---", "---:", "---:", "---:", "---:", "---:"])
+
+
 def block_p8_provenance(ctx: Mapping[str, Any]) -> str:
     src = lookup(ctx, "phase8.analysis.sources")
     if not isinstance(src, Mapping):
@@ -1710,6 +1753,11 @@ def block_p8_provenance(ctx: Mapping[str, Any]) -> str:
         rows.append(_provenance_row(f"Policy quality, {_ctx_label(c)}", src[c]["policy_quality"]))
         for i, pr in enumerate(src[c]["budget_speed"], 1):
             rows.append(_provenance_row(f"Budget speed, {_ctx_label(c)}, run {i}", pr))
+    # The 64K addendum ran later, at a different commit, and §4 says so; it belongs in the same
+    # table precisely so that difference is visible rather than buried in the prose.
+    for i, pr in enumerate(lookup(ctx, "phase8.analysis.context_65536.provenance") or [], 1):
+        if isinstance(pr, Mapping):
+            rows.append(_provenance_row(f"Budget speed, 64K, run {i} (§4)", pr))
     return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
