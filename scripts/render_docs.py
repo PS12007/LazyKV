@@ -37,6 +37,7 @@ OUTPUTS = {
     "PHASE_5.md.tmpl": "docs/phases/PHASE_5.md",
     "PHASE_6.md.tmpl": "docs/phases/PHASE_6.md",
     "PHASE_7.md.tmpl": "docs/phases/PHASE_7.md",
+    "PHASE_8.md.tmpl": "docs/phases/PHASE_8.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1597,6 +1598,119 @@ def block_ladder_repeatability(ctx: Mapping[str, Any]) -> str:
             f"{r['tokens_per_s_max_ratio']:.3f}x" if r["tokens_per_s_max_ratio"] is not None else "-",
         ])
     return table(["Condition", "Budget", "Phases", "Largest accuracy gap", "Largest tokens/s ratio"], rows, ["---", "---:", "---", "---:", "---:"])
+
+
+# -- Phase 8: the ladder across context length --------------------------------------------------
+
+
+def _ctx_label(c: str | int) -> str:
+    return f"{int(c) // 1024}K"
+
+
+def block_p8_headline(ctx: Mapping[str, Any]) -> str:
+    """Brief §B8's number at every context, with how thin each verdict is.
+
+    The margin column is the point of the table. Whether a rung clears the bar changes between
+    contexts, and it changes by about one prompt out of forty-five, so quoting only the budget
+    would present a coin-flip as a property of the policy.
+    """
+    head = lookup(ctx, "phase8.analysis.headline_by_context.by_policy")
+    if not isinstance(head, Mapping) or not head:
+        return f"_{NOT_MEASURED}_"
+    contexts = sorted({c for v in head.values() for c in v["by_context"]}, key=int)
+    rows = []
+    for policy, v in head.items():
+        for c in contexts:
+            d = v["by_context"].get(c)
+            if d is None:
+                continue
+            rows.append([
+                POLICY_NAMES.get(policy, policy),
+                _ctx_label(c),
+                _pct_budget(d["min_budget_meeting_target"]) if d["min_budget_meeting_target"] is not None else "**none**",
+                f"{100 * d['best_retention_below_full']:.1f}%" if d["best_retention_below_full"] is not None else NOT_MEASURED,
+                _pct_budget(d["best_retention_budget"]) if d["best_retention_budget"] is not None else NOT_MEASURED,
+                f"{d['best_margin_prompts']:+.1f}" if d.get("best_margin_prompts") is not None else NOT_MEASURED,
+            ])
+    header = ["Policy", "Context", "Smallest budget retaining >= 99%", "Best retention", "at budget", "Margin at best, prompts"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:"])
+
+
+def _p8_collapse_table(ctx: Mapping[str, Any], key: str, value_header: str) -> str:
+    rows_in = lookup(ctx, f"phase8.analysis.collapse.{key}")
+    if not isinstance(rows_in, list) or not rows_in:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in rows_in:
+        value = _pct_budget(r["value"]) if key == "by_budget" else f"{r['value']:,}"
+        rows.append([
+            POLICY_NAMES.get(r["policy"], r["policy"]),
+            value,
+            " · ".join(f"{_ctx_label(c)} {100 * r['retention_by_context'][str(c)]:.1f}%" for c in r["contexts"]),
+            f"{r['spread_pp']:.1f} pp",
+        ])
+    return table([ "Policy", value_header, "Retention by context", "Spread"], rows, ["---", "---:", "---", "---:"])
+
+
+def block_p8_collapse_budget(ctx: Mapping[str, Any]) -> str:
+    """The same retentions grouped by budget fraction."""
+    return _p8_collapse_table(ctx, "by_budget", "Budget")
+
+
+def block_p8_collapse_k(ctx: Mapping[str, Any]) -> str:
+    """The same retentions grouped by the blocks actually attended."""
+    return _p8_collapse_table(ctx, "by_k_blocks", "Blocks attended, K")
+
+
+def block_p8_scaling(ctx: Mapping[str, Any]) -> str:
+    """Decode latency and manager host time against context, and how much of each is a constant."""
+    series = lookup(ctx, "phase8.analysis.scaling.series")
+    if not isinstance(series, list) or not series:
+        return f"_{NOT_MEASURED}_"
+    contexts = sorted({p["context"] for s in series for p in s["points"]})
+    rows = []
+    for s in series:
+        pts = {p["context"]: p for p in s["points"]}
+        cells = [f"{pts[c]['decode_ms_per_token']:.1f}" if c in pts else NOT_MEASURED for c in contexts]
+        mgr = s.get("manager_intercept_share_at_max_ctx")
+        rows.append([
+            POLICY_NAMES.get(s["policy"], s["policy"]),
+            _pct_budget(s["budget"]),
+            *cells,
+            f"{s['decode_ms_first_to_last']:.2f}x" if s.get("decode_ms_first_to_last") is not None else NOT_MEASURED,
+            f"{100 * mgr:.0f}%" if mgr is not None else NOT_MEASURED,
+        ])
+    header = ["Policy", "Budget", *[f"{_ctx_label(c)} ms" for c in contexts], f"{_ctx_label(contexts[-1])} / {_ctx_label(contexts[0])}", "Manager cost at zero blocks"]
+    return table(header, rows, ["---", "---:"] + ["---:"] * (len(contexts) + 2))
+
+
+def block_p8_phase7_agreement(ctx: Mapping[str, Any]) -> str:
+    """This sweep's 32K column against the phase that already published those conditions."""
+    a = lookup(ctx, "phase8.analysis.phase7_agreement")
+    if not isinstance(a, Mapping) or not a.get("compared"):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in a["rows"]:
+        rows.append([
+            r["label"],
+            f"{100 * r['accuracy_phase8']:.1f}%",
+            f"{100 * r['accuracy_phase7']:.1f}%",
+            f"{r['accuracy_gap_pp']:.2f} pp",
+            f"{r['tokens_per_s_ratio']:.3f}x" if r.get("tokens_per_s_ratio") else "-",
+        ])
+    return table(["Condition", "Phase 8 accuracy", "Phase 7 accuracy", "Gap", "Tokens/s ratio"], rows, ["---", "---:", "---:", "---:", "---:"])
+
+
+def block_p8_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase8.analysis.sources")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in sorted(src, key=int):
+        rows.append(_provenance_row(f"Policy quality, {_ctx_label(c)}", src[c]["policy_quality"]))
+        for i, pr in enumerate(src[c]["budget_speed"], 1):
+            rows.append(_provenance_row(f"Budget speed, {_ctx_label(c)}, run {i}", pr))
+    return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
