@@ -337,8 +337,9 @@ contribution is framed as a **study**, not a mechanism (see [Delta](#delta)).
 - **Paging** yes · **CPU tier** no · **SSD** no · **Quantized KV** no.
 - **Eviction:** none; non-selected pages are skipped, not freed.
 - **Prefetch:** none.
+- **Budget shape:** a **fixed absolute token budget**, not a fraction. The paper selects "Top-K pages ... where K is a preset constant (e.g. 128, 256)", and its own sweeps move that constant up with the context rather than holding a ratio: 32-512 tokens at 10K, 256-4096 tokens at 100K. (Verified 2026-09-22 against `arxiv.org/html/2406.10774v1`.)
 - **Tradeoff:** speeds up attention without saving memory.
-- **LazyKV differs:** it uses Quest's bound (rung 5) and asks the question Quest does not: what happens when the skipped pages are *not in VRAM*?
+- **LazyKV differs:** it uses Quest's bound (rung 5) and asks the question Quest does not: what happens when the skipped pages are *not in VRAM*? Note also that LazyKV's brief states its headline as a *fraction* of the KV ("minimum GPU KV budget at which policy P retains >= 99%"), because a fraction is what a VRAM budget is. Quest's constant-K parameterization is the competing shape, and the two only agree at one context. Phase 8 measures which of them governs retention rather than assuming either.
 
 ### InfiniGen
 *arXiv [2406.19707](https://arxiv.org/abs/2406.19707): InfiniGen: Efficient Generative Inference of Large Language Models with Dynamic KV Cache Management*
