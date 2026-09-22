@@ -91,7 +91,10 @@ def collapse(per_ctx: dict[int, dict[str, Any]], policies: list[str], block_size
     points = []
     for ctx, d in per_ctx.items():
         for row in d["niah"]:
-            if row["policy"] == FULL or row["retention"] is None:
+            # The reference retains itself perfectly at every context, and `block_full` is the
+            # 100%-budget control rather than a point on any budget curve. Neither carries
+            # information about how retention responds to context, so neither is a datum here.
+            if row["policy"] not in policies or row["retention"] is None:
                 continue
             points.append({
                 "context": ctx,
