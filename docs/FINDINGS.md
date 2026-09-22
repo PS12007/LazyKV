@@ -212,8 +212,8 @@ The last row is the argument's end point. Rung 9 moves no KV at all — only
 The cause is the same each time. Every selecting layer must bring its top-K block indices to the CPU
 before it can decide what to fetch, and that round trip costs more than the transfer it authorizes.
 **[Phase 8](phases/PHASE_8.md) sharpens what that means**: sweeping the context from 4K to 64K shows
-the round trip is a per-layer *constant*, not a function of the blocks ranked —
-76%–120%
+the round trip is a per-layer *constant*, not a function of the blocks ranked: at least
+76%
 of the selecting rungs' manager cost sits at zero blocks, and sixteen times the blocks to rank does
 not measurably cost more. So "host-bound" here means bound by a fixed cost each selecting layer pays
 once per token, which is why no shorter context buys the tier back and why its gap to keeping KV in

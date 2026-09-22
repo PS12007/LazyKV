@@ -26,7 +26,7 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 7 (rung 9, the exact merge) complete.** All
+> **Status: Phase 8 (the ladder across context length) complete.** All
 > 9 rungs of the policy ladder are measured on the same sweep, at
 > 32,768 tokens, with the same prompts and the same quality metrics, and
 > they are on one frontier. **No *approximating* rung retains 99% of full-cache retrieval accuracy at
@@ -41,12 +41,23 @@ negative results included.
 > moves less KV than any of them and is the slowest of the lot — and removing
 > the host residency decision entirely is worth at most
 > 1.16×.
+> **Phase 8 swept four of those rungs across
+> 4 context lengths and 64K.** The budget
+> *fraction*, not a constant token budget, is what predicts retention across context (tighter by
+> 2.7×); the 99% bar turns out not to be
+> resolvable at 45 prompts, with the query-aware rungs landing within one
+> prompt of it at every context on either side; and the host cost that bounds this decode is a
+> per-layer *constant*
+> (at least 76% of it sits at zero
+> blocks), not a function of the blocks ranked — so the tier's gap never closes at any
+> context.
 > **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
 > number, the negative results and the limitations.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
-> [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md).
+> [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md) ·
+> [Phase 8](docs/phases/PHASE_8.md).
 
 ## Where the ladder stands
 
@@ -113,6 +124,7 @@ Other measured facts from these two phases:
 | Five attacks on bytes moved, none of them faster (Phases 4-5, 7) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is 1.14× its time at a 25% budget |
 | int8 warm/cold tier against the exact tier (Phase 5) | 26 NIAH answers changed across all budgets, 4 worse against 8 better (exact sign test, p = 0.39): quality-neutral, and the apparent gain at the tightest budget is noise |
 | Ceiling on taking the residency decision off the host (Phase 6) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes 1.11–1.16× faster — still slower than the full cache's 21.7 ms/token |
+| What travels across context (Phase 8) | over 4 contexts, grouping retention by budget fraction leaves 8.7 pp of spread against 23.6 pp by blocks attended; the reference's decode is flat over a 16× span of context, and rung 9's cost is the only one proportional to it (145–160 µs per block) |
 | The price of exactness (Phase 7) | rung 9 holds the full cache's retrieval accuracy at every budget, for 2.28–4.23× rung 6's decode time; the CPU pass costs 61–69 ms per token and only 113.8 KiB per token comes back |
 
 ## Phase 1 in brief
