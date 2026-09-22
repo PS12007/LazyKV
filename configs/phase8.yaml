@@ -1,0 +1,70 @@
+# Phase 8 gate: the same ladder across context length, the one axis of brief §B8 the study has
+# never moved. Every number in Phases 2-7 was measured at 32,768 tokens, and `docs/FINDINGS.md` §6
+# lists that as a limitation: nothing so far says whether the headline is a fact about the policies
+# or a fact about 32K.
+#
+# Two claims are specifically at risk, and both scale with context in opposite directions:
+#
+#   1. "No approximating rung retains 99% of full-cache accuracy below a 100% budget." A budget is
+#      a *fraction*, so at 4K a 6.25% budget is 2 blocks and at 32K it is 30. If retention is really
+#      a function of the fraction, the curves collapse onto each other; if it is a function of the
+#      absolute number of blocks kept, they do not. The brief's headline is stated in fractions, so
+#      which one is true decides whether it generalises.
+#   2. "This decode is host-bound, not link-bound." Host select time scales with the number of
+#      blocks to rank, i.e. linearly in context, while the full cache's decode also scales linearly
+#      but with a far smaller constant. Phases 4-7 measured that gap only at its widest point. If
+#      the tier is near par at 4K there is a crossover, and its position is a more useful number
+#      than the 32K ratio alone.
+#
+# Four rungs, chosen as the four distinct shapes on the Phase 7 frontier rather than for coverage:
+# the strong cheap baseline (2), the best approximating policy (5), the tier that turns rung 5's
+# budget into a memory budget (6), and the exact rung that clears the bar (9). Rungs 3, 4, 7 and 8
+# are left out because each was measured to be dominated by one of these four at 32K, and a context
+# sweep over eight rungs would cost more machine time than the question is worth.
+phase: phase8
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+# Held fixed at Phase 4's chosen value so context is the only axis that moves. Note that this makes
+# the *number of blocks* proportional to context, which is exactly what claim 1 above is about.
+block_size: 64
+prefill_chunk: 2048
+
+# `context` is the default for a run that does not pass --context; the sweep passes one per run and
+# writes to its own --out directory. 65536 is attempted last and separately: brief §B8 says "64K if
+# it runs", and at that length rung 9's float32 mirror alone is ~3.7 GiB of this machine's 16.
+context: 32768
+contexts: [4096, 8192, 16384, 32768]
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [window_sink, quest, tiered_sync, tiered_exact]
+
+# Phase 4's chosen tier configuration, and Phase 7's thread count, unchanged.
+tier:
+  fetch: gather
+  spare: 1.0
+  cpu_threads: 8
+
+# Identical to Phases 4-7: same book, same needle kinds, same depths, same seed. The prompts at a
+# given context are therefore the same prompts those phases used, which is what lets the 32,768
+# column of this sweep be checked against them in the cross-phase agreement table.
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
