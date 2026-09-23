@@ -6,7 +6,6 @@
 
 *Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
 
-![phase](https://img.shields.io/badge/phase-7%20complete-2a78d6)
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
@@ -24,31 +23,6 @@ ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The c
 is a careful, reproducible study of those ideas on constrained consumer hardware, with
 negative results included.
 
-> **Status: Phase 8 (the ladder across context length) complete.** All
-> {{ ladder.summary.rungs }} rungs of the policy ladder are measured on the same sweep, at
-> {{ ladder.summary.context | int }} tokens, with the same prompts and the same quality metrics, and
-> they are on one frontier. **No *approximating* rung retains 99% of full-cache retrieval accuracy at
-> any budget below 100%**, the best being
-> {{ ladder.summary.best_retention_approximate.max | pct }} at a
-> {{ ladder.summary.best_retention_budget_approximate | budget }} budget. The one rung that does not
-> approximate — it attends to the non-resident blocks on the CPU and merges exactly — holds the full
-> cache's accuracy down to a
-> {{ ladder.summary.exact_rung_min_budget_meeting_target | budget }} budget, and decodes
-> {{ ladder.summary.exact_rung_over_full_tokens_per_s | .1f }}× slower than keeping the KV in VRAM.
-> Separately, five independent attacks on bytes moved all failed to make decode faster — rung 9
-> moves less KV than any of them and is the slowest of the lot — and removing
-> the host residency decision entirely is worth at most
-> {{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×.
-> **Phase 8 swept four of those rungs across
-> {{ phase8.analysis.summary.contexts_measured | int }} context lengths and 64K.** The budget
-> *fraction*, not a constant token budget, is what predicts retention across context (tighter by
-> {{ phase8.analysis.summary.collapse_k_over_fraction | .1f }}×); the 99% bar turns out not to be
-> resolvable at {{ ladder.summary.prompts }} prompts, with the query-aware rungs landing within one
-> prompt of it at every context on either side; and the host cost that bounds this decode is a
-> per-layer *constant*
-> (at least {{ phase8.analysis.summary.manager_intercept_share.min | pct0 }} of it sits at zero
-> blocks), not a function of the blocks ranked — so the tier's gap never closes at any
-> context.
 > **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
 > number, the negative results and the limitations.
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
