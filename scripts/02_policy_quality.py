@@ -50,6 +50,11 @@ def main() -> None:
     p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
     p.add_argument("--policies", nargs="+", help="override config policies")
     p.add_argument("--samples", type=int, help="override NIAH samples per kind x depth")
+    # A prompt is keyed by its sample index, so a range [start, start + samples) reproduces exactly
+    # the prompts a single larger run would have drawn. That lets a many-hour run be split into
+    # chunks that each write their own metrics, so a crash costs one chunk rather than the run.
+    p.add_argument("--sample-start", type=int, default=0, help="first NIAH sample index (chunked runs)")
+    p.add_argument("--skip-teacher-forced", action="store_true", help="NIAH only (every chunk after the first)")
     p.add_argument("--out", default="policy_quality")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -98,7 +103,7 @@ def main() -> None:
     for kind in cfg["niah"]["kinds"]:
         n_new = cfg["niah"]["max_new_tokens"][kind]
         for depth in cfg["niah"]["depths"]:
-            for sample in range(samples):
+            for sample in range(args.sample_start, args.sample_start + samples):
                 prompt = build_prompt(lm.tokenizer, book, ctx, kind, depth, sample, seed=cfg["niah"]["seed"])
                 pre = run_prefill(prompt.input_ids)
                 total = prompt.length + n_new
@@ -127,7 +132,7 @@ def main() -> None:
     tf = cfg["teacher_forced"]
     text_ids = load_tokens(tf["book"], lm.tokenizer)
     tf_rows: list[dict[str, Any]] = []
-    for offset in tf["offsets"]:
+    for offset in [] if args.skip_teacher_forced else tf["offsets"]:
         # BOS, then a stretch of the book: the same shape as the Phase 1 quality reference.
         ids = torch.cat([text_ids[:1], text_ids[1 + offset : offset + ctx + tf["continuation"]]])
         context, cont = ids[:ctx], ids[ctx : ctx + tf["continuation"]]
@@ -151,7 +156,7 @@ def main() -> None:
     write_metrics(
         RESULTS_DIR / results_subdir(cfg) / args.out,
         {
-            "config": {**cfg, "context": ctx, "niah": {**cfg["niah"], "samples": samples}},
+            "config": {**cfg, "context": ctx, "niah": {**cfg["niah"], "samples": samples, "sample_start": args.sample_start}},
             "attention_strategy": QUALITY_STRATEGY,
             "conditions": [c.label for c in conds],
             "kv_bytes_per_token": lm.kv_bytes_per_token,
