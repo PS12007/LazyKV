@@ -105,6 +105,8 @@ class _Stage:
     src_host: torch.Tensor  # [cap] int64: flat host-pool indices
     dst_host: torch.Tensor  # [cap] int64, pinned: flat slot-pool indices
     dst_dev: torch.Tensor
+    # Recorded after the last non_blocking copy out of the pinned buffers; see TierLayer.idx_copied.
+    copied: torch.cuda.Event = field(default_factory=torch.cuda.Event)
 
     @classmethod
     def allocate(cls, cap: int, bs: int, d: int, dtype: torch.dtype, device: torch.device, quant: str | None = None) -> _Stage:
@@ -225,10 +227,14 @@ class TieredLayer:
         # Pairs a prefetch brought in and the real selection has not yet been checked against.
         self.pending_prefetch: tuple[np.ndarray, np.ndarray] | None = None
         # Pinned index buffer per layer. A non_blocking H2D from a reused buffer is safe only if
-        # the previous copy has run before the buffer is rewritten; every step syncs (the top-K
-        # indices must reach the host) long before this layer writes it again.
+        # the previous copy has run before the buffer is rewritten. A real selection guarantees
+        # that by accident -- the top-K indices must reach the host, which syncs the stream -- but
+        # the replay ablation exists to remove that sync, and without it the host overwrote indices
+        # a queued copy had not yet read, so a step gathered another step's blocks. The event makes
+        # the guarantee explicit; when a sync has already happened, waiting on it costs nothing.
         self.idx_host = torch.empty((h * (k_blocks + 2),), dtype=torch.int64, pin_memory=True)
         self.idx_dev = torch.empty_like(self.idx_host, device=dev)
+        self.idx_copied = torch.cuda.Event()
         self.flat_head = torch.arange(h, device=dev)
 
     # -- writes -----------------------------------------------------------------------------
@@ -324,15 +330,16 @@ class TieredLayer:
             chunks = 0
             with torch.cuda.stream(stream):
                 for c0 in range(0, src_flat.size, cap):
-                    if chunks:
-                        # The previous chunk's non_blocking copy reads the same pinned buffer.
-                        torch.cuda.current_stream().synchronize()
+                    # The previous chunk's non_blocking copy -- or, on the first chunk, the previous
+                    # call's, possibly for another layer -- reads the same pinned buffers.
+                    stage.copied.synchronize()
                     m = min(cap, src_flat.size - c0)
                     stage.src_host.numpy()[:m] = src_flat[c0 : c0 + m]
                     torch.index_select(host_flat, 0, stage.src_host[:m], out=stage.buf_host[:m])
                     stage.dst_host.numpy()[:m] = dst_flat[c0 : c0 + m]
                     stage.buf_dev[:m].copy_(stage.buf_host[:m], non_blocking=True)
                     stage.dst_dev[:m].copy_(stage.dst_host[:m], non_blocking=True)
+                    stage.copied.record()
                     # The slot pool is always the model's dtype: the hot tier is exact, and an int8
                     # record is widened back on arrival rather than attended in place.
                     arrived = stage.buf_dev[:m] if self.quant is None else unpack(stage.buf_dev[:m], self.bs, self.d, self.pool.dtype)
@@ -364,8 +371,10 @@ class TieredLayer:
         idx[:, 1:-1] = slots
         idx[:, -1] = self.tail_slot
         flat = idx * self.h + self.heads[:, None]
+        self.idx_copied.synchronize()
         self.idx_host.numpy()[:] = flat.reshape(-1)
         self.idx_dev.copy_(self.idx_host, non_blocking=True)
+        self.idx_copied.record()
         pool_flat = self.pool.view(-1, 2, self.bs, self.d)
         shape = (1, self.h, k2 * self.bs, self.d)
         k_sel = pool_flat[self.idx_dev, 0].view(shape)

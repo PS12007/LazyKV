@@ -256,3 +256,33 @@ def test_replaying_a_recorded_selection_reproduces_the_run_exactly(tiny) -> None
     rep.close()
     full.truncate(PROMPT)
     assert torch.equal(got, ref)
+
+
+@cuda
+def test_replay_is_exact_when_the_host_runs_ahead_of_the_device(tiny) -> None:  # noqa: ANN001
+    """The race the test above only caught under load, made deterministic.
+
+    Replay removes the host sync a real selection performs, so the host can run steps ahead of the
+    device. Before the pinned index and staging buffers were guarded by events, the host rewrote
+    them while a queued copy had yet to read them, and a step gathered another step's blocks. It
+    showed up only when something else was loading the GPU; stalling the device on purpose makes the
+    host run ahead every time.
+    """
+    from lazykv.generate import teacher_forced_decode
+    from lazykv.tiered import TieredCache
+
+    cfg, model = tiny
+    ids, full, pre = _prefilled(model, cfg)
+    cont = ids[:, PROMPT : PROMPT + 30]
+    rec = TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="gather", record_selection=True)
+    ref = torch.stack(list(teacher_forced_decode(model, rec, pre.last_logits, cont)))
+    selection = rec.recorded_selection()
+    rec.close()
+    full.truncate(PROMPT)
+
+    rep = TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="gather", replay_selection=selection)
+    torch.cuda._sleep(200_000_000)  # a stalled device: every copy below is queued behind this
+    got = torch.stack(list(teacher_forced_decode(model, rep, pre.last_logits, cont)))
+    rep.close()
+    full.truncate(PROMPT)
+    assert torch.equal(got, ref)
