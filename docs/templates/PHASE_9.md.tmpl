@@ -1,0 +1,155 @@
+# Phase 9 gate report: resolving the 99% bar with a larger paired prompt set
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Phase 8 left the study's headline in an awkward state. Brief §B8 asks for the minimum GPU KV budget
+at which a policy retains at least 99% of full-cache NIAH accuracy, and at 45 prompts the query-aware
+rungs landed within a fraction of one prompt of that bar at every context, on alternating sides. That
+is a statement about the sample, not about the policy. The only way to turn it into one about the
+policy is more paired prompts, so this phase ran
+{{ phase9.analysis.summary.prompts | int }} of them at
+{{ phase9.analysis.summary.context | int }} tokens, against Phase 8's
+{{ phase9.analysis.summary.phase8_prompts | int }}.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing. New: `tests/test_bar_resolution.py` pins the paired
+  bootstrap (concordant prompts must add no width), the three-way rule at its boundaries, the
+  prompts-to-resolve estimate (an effect on the bar must never resolve), and the chunk merge (a
+  prompt counted twice, or chunks from different commits, are refused). §5 describes a race the
+  suite caught during this phase, and the test that now makes it deterministic.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase9.yaml`, in four
+  chunks of 75 prompts via the new `--sample-start`, launched detached from a worktree pinned at the
+  commit under test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was measured, and the rule fixed before the run
+
+| Axis | Setting | Why |
+|---|---|---|
+| Context | {{ phase9.analysis.summary.context | int }} tokens | The headline is defined at 32K. Phase 8 already showed the budget fraction travels across context; this phase is about the noise floor, not the axis. |
+| Policy | Rung 5 (Quest-style) | Rung 6 is rung 5's selection over a CPU tier and was bit-identical to it in every cell of Phases 4-8, so its quality half would be a second copy of this measurement. |
+| Budgets | 75% · 50% | The two that straddle the bar at 45 prompts. 25% and below miss it by more than sampling error at this N could explain. |
+| Prompts | {{ phase9.analysis.summary.prompts | int }} per condition ({{ phase9.analysis.summary.samples_per_cell | int }} per needle kind × depth) | Samples 0-2 are Phase 8's 45 prompts exactly (a prompt is keyed by its sample index), so the first chunk doubles as a reproducibility check. |
+
+`configs/phase9.yaml` states the decision rule, and it was committed before the run started.
+Retention is `sum(policy score) / sum(full score)` over the same prompts, and its 95% CI is a
+percentile bootstrap that resamples *prompts*, so a prompt's two scores move together:
+
+- **meets** the bar if the CI's lower bound is at least 99%;
+- **fails** it if the CI's upper bound is below 99%;
+- **unresolved** otherwise, reported as such.
+
+Pairing is what makes this tractable at all. A prompt that both conditions pass, or both fail, adds
+no width; the interval is made of the discordant prompts alone.
+
+## 1. The verdicts
+
+{{> p9_verdicts }}
+
+**The 50% budget fails the bar.** Its retention is
+{{ phase9.analysis.conditions.quest_50.retention | pct }}, with a 95% CI of
+{{ phase9.analysis.conditions.quest_50.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_50.retention_ci95.1 | pct }}:
+the whole interval sits below 99%. It loses
+{{ phase9.analysis.conditions.quest_50.worse | int }} prompts to the full cache and wins
+{{ phase9.analysis.conditions.quest_50.better | int }} back (sign test p =
+{{ phase9.analysis.conditions.quest_50.sign_test_p | .2g }}). At Phase 8's 45 prompts, the same rule
+called it unresolved.
+
+**The 75% budget is unresolved, and on this evidence more prompts would not resolve it.** Its retention is
+{{ phase9.analysis.conditions.quest_75.retention | pct }}, which is the bar itself, with a CI of
+{{ phase9.analysis.conditions.quest_75.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_75.retention_ci95.1 | pct }}.
+Its margin over the bar is
+{{ phase9.analysis.conditions.quest_75.margin_prompts | +.2f }} prompts out of
+{{ phase9.analysis.conditions.quest_75.prompts | int }}. The observed discordance and effect put the
+prompt count needed to separate it from the bar at
+{{ phase9.analysis.conditions.quest_75.prompts_to_resolve | int }}, which is the delta method's way
+of saying that the estimate sits on the bar. That is not a failure of this experiment.
+It is the answer: the true retention at 75% is close enough to 99% that "does it clear 99%" is not a
+question NIAH can settle on this machine, and the defensible statement is the interval.
+
+The 100% block-pool control retains exactly what the full cache does on every prompt, so none of the
+losses above come from the block layout itself.
+
+## 2. What more prompts bought, prefix by prefix
+
+The same rule at every prefix of the prompt set. The prefixes are the chunk boundaries, fixed by
+sample index before the run, not chosen afterwards.
+
+{{> p9_prefixes }}
+
+The two budgets behave differently as N grows, and the difference is the finding. At 50% the
+interval narrows around a retention that stays several points below the bar, so it resolves once it
+is narrow enough, and it stays resolved. At 75% the interval narrows around the bar itself: the
+point estimate moves by a fraction of a point, never leaves the interval, and ends on the bar.
+Six times the prompts shrank its CI width from
+{{ phase9.analysis.conditions.quest_75.prefixes.0.ci_width_pp | .1f }} pp to
+{{ phase9.analysis.conditions.quest_75.ci_width_pp | .1f }} pp without moving it off the line.
+
+## 3. Where the losses are
+
+{{> p9_by_kind }}
+
+Descriptive only; a third of the prompts cannot carry a verdict. The single-needle task is almost
+never where rung 5 loses. The losses concentrate in the multi-needle kinds, which need several
+distant blocks at once, so a selection that keeps most of them still drops a value. Multivalue is
+also where rung 5 most often *beats* the full cache: those wins are partial-credit swings on
+four-value answers, not evidence that approximation helps.
+
+## 4. The first chunk reproduces Phase 8
+
+The first chunk repeated Phase 8's 45 prompts. Of the
+{{ phase9.analysis.phase8_reproduction.compared | int }} condition-by-prompt rows the two runs share,
+{{ phase9.analysis.phase8_reproduction.identical | int }} are identical in score *and* in the
+generated text. So pooling Phase 8's prompts into this phase's prefixes pools the same measurement,
+two days and several commits apart.
+
+## 5. Erratum: the Phase 6 replay ablation raced, and its ceiling is optimistic
+
+While this run was sharing the GPU, `test_replaying_a_recorded_selection_reproduces_the_run_exactly`
+started failing most of the time. It was not the known kernel nondeterminism: pinning the
+deterministic kernel made it fail every time, and recording the same pass twice stayed
+bit-identical. The cause was a race in the tier (`lazykv/tiered.py`).
+
+The gather-mode staging buffers are pinned host memory shared by every layer. Layer *L* fills them
+and queues a non-blocking copy to the GPU; layer *L+1* fills them again. That is safe only if the
+copy has run by then. In a real selection it always has, by accident: `rank()` moves the top-K
+indices to the host, which syncs the stream at every layer. The replay ablation exists to remove
+exactly that sync, so under load the host rewrote the buffers before the copy read them, and a step
+attended to the wrong blocks. Disabling each guard in turn identified the staging buffers as the
+culprit; the per-layer index buffer is guarded too, for the same reason.
+
+The fix records a CUDA event after each copy and waits on it before the buffer is rewritten. On the
+normal path the event has already completed, so the wait is free. A new test stalls the device with
+`torch.cuda._sleep` so the host runs ahead every time; it fails without the fix and passes with it.
+
+**What this does and does not affect:**
+
+- Every quality result in Phases 4-9 is unaffected. Normal decode always synced, and rung 5, the only
+  policy this phase measured, does not use the tier.
+- **The Phase 6 ceiling is.** A correct replay must wait for the previous layer's copy before reusing
+  the buffers, and the replay that produced the
+  {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×
+  ceiling skipped that wait. The ceiling is therefore probably optimistic. Its replay token agreement of
+  {{ phase5.ceiling.summary.token_agreement.min | pct }}–{{ phase5.ceiling.summary.token_agreement.max | pct }},
+  which Phase 6 attributed to kernel nondeterminism, was at least partly this race.
+- Phase 6's conclusion, that taking the decision off the host is not worth a redesign, can only get
+  stronger if the ceiling falls. But the number itself is not settled until it is re-measured, and
+  that is a timing run that needs an idle machine. **Not measured yet.**
+
+## 6. What this changes
+
+- **Rung 5's minimum budget at 32K is not 50%.** That is now a measured failure rather than a noisy
+  miss.
+- **At 75%, rung 5 is indistinguishable from the bar,** and the indistinguishability is itself
+  measured. The headline should quote rung 5's 75% retention with its interval, not a pass or a fail.
+- **The 99% bar is too fine for NIAH at this scale** whenever a policy lands near it. A study that
+  wants a pass/fail headline needs either a non-inferiority margin chosen in advance or a continuous
+  metric (the teacher-forced KL is already measured for every condition).
+
+## Provenance
+
+{{> p9_provenance }}
+
+Total machine time: {{ phase9.analysis.summary.wall_s | .0f }} s across the four chunks.

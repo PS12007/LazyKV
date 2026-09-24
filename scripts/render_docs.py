@@ -1793,7 +1793,8 @@ def block_p9_verdicts(ctx: Mapping[str, Any]) -> str:
             f"**{c['verdict']}**",
             f"{c['worse']} / {c['better']}",
             f"{c['sign_test_p']:.2g}",
-            _to_resolve(c["prompts_to_resolve"]),
+            # With no discordant prompts the ratio has no variance and nothing is left to resolve.
+            _to_resolve(c["prompts_to_resolve"]) if c["discordant"] else "n/a (no discordant prompts)",
         ])
     header = ["Policy", "Budget", "Prompts", "Retention", "95% CI (paired)", "Verdict", "Worse / better than full", "Sign test p", "Prompts to resolve"]
     return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---", "---:", "---:", "---:"])
