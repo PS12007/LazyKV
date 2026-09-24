@@ -150,3 +150,57 @@ def sign_test_p(worse: int, better: int) -> float:
     k = min(worse, better)
     tail = sum(math.comb(n, i) for i in range(k + 1)) / 2**n
     return min(1.0, 2 * tail)
+
+
+def paired_ratio_ci(num: Sequence[float], den: Sequence[float], iters: int = 10000, seed: int = 0) -> tuple[float, float]:
+    """Percentile bootstrap 95% CI of sum(num) / sum(den), resampling the pairs together.
+
+    This is the CI for a retention (a policy's accuracy over the reference's on the same prompts).
+    Resampling the two scores of a prompt as one unit is what makes it paired: the prompts both
+    conditions fail, or both pass, move the numerator and denominator together and add no width,
+    so the interval reflects the discordant prompts rather than the difficulty of the prompt set.
+    Two unpaired accuracy CIs divided into each other would be several times wider.
+    """
+    if len(num) != len(den):
+        raise ValueError("paired samples must have equal length")
+    n = len(num)
+    if n == 0:
+        return (math.nan, math.nan)
+    rng = random.Random(seed)
+    ratios = []
+    for _ in range(iters):
+        idx = [rng.randrange(n) for _ in range(n)]
+        d = sum(den[i] for i in idx)
+        if d > 0:
+            ratios.append(sum(num[i] for i in idx) / d)
+    ratios.sort()
+    m = len(ratios)
+    return ratios[int(0.025 * m)], ratios[int(0.975 * m) - 1]
+
+
+def prompts_to_resolve(num: Sequence[float], den: Sequence[float], bar: float, z: float = 1.96) -> float | None:
+    """Pairs needed for a 95% CI on sum(num)/sum(den) to exclude `bar`, at the observed effect.
+
+    Delta method: the ratio's standard error is sd(num_i - R * den_i) / (mean(den) * sqrt(n)), and
+    the CI excludes the bar once z of those fit between R and the bar. Solved for n, this is the
+    honest answer to "would more prompts settle it": it is the observed effect's size, not the bar,
+    that decides, and an effect sitting on the bar needs arbitrarily many (None). It assumes the
+    observed discordance rate and effect hold as n grows, which is exactly what is unknown, so it
+    is an order of magnitude and is reported as one.
+    """
+    n = len(num)
+    if n != len(den) or n < 2:
+        raise ValueError("need at least two paired samples")
+    mean_den = sum(den) / n
+    if mean_den <= 0:
+        return None
+    r = sum(num) / sum(den)
+    gap = abs(r - bar)
+    if gap == 0:
+        return None
+    resid = [a - r * b for a, b in zip(num, den)]
+    mu = sum(resid) / n
+    sd = math.sqrt(sum((x - mu) ** 2 for x in resid) / (n - 1))
+    if sd == 0:
+        return float(n)
+    return (z * sd / (mean_den * gap)) ** 2
