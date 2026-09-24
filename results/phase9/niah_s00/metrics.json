@@ -1,0 +1,6440 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-24T21:37:45+00:00",
+    "git_commit": "2660880b30f73d2f918a5e95dc1c55667af8ee7d",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\02_policy_quality.py",
+      "--config",
+      "configs\\phase9.yaml",
+      "--samples",
+      "5",
+      "--sample-start",
+      "0",
+      "--out",
+      "niah_s00"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "phase": "phase9",
+    "model": {
+      "repo": "unsloth/Llama-3.2-1B-Instruct",
+      "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+    },
+    "block_size": 64,
+    "prefill_chunk": 2048,
+    "context": 32768,
+    "budgets": [
+      0.75,
+      0.5
+    ],
+    "policies": [
+      "quest"
+    ],
+    "niah": {
+      "book": "moby_dick",
+      "kinds": [
+        "single",
+        "multikey",
+        "multivalue"
+      ],
+      "depths": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "samples": 5,
+      "chunk_samples": 5,
+      "max_new_tokens": {
+        "single": 16,
+        "multikey": 16,
+        "multivalue": 48
+      },
+      "seed": 0,
+      "sample_start": 0
+    },
+    "teacher_forced": {
+      "book": "pride_and_prejudice",
+      "offsets": [
+        0,
+        60000
+      ],
+      "continuation": 256
+    },
+    "bar": 0.99,
+    "bootstrap": {
+      "iters": 10000,
+      "seed": 0
+    }
+  },
+  "attention_strategy": "efficient",
+  "conditions": [
+    "full@1",
+    "block_full@1",
+    "quest@0.75",
+    "quest@0.5"
+  ],
+  "kv_bytes_per_token": 32768,
+  "niah": [
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.31135289988014847,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.033657799707725644,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17013229965232313,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1082357.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1082357.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.026498999446630478,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17292010004166514,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "1082357.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17339110048487782,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16554309928324074,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.030537300743162632,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.209106900729239,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6512503.",
+      "values": [
+        "6512503"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027184500941075385,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6512503.",
+      "values": [
+        "6512503"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6512503.",
+      "values": [
+        "6512503"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1558299995958805,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6512503.",
+      "values": [
+        "6512503"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15782469895202667,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5457695.",
+      "values": [
+        "5457695"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15664689929690212,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5457695.",
+      "values": [
+        "5457695"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5457695.",
+      "values": [
+        "5457695"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1540581986773759,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5457695.",
+      "values": [
+        "5457695"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028725000796839595,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16921130032278597,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027295300853438675,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18764179886784405,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16496400069445372,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19276690017431974,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027680800762027502,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16864380100741982,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.025481700315140188,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1710270014591515,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1967851.",
+      "values": [
+        "1967851"
+      ],
+      "target_needle_pos": 8220,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027177099487744272,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1967851.",
+      "values": [
+        "1967851"
+      ],
+      "target_needle_pos": 8220,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "1967851.",
+      "values": [
+        "1967851"
+      ],
+      "target_needle_pos": 8220,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1702938990201801,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "1967851.",
+      "values": [
+        "1967851"
+      ],
+      "target_needle_pos": 8220,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20503199973609298,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4722672.",
+      "values": [
+        "4722672"
+      ],
+      "target_needle_pos": 8169,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "4722672.",
+      "values": [
+        "4722672"
+      ],
+      "target_needle_pos": 8169,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2286275007063523,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4722672.",
+      "values": [
+        "4722672"
+      ],
+      "target_needle_pos": 8169,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.041489999392069876,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "4722672.",
+      "values": [
+        "4722672"
+      ],
+      "target_needle_pos": 8169,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.3414470989955589,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18070389912463725,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1716014004778117,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028452598489820957,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.025746100000105798,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1641695003490895,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1626324001699686,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.036262899986468256,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19379619997926056,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20362589950673282,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "4152490.",
+      "values": [
+        "4152490"
+      ],
+      "target_needle_pos": 16387,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1947990000480786,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4152490.",
+      "values": [
+        "4152490"
+      ],
+      "target_needle_pos": 16387,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.035010700463317335,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "4152490.",
+      "values": [
+        "4152490"
+      ],
+      "target_needle_pos": 16387,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17975329887121916,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4152490.",
+      "values": [
+        "4152490"
+      ],
+      "target_needle_pos": 16387,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "7406281.",
+      "values": [
+        "7406281"
+      ],
+      "target_needle_pos": 16366,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21304770011920482,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "7406281.",
+      "values": [
+        "7406281"
+      ],
+      "target_needle_pos": 16366,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.03169259999413043,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "7406281.",
+      "values": [
+        "7406281"
+      ],
+      "target_needle_pos": 16366,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15146490093320608,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "7406281.",
+      "values": [
+        "7406281"
+      ],
+      "target_needle_pos": 16366,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15907570137642324,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027570401318371296,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16218969959300011,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.02836910029873252,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19465830037370324,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1832006009062752,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1748958999523893,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1737528000958264,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028164799907244742,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6736785.",
+      "values": [
+        "6736785"
+      ],
+      "target_needle_pos": 24554,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1723645000020042,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6736785.",
+      "values": [
+        "6736785"
+      ],
+      "target_needle_pos": 24554,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028536400175653398,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6736785.",
+      "values": [
+        "6736785"
+      ],
+      "target_needle_pos": 24554,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1781499992357567,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6736785.",
+      "values": [
+        "6736785"
+      ],
+      "target_needle_pos": 24554,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6049707.",
+      "values": [
+        "6049707"
+      ],
+      "target_needle_pos": 24538,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18434740009251982,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6049707.",
+      "values": [
+        "6049707"
+      ],
+      "target_needle_pos": 24538,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.03556639945600182,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6049707.",
+      "values": [
+        "6049707"
+      ],
+      "target_needle_pos": 24538,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6049707.",
+      "values": [
+        "6049707"
+      ],
+      "target_needle_pos": 24538,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1890603005886078,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.034653599257580936,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.173450599424541,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17025920026935637,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028084199293516576,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16319309861864895,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1647834002505988,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20419719989877194,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.026335999369621277,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16518260049633682,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "3520846.",
+      "values": [
+        "3520846"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16891299979761243,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3520846.",
+      "values": [
+        "3520846"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3520846.",
+      "values": [
+        "3520846"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027269099606201053,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "3520846.",
+      "values": [
+        "3520846"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15784129954408854,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8938087.",
+      "values": [
+        "8938087"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.03545020055025816,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "8938087.",
+      "values": [
+        "8938087"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21405570046044886,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8938087.",
+      "values": [
+        "8938087"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "8938087.",
+      "values": [
+        "8938087"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1518349003745243,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.28255149989854544,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2308081998489797,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.0370017004897818,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6330131.oms.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.029982198728248477,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6330131.oms.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14175439928658307,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6330131.oms.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6330131.oms.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17662690056022257,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17581820103805512,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17051099915988743,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5780624.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5780624.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.029114000033587217,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.0,
+      "answer": "1082322.",
+      "values": [
+        "4718473"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1630599000491202,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4718473.",
+      "values": [
+        "4718473"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027822600328363478,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "4718473.",
+      "values": [
+        "4718473"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16063419950660318,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4718473.",
+      "values": [
+        "4718473"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4378725.Bargain?.",
+      "values": [
+        "4378725"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.02666100033093244,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4378725.Bargain?.",
+      "values": [
+        "4378725"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "4378725.",
+      "values": [
+        "4378725"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20420219923835248,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "4378725.",
+      "values": [
+        "4378725"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16141810023691505,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1564461993984878,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15449389931745827,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.026605500257574022,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17671289935242385,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.03738500038161874,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1677087009884417,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16984199883881956,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.030225100927054882,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16387219924945384,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 6061084.",
+      "values": [
+        "6061084"
+      ],
+      "target_needle_pos": 8212,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15277620032429695,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 6061084.",
+      "values": [
+        "6061084"
+      ],
+      "target_needle_pos": 8212,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16602660017088056,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 6061084.",
+      "values": [
+        "6061084"
+      ],
+      "target_needle_pos": 8212,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.030263500288128853,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 6061084.",
+      "values": [
+        "6061084"
+      ],
+      "target_needle_pos": 8212,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 1574762.",
+      "values": [
+        "1574762"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15737969952169806,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 1574762.",
+      "values": [
+        "1574762"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16278479958418757,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1574762.",
+      "values": [
+        "1574762"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1574762.",
+      "values": [
+        "1574762"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.029080999549478292,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.025636399164795876,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.10891940025612712,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15260830102488399,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14861950068734586,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.024968099663965404,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16411360050551593,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.01742430147714913,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1477105994708836,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16740310052409768,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 3012068.",
+      "values": [
+        "3012068"
+      ],
+      "target_needle_pos": 16386,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14628250035457313,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 3012068.",
+      "values": [
+        "3012068"
+      ],
+      "target_needle_pos": 16386,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 3012068.",
+      "values": [
+        "3012068"
+      ],
+      "target_needle_pos": 16386,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14867010014131665,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 3012068.",
+      "values": [
+        "3012068"
+      ],
+      "target_needle_pos": 16386,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028728198842145503,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1699695.",
+      "values": [
+        "1699695"
+      ],
+      "target_needle_pos": 16393,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.04277409997303039,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 1699695.",
+      "values": [
+        "1699695"
+      ],
+      "target_needle_pos": 16393,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22934870014432818,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 1699695.",
+      "values": [
+        "1699695"
+      ],
+      "target_needle_pos": 16393,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21900179889053106,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1699695.",
+      "values": [
+        "1699695"
+      ],
+      "target_needle_pos": 16393,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.05727490002755076,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2904486997285858,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2827743007801473,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15858460078015924,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15539639978669584,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.025527499383315444,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.02539689897093922,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1297646991442889,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16395059938076884,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5625424.",
+      "values": [
+        "5625424"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.028152900864370167,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5625424.",
+      "values": [
+        "5625424"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16075040108989924,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5625424.",
+      "values": [
+        "5625424"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16519179940223694,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5625424.",
+      "values": [
+        "5625424"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ": 4385188.",
+      "values": [
+        "4385188"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.13490539940539747,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ": 4385188.",
+      "values": [
+        "4385188"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15337439917493612,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 4385188.",
+      "values": [
+        "4385188"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.02261959936004132,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 4385188.",
+      "values": [
+        "4385188"
+      ],
+      "target_needle_pos": 24524,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.029967999318614602,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14237349992617965,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14934780029579997,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.030007299268618226,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1614386992296204,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15255090035498142,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.026513701071962714,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15812520030885935,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15698239975608885,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5243408.",
+      "values": [
+        "5243408"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.14711920137051493,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5243408.",
+      "values": [
+        "5243408"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027244200697168708,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5243408.",
+      "values": [
+        "5243408"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.15685980033595115,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5243408.",
+      "values": [
+        "5243408"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": "5332945.",
+      "values": [
+        "5332945"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16908739949576557,
+      "selections": 210,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5332945.",
+      "values": [
+        "5332945"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5332945.",
+      "values": [
+        "5332945"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_update_s": 0.027867600321769714,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": "5332945.",
+      "values": [
+        "5332945"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16107399889733642,
+      "selections": 210,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4425229\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5818677970673889,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4425229\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08415739773772657,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.5,
+      "answer": ":\n\n1. 7529401\n2. 4425229",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5164012995082885,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4425229\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 7064276\n2. 2235723\n3. 400000\n4. 60,000\n5. 150,000\n6. 550,000\n7. 72,000",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08352539874613285,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.25,
+      "answer": ":\n\n1. 2235723\n2. 2235723\n3. 2235723\n4. 2235723\n5. 2235723\n6. 2235723\n7. 223572",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5591226009419188,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 2235723\n2. 6461968\n3. 6368150",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5353811009554192,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 7064276\n2. 2235723\n3. 400000\n4. 60,000\n5. 150,000\n6. 550,000\n7. 72,000",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5016274028457701,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08193809830117971,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821\n4. 4085572",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4910763988737017,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 5423545\n2. 5233703\n3. 9457528\n4. 9453703",
+      "values": [
+        "5423545",
+        "5233703",
+        "9457528",
+        "5358022"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 5423545\n2. 5233703\n3. 9457528\n4. 9453703",
+      "values": [
+        "5423545",
+        "5233703",
+        "9457528",
+        "5358022"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.09032810153439641,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 5423545\n2. 5233703\n3. 9457528\n4. 9453703",
+      "values": [
+        "5423545",
+        "5233703",
+        "9457528",
+        "5358022"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5036131977103651,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 5423545\n2. 5233703\n3. 9457528\n4. 9453703",
+      "values": [
+        "5423545",
+        "5233703",
+        "9457528",
+        "5358022"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5133027005940676,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 3955959\n2. 6680727\n3. 8790552\n4. 3162221",
+      "values": [
+        "3955959",
+        "8790552",
+        "6680727",
+        "3162221"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5395403999136761,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 3955959\n2. 6680727\n3. 8790552\n4. 3162221",
+      "values": [
+        "3955959",
+        "8790552",
+        "6680727",
+        "3162221"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 3955959\n2. 8790552\n3. 3162221",
+      "values": [
+        "3955959",
+        "8790552",
+        "6680727",
+        "3162221"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5174366015708074,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 3955959\n2. 6680727\n3. 8790552\n4. 3162221",
+      "values": [
+        "3955959",
+        "8790552",
+        "6680727",
+        "3162221"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.0881943010026589,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.0849291963968426,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4977704006014392,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.47884189966134727,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5990544998785481,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5866235010325909,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08821900049224496,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6621216988423839,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.13519719941541553,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5738260990474373,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 6249274\n2. 8956565\n3. 4239556",
+      "values": [
+        "8956565",
+        "4239556",
+        "2848509",
+        "6249274"
+      ],
+      "target_needle_pos": 8186,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5235250985715538,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 6249274\n2. 8956565\n3. 4239556",
+      "values": [
+        "8956565",
+        "4239556",
+        "2848509",
+        "6249274"
+      ],
+      "target_needle_pos": 8186,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5646528992801905,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 6249274\n2. 8956565\n3. 4239556",
+      "values": [
+        "8956565",
+        "4239556",
+        "2848509",
+        "6249274"
+      ],
+      "target_needle_pos": 8186,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 6249274\n2. 8956565\n3. 4239556",
+      "values": [
+        "8956565",
+        "4239556",
+        "2848509",
+        "6249274"
+      ],
+      "target_needle_pos": 8186,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08714240079279989,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 7592143\n2. 9130001\n3. 7864164\n4. 5145675",
+      "values": [
+        "7864164",
+        "5145675",
+        "7592143",
+        "9130001"
+      ],
+      "target_needle_pos": 8229,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 7592143\n2. 9130001\n3. 7864164\n4. 5145675",
+      "values": [
+        "7864164",
+        "5145675",
+        "7592143",
+        "9130001"
+      ],
+      "target_needle_pos": 8229,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.07531499932520092,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 7592143\n2. 9130001\n3. 7864164\n4. 5145675",
+      "values": [
+        "7864164",
+        "5145675",
+        "7592143",
+        "9130001"
+      ],
+      "target_needle_pos": 8229,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5190993014257401,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 7592143\n2. 9130001\n3. 7864164\n4. 5145675",
+      "values": [
+        "7864164",
+        "5145675",
+        "7592143",
+        "9130001"
+      ],
+      "target_needle_pos": 8229,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4975819996325299,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7690801\n4. 7096956",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7690801\n4. 7096956\n5. 5293128 (again, as it appears in the text again)\n6.",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.541094699408859,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7690801\n4. 7096956",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.0959657997591421,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7690801\n4. 7096956",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5416629019891843,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 1976000\n2. 9187448",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5757512018317357,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8770218\n2. 1976000\n3. 9187448",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 8770218\n2. 9187448\n3. 1976000",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5355014998931438,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8770218\n2. 1976000\n3. 9187448",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08662279939744622,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08949539822060615,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.516688100527972,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5166143014794216,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 8924358\n2. 4832052\n3. 8894860\n4. 2325860\n5. 8924358 (again, as a special magic number for the Pequod",
+      "values": [
+        "8924358",
+        "4832052",
+        "2325860",
+        "8894860"
+      ],
+      "target_needle_pos": 16378,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.09800439805258065,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 8924358\n2. 4832052\n3. 8894860\n4. 2325860\n5. 8924358 (again, as a special magic number for the Pequod",
+      "values": [
+        "8924358",
+        "4832052",
+        "2325860",
+        "8894860"
+      ],
+      "target_needle_pos": 16378,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 8924358\n2. 4832052\n3. 2325860\n4. 8924359\n5. 4832053\n6. 2325861\n7. 892435",
+      "values": [
+        "8924358",
+        "4832052",
+        "2325860",
+        "8894860"
+      ],
+      "target_needle_pos": 16378,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5609464005101472,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 8924358\n2. 4832052\n3. 8894860\n4. 2325860\n5. 8924358 (again, as the text mentions it multiple times)\n6.",
+      "values": [
+        "8924358",
+        "4832052",
+        "2325860",
+        "8894860"
+      ],
+      "target_needle_pos": 16378,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5017523991409689,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 5104668\n2. 3993611\n3. 5713604",
+      "values": [
+        "5713604",
+        "5104668",
+        "3993611",
+        "7370656"
+      ],
+      "target_needle_pos": 16318,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.09531969949603081,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 5104668\n2. 3993611\n3. 3993618\n4. 3993619\n5. 3993616\n6. 3993617\n7. 399361",
+      "values": [
+        "5713604",
+        "5104668",
+        "3993611",
+        "7370656"
+      ],
+      "target_needle_pos": 16318,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5247108022449538,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 5104668\n2. 3993611\n3. 5713604",
+      "values": [
+        "5713604",
+        "5104668",
+        "3993611",
+        "7370656"
+      ],
+      "target_needle_pos": 16318,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 5104668\n2. 3993611\n3. 5713604",
+      "values": [
+        "5713604",
+        "5104668",
+        "3993611",
+        "7370656"
+      ],
+      "target_needle_pos": 16318,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5154867963865399,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5050166016444564,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.09529440081678331,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5276945990044624,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08994239568710327,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4776279015932232,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5002648999216035,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5205522001488134,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.07493089896161109,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.48030419973656535,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 7540843\n2. 3981377\n3. 4562271\n4. 3981377 (again)\n5. 1047050",
+      "values": [
+        "3981377",
+        "7540843",
+        "1047050",
+        "4562271"
+      ],
+      "target_needle_pos": 24547,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.09245549980551004,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 7540843\n2. 3981377\n3. 4562271\n4. 3981377 (again)\n5. 1047050",
+      "values": [
+        "3981377",
+        "7540843",
+        "1047050",
+        "4562271"
+      ],
+      "target_needle_pos": 24547,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5002165004843846,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 7540843\n2. 3981377\n3. 1047050",
+      "values": [
+        "3981377",
+        "7540843",
+        "1047050",
+        "4562271"
+      ],
+      "target_needle_pos": 24547,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5490375012159348,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 7540843\n2. 3981377\n3. 4562271\n4. 3981377 (again)\n5. 1047050",
+      "values": [
+        "3981377",
+        "7540843",
+        "1047050",
+        "4562271"
+      ],
+      "target_needle_pos": 24547,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 4885825\n2. 6855825\n3. 9310738",
+      "values": [
+        "9310738",
+        "4032800",
+        "4888089",
+        "6855825"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.0796962013700977,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.5,
+      "answer": ":\n\n1. 4885825\n2. 6855825\n3. 9310738",
+      "values": [
+        "9310738",
+        "4032800",
+        "4888089",
+        "6855825"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5737895021447912,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 4885825\n2. 6855825\n3. 9310738",
+      "values": [
+        "9310738",
+        "4032800",
+        "4888089",
+        "6855825"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.5,
+      "answer": ":\n\n1. 4885825\n2. 6855825\n3. 9310738",
+      "values": [
+        "9310738",
+        "4032800",
+        "4888089",
+        "6855825"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.46713310200721025,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 5809031",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 8000593.Lucky\n2. 4698795\n3. 7034908",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.47915369912516326,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 5809031",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4914289992302656,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 5809031",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08217000227887183,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 400000\n3. 8579353\n4. 2713574",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 400000\n3. 8579353\n4. 2713574",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.0777301003690809,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 8579353\n3. 2713574",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.44885850173886865,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 8579353\n3. 2713574",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.42244770063553005,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 8559832\n4. 3571180",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4928881995147094,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 8559832\n4. 3571180",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.3450700999237597,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 6759960 (again)\n4. 6759960 (third time)\n5. 6759960 (fourth time)\n6.",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08492619858589023,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 6759960 (again)\n4. 6759960 (third time)\n5. 6759960 (fourth time)\n6.",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 1.0,
+      "answer": ":\n\n1. 4428917\n2. 6751128\n3. 8667078\n4. 5379222",
+      "values": [
+        "5379222",
+        "6751128",
+        "8667078",
+        "4428917"
+      ],
+      "target_needle_pos": 32714,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.47695069818291813,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 4428917\n2. 6751128\n3. 8667078\n4. 5379222",
+      "values": [
+        "5379222",
+        "6751128",
+        "8667078",
+        "4428917"
+      ],
+      "target_needle_pos": 32714,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.08138810121454298,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 1.0,
+      "answer": ":\n\n1. 4428917\n2. 6751128\n3. 8667078\n4. 5379222",
+      "values": [
+        "5379222",
+        "6751128",
+        "8667078",
+        "4428917"
+      ],
+      "target_needle_pos": 32714,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.46085569995921105,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 3,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 4428917\n2. 6751128\n3. 8667078\n4. 5379222",
+      "values": [
+        "5379222",
+        "6751128",
+        "8667078",
+        "4428917"
+      ],
+      "target_needle_pos": 32714,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.75,
+      "score": 0.75,
+      "answer": ":\n\n1. 7232972\n2. 5791099\n3. 5791099 (again)\n4. 7232972 (again)\n5. 2951246",
+      "values": [
+        "2951246",
+        "7232972",
+        "5791099",
+        "8579537"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.46465910074766725,
+      "selections": 658,
+      "k_blocks": 382,
+      "attended_tokens_selecting_layers": 24576,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.5,
+      "score": 0.75,
+      "answer": ":\n\n1. 7232972\n2. 5791099\n3. 2951246",
+      "values": [
+        "2951246",
+        "7232972",
+        "5791099",
+        "8579537"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.4348367009079084,
+      "selections": 658,
+      "k_blocks": 254,
+      "attended_tokens_selecting_layers": 16384,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "block_full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 7232972\n2. 5791099\n3. 5791099 (again)\n4. 2951246",
+      "values": [
+        "2951246",
+        "7232972",
+        "5791099",
+        "8579537"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_update_s": 0.07749929768033326,
+      "host_observe_s": 0.0,
+      "seals": 0,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 513,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 4,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 7232972\n2. 5791099\n3. 5791099 (again)\n4. 2951246",
+      "values": [
+        "2951246",
+        "7232972",
+        "5791099",
+        "8579537"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920
+    }
+  ],
+  "teacher_forced": [
+    {
+      "offset": 0,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664
+    },
+    {
+      "offset": 0,
+      "policy": "block_full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_update_s": 0.4885326971998438,
+      "host_observe_s": 0.0,
+      "seals": 48,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 516,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "offset": 0,
+      "policy": "quest",
+      "budget": 0.75,
+      "positions": 256,
+      "top1_agreement": 0.9765625,
+      "mean_kl": 0.003201574014085891,
+      "max_kl": 0.24805577110751897,
+      "kl_ci95": [
+        0.001949170799739942,
+        0.005451341016396471
+      ],
+      "top1_ci95": [
+        0.95703125,
+        0.9921875
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.73928009881638,
+      "selections": 3570,
+      "k_blocks": 385,
+      "attended_tokens_selecting_layers": 24768,
+      "dense_layers": 2
+    },
+    {
+      "offset": 0,
+      "policy": "quest",
+      "budget": 0.5,
+      "positions": 256,
+      "top1_agreement": 0.94921875,
+      "mean_kl": 0.009585249237158368,
+      "max_kl": 0.4020814279568489,
+      "kl_ci95": [
+        0.007136083524102717,
+        0.013482616472497067
+      ],
+      "top1_ci95": [
+        0.921875,
+        0.97265625
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.641393299563788,
+      "selections": 3570,
+      "k_blocks": 256,
+      "attended_tokens_selecting_layers": 16512,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "quest",
+      "budget": 0.75,
+      "positions": 256,
+      "top1_agreement": 0.95703125,
+      "mean_kl": 0.0033700679338258713,
+      "max_kl": 0.035571408435471394,
+      "kl_ci95": [
+        0.0028839210717728284,
+        0.003937500615386891
+      ],
+      "top1_ci95": [
+        0.9296875,
+        0.98046875
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.649968396872282,
+      "selections": 3570,
+      "k_blocks": 385,
+      "attended_tokens_selecting_layers": 24768,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "block_full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_update_s": 0.46687370107974857,
+      "host_observe_s": 0.0,
+      "seals": 48,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 516,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "offset": 60000,
+      "policy": "quest",
+      "budget": 0.5,
+      "positions": 256,
+      "top1_agreement": 0.953125,
+      "mean_kl": 0.009233170921038468,
+      "max_kl": 0.13631597576757176,
+      "kl_ci95": [
+        0.007851639759918188,
+        0.010865575800160211
+      ],
+      "top1_ci95": [
+        0.92578125,
+        0.9765625
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.848295399453491,
+      "selections": 3570,
+      "k_blocks": 256,
+      "attended_tokens_selecting_layers": 16512,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664
+    }
+  ],
+  "wall_s": 1291.2816300999839,
+  "prefill_wall_s": [
+    7.539582299999893,
+    7.191215300001204,
+    7.218652600073256,
+    7.406856000074185,
+    7.2476223999401554,
+    7.424009000067599,
+    7.281271899933927,
+    7.3067140999482945,
+    7.243800999945961,
+    7.231085699982941,
+    7.387348400079645,
+    8.680111900088377,
+    9.76187129993923,
+    8.640470499987714,
+    7.54809940000996,
+    7.298621700028889,
+    7.993626799900085,
+    7.294868299970403,
+    7.255447300034575,
+    7.312418700079434,
+    7.592950599966571,
+    7.234921199968085,
+    7.225415900000371,
+    7.236451799981296,
+    7.555131300003268,
+    7.522190500050783,
+    7.616895899991505,
+    7.6318194000050426,
+    7.685092799947597,
+    7.3043410000391304,
+    7.255502799991518,
+    8.007518199970946,
+    7.282119000097737,
+    8.453290999983437,
+    7.219192899996415,
+    7.213044100091793,
+    7.209903799928725,
+    7.227993099950254,
+    7.268245100043714,
+    7.222480299999006,
+    7.3095483999932185,
+    7.289080000016838,
+    7.253248000051826,
+    7.4196152000222355,
+    7.640577999991365,
+    7.616338499938138,
+    7.643125100061297,
+    7.457914300030097,
+    7.38641350006219,
+    7.612535700085573,
+    7.343493500025943,
+    7.709303799900226,
+    7.294348999974318,
+    7.235804500058293,
+    7.268097300082445,
+    7.34702629991807,
+    7.256283299997449,
+    7.323559099924751,
+    7.365798200014979,
+    8.91751870000735,
+    9.530683399992995,
+    7.307799200061709,
+    7.380187699920498,
+    7.368874799925834,
+    7.367192400037311,
+    7.350808899966069,
+    7.33173810003791,
+    7.611108400044031,
+    7.969415299943648,
+    7.354985499987379,
+    7.757141400012188,
+    7.504211799940094,
+    7.944077700027265,
+    7.5818887000204995,
+    7.692215100047179,
+    7.778465599985793,
+    7.304795100004412
+  ],
+  "prefill_scorer": null,
+  "memory_guard": {
+    "allocator_cap": {
+      "free_bytes_at_cap": 4834983936,
+      "total_bytes": 8546484224,
+      "margin_bytes": 268435456,
+      "fraction": 0.8285317731138189,
+      "limit_bytes": 7081033728
+    },
+    "shared_baseline_bytes": 81788928,
+    "shared_after_bytes": 81788928
+  }
+}

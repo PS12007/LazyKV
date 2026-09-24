@@ -1,0 +1,738 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-24T22:33:20+00:00",
+    "git_commit": "e5fd56638c0a3715beb9dac06f0cd4968e275241",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts/analyze_phase9.py"
+    ],
+    "python": "3.12.10"
+  },
+  "sources": [
+    {
+      "chunk": "niah_s00",
+      "sample_start": 0,
+      "samples": 5,
+      "wall_s": 1291.2816300999839,
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-24T21:37:45+00:00",
+      "git_commit": "2660880b30f73d2f918a5e95dc1c55667af8ee7d",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase9.yaml",
+        "--samples",
+        "5",
+        "--sample-start",
+        "0",
+        "--out",
+        "niah_s00"
+      ],
+      "python": "3.12.10"
+    },
+    {
+      "chunk": "niah_s05",
+      "sample_start": 5,
+      "samples": 5,
+      "wall_s": 1084.015364299994,
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-24T21:56:10+00:00",
+      "git_commit": "2660880b30f73d2f918a5e95dc1c55667af8ee7d",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase9.yaml",
+        "--samples",
+        "5",
+        "--sample-start",
+        "5",
+        "--skip-teacher-forced",
+        "--out",
+        "niah_s05"
+      ],
+      "python": "3.12.10"
+    },
+    {
+      "chunk": "niah_s10",
+      "sample_start": 10,
+      "samples": 5,
+      "wall_s": 1082.9665781999938,
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-24T22:14:37+00:00",
+      "git_commit": "2660880b30f73d2f918a5e95dc1c55667af8ee7d",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase9.yaml",
+        "--samples",
+        "5",
+        "--sample-start",
+        "10",
+        "--skip-teacher-forced",
+        "--out",
+        "niah_s10"
+      ],
+      "python": "3.12.10"
+    },
+    {
+      "chunk": "niah_s15",
+      "sample_start": 15,
+      "samples": 5,
+      "wall_s": 1069.4321824000217,
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-24T22:32:49+00:00",
+      "git_commit": "2660880b30f73d2f918a5e95dc1c55667af8ee7d",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase9.yaml",
+        "--samples",
+        "5",
+        "--sample-start",
+        "15",
+        "--skip-teacher-forced",
+        "--out",
+        "niah_s15"
+      ],
+      "python": "3.12.10"
+    }
+  ],
+  "conditions": {
+    "quest_75": {
+      "policy": "quest",
+      "budget": 0.75,
+      "prompts": 300,
+      "accuracy": 0.9083333333333333,
+      "full_accuracy": 0.9175,
+      "retention": 0.9900090826521344,
+      "retention_ci95": [
+        0.9764492753623188,
+        1.0017937219730941
+      ],
+      "ci_width_pp": 2.5344446610775284,
+      "verdict": "unresolved",
+      "worse": 12,
+      "better": 6,
+      "discordant": 18,
+      "sign_test_p": 0.237884521484375,
+      "margin_prompts": 0.0024999999999977263,
+      "prompts_to_resolve": 582349656.1952826,
+      "by_kind": {
+        "multikey": {
+          "prompts": 100,
+          "retention": 0.9787234042553191,
+          "worse": 2,
+          "better": 0
+        },
+        "multivalue": {
+          "prompts": 100,
+          "retention": 0.9907692307692307,
+          "worse": 10,
+          "better": 6
+        },
+        "single": {
+          "prompts": 100,
+          "retention": 1.0,
+          "worse": 0,
+          "better": 0
+        }
+      },
+      "prefixes": [
+        {
+          "samples": 3,
+          "prompts": 45,
+          "accuracy": 0.8777777777777778,
+          "full_accuracy": 0.8888888888888888,
+          "retention": 0.9875,
+          "retention_ci95": [
+            0.9230769230769231,
+            1.038709677419355
+          ],
+          "ci_width_pp": 11.563275434243181,
+          "verdict": "unresolved",
+          "worse": 2,
+          "better": 2,
+          "discordant": 4,
+          "sign_test_p": 1.0,
+          "margin_prompts": -0.10000000000000142,
+          "prompts_to_resolve": 24054.937750356137
+        },
+        {
+          "samples": 5,
+          "prompts": 75,
+          "accuracy": 0.9033333333333333,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 0.9890510948905109,
+          "retention_ci95": [
+            0.9505703422053232,
+            1.0186567164179106
+          ],
+          "ci_width_pp": 6.808637421258734,
+          "verdict": "unresolved",
+          "worse": 3,
+          "better": 2,
+          "discordant": 5,
+          "sign_test_p": 1.0,
+          "margin_prompts": -0.06499999999999773,
+          "prompts_to_resolve": 98285.22865792869
+        },
+        {
+          "samples": 10,
+          "prompts": 150,
+          "accuracy": 0.9033333333333333,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 0.9890510948905109,
+          "retention_ci95": [
+            0.9690346083788707,
+            1.005586592178771
+          ],
+          "ci_width_pp": 3.6551983799900323,
+          "verdict": "unresolved",
+          "worse": 7,
+          "better": 3,
+          "discordant": 10,
+          "sign_test_p": 0.34375,
+          "margin_prompts": -0.12999999999999545,
+          "prompts_to_resolve": 59198.43905434586
+        },
+        {
+          "samples": 15,
+          "prompts": 225,
+          "accuracy": 0.9055555555555556,
+          "full_accuracy": 0.9177777777777778,
+          "retention": 0.986682808716707,
+          "retention_ci95": [
+            0.9689366786140979,
+            1.0012269938650307
+          ],
+          "ci_width_pp": 3.2290315250932733,
+          "verdict": "unresolved",
+          "worse": 10,
+          "better": 4,
+          "discordant": 14,
+          "sign_test_p": 0.1795654296875,
+          "margin_prompts": -0.6850000000000023,
+          "prompts_to_resolve": 5349.130485005813
+        },
+        {
+          "samples": 20,
+          "prompts": 300,
+          "accuracy": 0.9083333333333333,
+          "full_accuracy": 0.9175,
+          "retention": 0.9900090826521344,
+          "retention_ci95": [
+            0.9764492753623188,
+            1.0017937219730941
+          ],
+          "ci_width_pp": 2.5344446610775284,
+          "verdict": "unresolved",
+          "worse": 12,
+          "better": 6,
+          "discordant": 18,
+          "sign_test_p": 0.237884521484375,
+          "margin_prompts": 0.0024999999999977263,
+          "prompts_to_resolve": 582349656.1952826
+        }
+      ]
+    },
+    "quest_50": {
+      "policy": "quest",
+      "budget": 0.5,
+      "prompts": 300,
+      "accuracy": 0.8891666666666667,
+      "full_accuracy": 0.9175,
+      "retention": 0.9691189827429609,
+      "retention_ci95": [
+        0.9469424460431655,
+        0.989100817438692
+      ],
+      "ci_width_pp": 4.215837139552658,
+      "verdict": "fails",
+      "worse": 23,
+      "better": 10,
+      "discordant": 33,
+      "sign_test_p": 0.03508203336969018,
+      "margin_prompts": -5.747500000000002,
+      "prompts_to_resolve": 303.70244899735275,
+      "by_kind": {
+        "multikey": {
+          "prompts": 100,
+          "retention": 0.9361702127659575,
+          "worse": 6,
+          "better": 0
+        },
+        "multivalue": {
+          "prompts": 100,
+          "retention": 0.9815384615384616,
+          "worse": 16,
+          "better": 10
+        },
+        "single": {
+          "prompts": 100,
+          "retention": 0.99,
+          "worse": 1,
+          "better": 0
+        }
+      },
+      "prefixes": [
+        {
+          "samples": 3,
+          "prompts": 45,
+          "accuracy": 0.8444444444444444,
+          "full_accuracy": 0.8888888888888888,
+          "retention": 0.95,
+          "retention_ci95": [
+            0.8682634730538922,
+            1.0186335403726707
+          ],
+          "ci_width_pp": 15.037006731877856,
+          "verdict": "unresolved",
+          "worse": 5,
+          "better": 2,
+          "discordant": 7,
+          "sign_test_p": 0.453125,
+          "margin_prompts": -1.6000000000000014,
+          "prompts_to_resolve": 164.47750588156933
+        },
+        {
+          "samples": 5,
+          "prompts": 75,
+          "accuracy": 0.8633333333333333,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 0.9452554744525548,
+          "retention_ci95": [
+            0.8884892086330936,
+            0.9927797833935018
+          ],
+          "ci_width_pp": 10.429057476040827,
+          "verdict": "unresolved",
+          "worse": 9,
+          "better": 2,
+          "discordant": 11,
+          "sign_test_p": 0.0654296875,
+          "margin_prompts": -3.0649999999999977,
+          "prompts_to_resolve": 107.71510049374555
+        },
+        {
+          "samples": 10,
+          "prompts": 150,
+          "accuracy": 0.8716666666666667,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 0.9543795620437956,
+          "retention_ci95": [
+            0.9162112932604736,
+            0.9870609981515711
+          ],
+          "ci_width_pp": 7.084970489109754,
+          "verdict": "fails",
+          "worse": 15,
+          "better": 5,
+          "discordant": 20,
+          "sign_test_p": 0.04138946533203125,
+          "margin_prompts": -4.8799999999999955,
+          "prompts_to_resolve": 145.80614773755923
+        },
+        {
+          "samples": 15,
+          "prompts": 225,
+          "accuracy": 0.8855555555555555,
+          "full_accuracy": 0.9177777777777778,
+          "retention": 0.9648910411622276,
+          "retention_ci95": [
+            0.9371980676328503,
+            0.9891566265060241
+          ],
+          "ci_width_pp": 5.19585588731738,
+          "verdict": "fails",
+          "worse": 19,
+          "better": 8,
+          "discordant": 27,
+          "sign_test_p": 0.052238985896110535,
+          "margin_prompts": -5.185000000000002,
+          "prompts_to_resolve": 238.54337155207108
+        },
+        {
+          "samples": 20,
+          "prompts": 300,
+          "accuracy": 0.8891666666666667,
+          "full_accuracy": 0.9175,
+          "retention": 0.9691189827429609,
+          "retention_ci95": [
+            0.9469424460431655,
+            0.989100817438692
+          ],
+          "ci_width_pp": 4.215837139552658,
+          "verdict": "fails",
+          "worse": 23,
+          "better": 10,
+          "discordant": 33,
+          "sign_test_p": 0.03508203336969018,
+          "margin_prompts": -5.747500000000002,
+          "prompts_to_resolve": 303.70244899735275
+        }
+      ]
+    },
+    "block_full_100": {
+      "policy": "block_full",
+      "budget": 1.0,
+      "prompts": 300,
+      "accuracy": 0.9175,
+      "full_accuracy": 0.9175,
+      "retention": 1.0,
+      "retention_ci95": [
+        1.0,
+        1.0
+      ],
+      "ci_width_pp": 0.0,
+      "verdict": "meets",
+      "worse": 0,
+      "better": 0,
+      "discordant": 0,
+      "sign_test_p": 1.0,
+      "margin_prompts": 2.7524999999999977,
+      "prompts_to_resolve": 300.0,
+      "by_kind": {
+        "multikey": {
+          "prompts": 100,
+          "retention": 1.0,
+          "worse": 0,
+          "better": 0
+        },
+        "multivalue": {
+          "prompts": 100,
+          "retention": 1.0,
+          "worse": 0,
+          "better": 0
+        },
+        "single": {
+          "prompts": 100,
+          "retention": 1.0,
+          "worse": 0,
+          "better": 0
+        }
+      },
+      "prefixes": [
+        {
+          "samples": 3,
+          "prompts": 45,
+          "accuracy": 0.8888888888888888,
+          "full_accuracy": 0.8888888888888888,
+          "retention": 1.0,
+          "retention_ci95": [
+            1.0,
+            1.0
+          ],
+          "ci_width_pp": 0.0,
+          "verdict": "meets",
+          "worse": 0,
+          "better": 0,
+          "discordant": 0,
+          "sign_test_p": 1.0,
+          "margin_prompts": 0.3999999999999986,
+          "prompts_to_resolve": 45.0
+        },
+        {
+          "samples": 5,
+          "prompts": 75,
+          "accuracy": 0.9133333333333333,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 1.0,
+          "retention_ci95": [
+            1.0,
+            1.0
+          ],
+          "ci_width_pp": 0.0,
+          "verdict": "meets",
+          "worse": 0,
+          "better": 0,
+          "discordant": 0,
+          "sign_test_p": 1.0,
+          "margin_prompts": 0.6850000000000023,
+          "prompts_to_resolve": 75.0
+        },
+        {
+          "samples": 10,
+          "prompts": 150,
+          "accuracy": 0.9133333333333333,
+          "full_accuracy": 0.9133333333333333,
+          "retention": 1.0,
+          "retention_ci95": [
+            1.0,
+            1.0
+          ],
+          "ci_width_pp": 0.0,
+          "verdict": "meets",
+          "worse": 0,
+          "better": 0,
+          "discordant": 0,
+          "sign_test_p": 1.0,
+          "margin_prompts": 1.3700000000000045,
+          "prompts_to_resolve": 150.0
+        },
+        {
+          "samples": 15,
+          "prompts": 225,
+          "accuracy": 0.9177777777777778,
+          "full_accuracy": 0.9177777777777778,
+          "retention": 1.0,
+          "retention_ci95": [
+            1.0,
+            1.0
+          ],
+          "ci_width_pp": 0.0,
+          "verdict": "meets",
+          "worse": 0,
+          "better": 0,
+          "discordant": 0,
+          "sign_test_p": 1.0,
+          "margin_prompts": 2.0649999999999977,
+          "prompts_to_resolve": 225.0
+        },
+        {
+          "samples": 20,
+          "prompts": 300,
+          "accuracy": 0.9175,
+          "full_accuracy": 0.9175,
+          "retention": 1.0,
+          "retention_ci95": [
+            1.0,
+            1.0
+          ],
+          "ci_width_pp": 0.0,
+          "verdict": "meets",
+          "worse": 0,
+          "better": 0,
+          "discordant": 0,
+          "sign_test_p": 1.0,
+          "margin_prompts": 2.7524999999999977,
+          "prompts_to_resolve": 300.0
+        }
+      ]
+    }
+  },
+  "phase8_reproduction": {
+    "compared": 180,
+    "identical": 180,
+    "reproduces": true
+  },
+  "teacher_forced": [
+    {
+      "offset": 0,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664
+    },
+    {
+      "offset": 0,
+      "policy": "block_full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_update_s": 0.4885326971998438,
+      "host_observe_s": 0.0,
+      "seals": 48,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 516,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "offset": 0,
+      "policy": "quest",
+      "budget": 0.75,
+      "positions": 256,
+      "top1_agreement": 0.9765625,
+      "mean_kl": 0.003201574014085891,
+      "max_kl": 0.24805577110751897,
+      "kl_ci95": [
+        0.001949170799739942,
+        0.005451341016396471
+      ],
+      "top1_ci95": [
+        0.95703125,
+        0.9921875
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.73928009881638,
+      "selections": 3570,
+      "k_blocks": 385,
+      "attended_tokens_selecting_layers": 24768,
+      "dense_layers": 2
+    },
+    {
+      "offset": 0,
+      "policy": "quest",
+      "budget": 0.5,
+      "positions": 256,
+      "top1_agreement": 0.94921875,
+      "mean_kl": 0.009585249237158368,
+      "max_kl": 0.4020814279568489,
+      "kl_ci95": [
+        0.007136083524102717,
+        0.013482616472497067
+      ],
+      "top1_ci95": [
+        0.921875,
+        0.97265625
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.641393299563788,
+      "selections": 3570,
+      "k_blocks": 256,
+      "attended_tokens_selecting_layers": 16512,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "quest",
+      "budget": 0.75,
+      "positions": 256,
+      "top1_agreement": 0.95703125,
+      "mean_kl": 0.0033700679338258713,
+      "max_kl": 0.035571408435471394,
+      "kl_ci95": [
+        0.0028839210717728284,
+        0.003937500615386891
+      ],
+      "top1_ci95": [
+        0.9296875,
+        0.98046875
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.649968396872282,
+      "selections": 3570,
+      "k_blocks": 385,
+      "attended_tokens_selecting_layers": 24768,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "block_full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_update_s": 0.46687370107974857,
+      "host_observe_s": 0.0,
+      "seals": 48,
+      "evictions": 0,
+      "boundary_evicted_blocks": 0,
+      "n_slots": 516,
+      "layers_with_block0_resident": 16
+    },
+    {
+      "offset": 60000,
+      "policy": "quest",
+      "budget": 0.5,
+      "positions": 256,
+      "top1_agreement": 0.953125,
+      "mean_kl": 0.009233170921038468,
+      "max_kl": 0.13631597576757176,
+      "kl_ci95": [
+        0.007851639759918188,
+        0.010865575800160211
+      ],
+      "top1_ci95": [
+        0.92578125,
+        0.9765625
+      ],
+      "exact_match": false,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 2.848295399453491,
+      "selections": 3570,
+      "k_blocks": 256,
+      "attended_tokens_selecting_layers": 16512,
+      "dense_layers": 2
+    },
+    {
+      "offset": 60000,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "gpu_resident_kv_bytes": 1082097664
+    }
+  ],
+  "summary": {
+    "context": 32768,
+    "bar": 0.99,
+    "samples_per_cell": 20,
+    "prompts": 300,
+    "phase8_prompts": 45,
+    "full_accuracy": 0.9175,
+    "verdicts": {
+      "quest_75": "unresolved",
+      "quest_50": "fails"
+    },
+    "verdicts_at_phase8_n": {
+      "quest_75": "unresolved",
+      "quest_50": "unresolved"
+    },
+    "min_budget_meeting_bar": null,
+    "any_unresolved": true,
+    "control_verdict": "meets",
+    "phase8_reproduces": true,
+    "phase8_rows_compared": 180,
+    "wall_s": 4527.695754999993
+  }
+}
