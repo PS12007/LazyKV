@@ -1,0 +1,59 @@
+# Phase 9: resolving the headline bar with more prompts.
+#
+# Phase 8 left the study's headline in an awkward state: the query-aware rungs land within a
+# fraction of one prompt of the 99% retention bar at every context, on alternating sides, so at 45
+# prompts the bar cannot say whether a budget passes. The only remedy is a larger paired sample.
+#
+# The decision rule is fixed here, before the run, so the run cannot be read to fit it:
+#
+#   retention R = sum(quest score) / sum(full score) over the same prompts, and its 95% CI is a
+#   paired percentile bootstrap that resamples prompts (both conditions move together).
+#     meets the bar   CI lower bound >= 0.99
+#     fails the bar   CI upper bound <  0.99
+#     unresolved      otherwise -- reported as such, with the prompt count the observed
+#                     discordance rate says would resolve it.
+#
+# What is deliberately held fixed, and why:
+#   - 32,768 tokens only. The headline is defined at 32K (brief §B8), and Phase 8 already showed the
+#     budget fraction travels across context; this phase is about the noise floor, not the axis.
+#   - Rung 5 (quest) only. Rung 6 is rung 5's selection over a CPU tier and was bit-identical to it
+#     in every cell of Phases 4-8, so its quality half would be a second copy of this measurement
+#     at twice the machine time.
+#   - Budgets 75% and 50%, the two that straddle the bar at 45 prompts. 25% and below miss it by
+#     more than any sampling error at this N could explain.
+#   - Samples 0-2 are Phase 8's 45 prompts exactly (a prompt is keyed by its sample index), so the
+#     first chunk doubles as a reproducibility check against Phase 8's 32K column.
+phase: phase9
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+context: 32768
+
+budgets: [0.75, 0.5]
+policies: [quest]
+
+# Run as chunks of `chunk_samples` via --sample-start; `samples` is the total per kind x depth.
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 20
+  chunk_samples: 5
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+# Run once, with the first chunk, for continuity with every earlier phase's quality table.
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+# The paired bootstrap behind the decision rule above.
+bar: 0.99
+bootstrap:
+  iters: 10000
+  seed: 0
