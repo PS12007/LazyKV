@@ -38,6 +38,7 @@ OUTPUTS = {
     "PHASE_6.md.tmpl": "docs/phases/PHASE_6.md",
     "PHASE_7.md.tmpl": "docs/phases/PHASE_7.md",
     "PHASE_8.md.tmpl": "docs/phases/PHASE_8.md",
+    "PHASE_9.md.tmpl": "docs/phases/PHASE_9.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1759,6 +1760,89 @@ def block_p8_provenance(ctx: Mapping[str, Any]) -> str:
         if isinstance(pr, Mapping):
             rows.append(_provenance_row(f"Budget speed, 64K, run {i} (§4)", pr))
     return table(["Experiment", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+# ---- Phase 9 -----------------------------------------------------------------------------
+
+
+def _ci(ci: Any) -> str:
+    return f"{100 * ci[0]:.1f}–{100 * ci[1]:.1f}%" if isinstance(ci, list) and len(ci) == 2 else NOT_MEASURED
+
+
+def _to_resolve(n: Any) -> str:
+    # An order of magnitude by construction (see harness.stats.prompts_to_resolve), so rounded to
+    # two significant figures; None means the observed retention sits on the bar.
+    if n is None:
+        return "unbounded (on the bar)"
+    return f"~{float(f'{n:.2g}'):,.0f}"
+
+
+def block_p9_verdicts(ctx: Mapping[str, Any]) -> str:
+    """The pre-registered rule applied to every condition, with what the width is made of."""
+    conds = lookup(ctx, "phase9.analysis.conditions")
+    if not isinstance(conds, Mapping) or not conds:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in conds.values():
+        rows.append([
+            POLICY_NAMES.get(c["policy"], c["policy"]),
+            _pct_budget(c["budget"]),
+            f"{c['prompts']:,}",
+            f"{100 * c['retention']:.1f}%",
+            _ci(c["retention_ci95"]),
+            f"**{c['verdict']}**",
+            f"{c['worse']} / {c['better']}",
+            f"{c['sign_test_p']:.2g}",
+            _to_resolve(c["prompts_to_resolve"]),
+        ])
+    header = ["Policy", "Budget", "Prompts", "Retention", "95% CI (paired)", "Verdict", "Worse / better than full", "Sign test p", "Prompts to resolve"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---", "---:", "---:", "---:"])
+
+
+def block_p9_prefixes(ctx: Mapping[str, Any]) -> str:
+    """The same rule at every prefix of the prompt set: is more data converging on a verdict?"""
+    conds = lookup(ctx, "phase9.analysis.conditions")
+    if not isinstance(conds, Mapping) or not conds:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in conds.values():
+        if c["policy"] == "block_full":
+            continue
+        for pr in c["prefixes"]:
+            rows.append([
+                POLICY_NAMES.get(c["policy"], c["policy"]),
+                _pct_budget(c["budget"]),
+                f"{pr['prompts']:,}" + (" (Phase 8's set)" if pr["samples"] == 3 else ""),
+                f"{100 * pr['retention']:.1f}%",
+                _ci(pr["retention_ci95"]),
+                f"{pr['ci_width_pp']:.1f} pp",
+                f"{pr['margin_prompts']:+.2f}",
+                pr["verdict"],
+            ])
+    header = ["Policy", "Budget", "Prompts", "Retention", "95% CI", "CI width", "Margin, prompts", "Verdict"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---"])
+
+
+def block_p9_by_kind(ctx: Mapping[str, Any]) -> str:
+    conds = lookup(ctx, "phase9.analysis.conditions")
+    if not isinstance(conds, Mapping) or not conds:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in conds.values():
+        if c["policy"] == "block_full":
+            continue
+        for kind, k in c["by_kind"].items():
+            rows.append([POLICY_NAMES.get(c["policy"], c["policy"]), _pct_budget(c["budget"]), kind, f"{k['prompts']:,}",
+                         f"{100 * k['retention']:.1f}%" if k["retention"] is not None else NOT_MEASURED, f"{k['worse']} / {k['better']}"])
+    return table(["Policy", "Budget", "Needle kind", "Prompts", "Retention", "Worse / better"], rows, ["---", "---:", "---", "---:", "---:", "---:"])
+
+
+def block_p9_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase9.analysis.sources")
+    if not isinstance(src, list) or not src:
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row(f"NIAH samples {s['sample_start']}–{s['sample_start'] + s['samples'] - 1}", s) for s in src]
+    return table(["Chunk", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
