@@ -76,6 +76,9 @@ def main() -> None:
     # chunks that each write their own metrics, so a crash costs one chunk rather than the run.
     p.add_argument("--sample-start", type=int, default=0, help="first NIAH sample index (chunked runs)")
     p.add_argument("--skip-teacher-forced", action="store_true", help="NIAH only (every chunk after the first)")
+    # The 100% block-pool control is a second full-size copy of the KV. On the 3B model at 32K that
+    # copy does not fit beside the reference (as at 64K on the 1B model, Phase 8), so it can be dropped.
+    p.add_argument("--skip-block-full", action="store_true", help="drop the 100%% block-pool control")
     p.add_argument("--out", default="policy_quality")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -95,9 +98,10 @@ def main() -> None:
     ctx = args.context or cfg["context"]
     samples = args.samples or cfg["niah"]["samples"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
-    conds = conditions(cfg)
+    conds = conditions(cfg, skip_block_full=args.skip_block_full)
 
-    lm = load(cfg["model"]["repo"], cfg["model"]["revision"], strategy=QUALITY_STRATEGY)
+    lm = load(cfg["model"]["repo"], cfg["model"]["revision"], strategy=QUALITY_STRATEGY,
+              cache_dir=cfg["model"].get("cache_dir"), quant=cfg["model"].get("quant"))
     set_strategy_for_test(QUALITY_STRATEGY)
     memory_cap = cap_allocator_to_dedicated()
     shared_baseline = process_gpu_memory().shared_bytes
