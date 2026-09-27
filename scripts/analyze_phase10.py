@@ -198,6 +198,9 @@ def main() -> None:
         # Conditions whose whole CI excludes no change, at the longest context (either direction).
         "resolved_worse_longest": sorted(label(c["policy"], c["budget"]) for c in policy_conds if c["nll_delta_ci95"][0] > 0),
         "resolved_better_longest": sorted(label(c["policy"], c["budget"]) for c in policy_conds if c["nll_delta_ci95"][1] < 0),
+        "resolved_worse_count_longest": sum(1 for c in policy_conds if c["nll_delta_ci95"][0] > 0),
+        "resolved_better_count_longest": sum(1 for c in policy_conds if c["nll_delta_ci95"][1] < 0),
+        "largest_budget_resolved_worse_longest": max((c["budget"] for c in policy_conds if c["nll_delta_ci95"][0] > 0), default=None),
         "niah_joined_conditions": len(joined),
         "ppl_blind_conditions": sorted(label(c["policy"], c["budget"]) for c in blind),
         "ppl_blind_count": len(blind),
