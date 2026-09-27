@@ -1,10 +1,12 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-27T19:17:16+00:00",
-    "git_commit": "977aad2326f6f326ff9f7135039382a7c65893b1",
-    "git_dirty": false,
-    "git_dirty_files": [],
+    "generated_at_utc": "2026-09-27T19:26:32+00:00",
+    "git_commit": "ee8f92d4ae8a47ba2c59a6b0c8af53ddc02d0bb3",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "scripts/render_docs.py"
+    ],
     "argv": [
       "scripts/analyze_phase13.py"
     ],
@@ -106,6 +108,7 @@
         -0.2110391363022941,
         -0.026415094339622636
       ],
+      "verdict": "not established",
       "phase12_separated_at_30": false,
       "phase12_gap_at_30": -0.23834808259587026
     },
@@ -166,6 +169,7 @@
         -0.2964214711729622,
         -0.09938697318007667
       ],
+      "verdict": "established",
       "phase12_separated_at_30": false,
       "phase12_gap_at_30": -0.2725663716814159
     }
