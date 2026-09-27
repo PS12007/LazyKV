@@ -12,10 +12,11 @@ degrades gracefully and predictably with the budget, and the best *approximating
 98.8% of the full cache's retrieval accuracy at a
 75% budget — but **no approximating policy on
 the ladder retains 99% of full-cache accuracy at any budget below 100%**, which was the bar the brief
-set. That miss is inside this study's resolution rather than safely beyond it:
-[Phase 8](phases/PHASE_8.md) puts the best rungs within one prompt of the bar at four separate
-context lengths, landing on either side. Memory can be bought back almost linearly; the last percent
-of accuracy cannot be, by skipping.
+set. [Phase 8](phases/PHASE_8.md) put the best rungs within one prompt of the bar at four separate
+context lengths, landing on either side, so [Phase 9](phases/PHASE_9.md) reran rung 5 on
+300 paired prompts: at a 50% budget it **fails** the bar
+outright, and at 75% it sits *on* it: six times the prompts narrowed the interval without moving it.
+Memory can be bought back almost linearly; the last percent of accuracy cannot be, by skipping.
 
 It can be bought another way. Rung 9 does not skip the non-resident blocks: it attends to them on the
 CPU and merges the two partial attentions exactly, so it reproduces the full cache at a
@@ -31,7 +32,8 @@ by moving it — and rung 9 is that finding again, at a larger scale.
 Individual gate reports carry the detail and the provenance:
 [Phase 0](phases/PHASE_0.md) · [Phase 1](phases/PHASE_1.md) · [Phase 2](phases/PHASE_2.md) ·
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
-[Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md).
+[Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
+[Phase 9](phases/PHASE_9.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -65,6 +67,26 @@ they land on alternates. So the sentence above should be read as "this study can
 rungs relative to the 99% bar", not as "these rungs fall short of it". The two rungs that *are*
 resolvable stay resolvable at every context: the window with a sink misses by 13 to 17 prompts, and
 rung 9 clears at the smallest budget swept.
+
+**[Phase 9](phases/PHASE_9.md) placed rung 5 as far as NIAH can.** It reran the two budgets that
+straddle the bar on 300 paired prompts at
+32,768 tokens, under a decision rule committed before the run:
+
+| Policy | Budget | Prompts | Retention | 95% CI (paired) | Verdict | Worse / better than full | Sign test p | Prompts to resolve |
+| --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: |
+| Quest-style (rung 5) | 75% | 300 | 99.0% | 97.6–100.2% | **unresolved** | 12 / 6 | 0.24 | ~580,000,000 |
+| Quest-style (rung 5) | 50% | 300 | 96.9% | 94.7–98.9% | **fails** | 23 / 10 | 0.035 | ~300 |
+| Block pool, 100% | 100% | 300 | 100.0% | 100.0–100.0% | **meets** | 0 / 0 | 1 | n/a (no discordant prompts) |
+
+At a 50% budget rung 5 **fails**: retention
+96.9%, and the whole paired 95% CI
+(94.7%–98.9%)
+sits below 99%. At 75% it retains
+99.0% — the bar itself — with a CI of
+97.6%–100.2%.
+Six times the prompts narrowed that interval without moving it off the line, so the defensible
+headline for rung 5 at 75% is the interval, not a pass or a fail. The 99% bar is finer than NIAH can
+resolve on this machine for any policy that lands near it.
 
 **One rung clears it, and it is the one that does not approximate.** Rung 9 computes attention over
 the non-resident blocks where they already live — on the CPU — and merges the two partial results
@@ -287,6 +309,8 @@ claim in this study is quoted with a range over independent runs.
 - **45 prompts is a wide confidence interval.** The per-condition CIs in
   §3 span several percentage points. Differences smaller than that are not resolvable, which is why
   Phase 5's apparent int8 improvement is reported as noise with a paired test rather than as a win.
+  Only rung 5 at 50% and 75% was rerun on 300 prompts
+  (Phase 9); every other cell of the frontier is still at 45.
 - **Rung 9 is exact in the algebra, not in the bits.** Its GPU half runs the bf16 kernel and its CPU
   half runs float32, so it agrees with the full cache to a teacher-forced KL of about
   1e-03 nats rather than to zero, and its
