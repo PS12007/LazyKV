@@ -463,6 +463,7 @@ here rather than cited from code with no provenance. **Both verified by a live l
 | **RULER** | arXiv [2404.06654](https://arxiv.org/abs/2404.06654) | Single- and multi-needle task definitions. RULER's own finding is that vanilla NIAH is only a superficial long-context test, so LazyKV will not rely on NIAH alone |
 | **LongBench** | arXiv [2308.14508](https://arxiv.org/abs/2308.14508) | Task accuracy on a few subsets, if time allows (§B7.4) |
 | **InfiniteBench (∞Bench)** | arXiv [2402.13718](https://arxiv.org/abs/2402.13718) | 100K+ tasks. Likely beyond this 8 GB GPU's reach at bf16; used only where the context fits |
+| **LongPPL** ("What is Wrong with Perplexity for Long-context Language Modeling?", ICLR 2025) | arXiv [2410.23771](https://arxiv.org/abs/2410.23771) | Not run. It is the prior result Phase 10 lands on: perplexity averages over all tokens, and the few tokens that need distant context are too rare to move it, so it barely tracks long-context ability. LongPPL scores only key tokens found by contrasting long and short context. Phase 10 uses plain perplexity (the brief's §B7.3 metric) and reports how little it resolves, rather than switching metrics after the fact. (Verified 2026-09-26 by web search: arXiv abstract and ICLR 2025 proceedings.) |
 
 ---
 
