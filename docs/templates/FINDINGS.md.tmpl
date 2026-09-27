@@ -31,7 +31,7 @@ Individual gate reports carry the detail and the provenance:
 [Phase 0](phases/PHASE_0.md) · [Phase 1](phases/PHASE_1.md) · [Phase 2](phases/PHASE_2.md) ·
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
-[Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md).
+[Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md) · [Phase 11](phases/PHASE_11.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -154,7 +154,7 @@ Five independent attacks on bytes moved, none of which made decode faster:
 | Double the VRAM slots, cutting on-demand fetches roughly tenfold | 4 | ~5% faster |
 | Layer-ahead prefetch, hiding 100% of copies inside the compute window | 4 | **slower** than synchronous fetch |
 | int8 warm/cold tier, halving the bytes on the wire | 5 | **{{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× slower** |
-| Removing the per-layer host sync entirely (replay ablation) | 6 | {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}× faster, and that is the ceiling (optimistic: see the erratum below) |
+| Removing the per-layer host sync entirely (replay ablation) | 6, 11 | {{ phase11.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.summary.ceiling_speedup.max | .2f }}× faster, and that is the ceiling |
 | Removing the transfer altogether: attend to the cold blocks where they are (rung 9) | 7 | **{{ phase7.analysis.summary.over_approx.min | .2f }}–{{ phase7.analysis.summary.over_approx.max | .2f }}× slower**, and exact |
 
 The last row is the argument's end point. Rung 9 moves no KV at all — only
@@ -179,21 +179,27 @@ per token.
 **The ceiling on fixing it is measured, not guessed.** A replay ablation records each layer's
 selection and decodes again driven by that record, so the bound and its sync never run while the
 blocks fetched stay identical. Removing them is worth
-{{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×.
+{{ phase11.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.summary.ceiling_speedup.max | .2f }}×,
+over {{ phase11.ceiling.summary.runs | int }} independent runs at every budget
+([Phase 11](phases/PHASE_11.md)).
 Removing *all* host select time would be
 {{ phase5.ceiling.summary.arithmetic_ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.arithmetic_ceiling_speedup.max | .2f }}×,
 but that figure is arithmetic rather than measured and this project has twice found such arithmetic
-wrong. Either way the full cache decodes a token in
-{{ phase5.ceiling.summary.full_decode_ms | .1f }} ms, so a device-side residency decision would close
-part of the tier's own gap and never the gap to keeping KV in VRAM.
+wrong. Either way the fastest the replay ever decodes is
+{{ phase11.ceiling.summary.replay_ms.min | .1f }} ms per token against the full cache's
+{{ phase11.ceiling.summary.full_decode_ms | .1f }} ms, so a device-side residency decision would
+narrow the tier's gap to keeping KV in VRAM and never close it.
 
-**Erratum ([Phase 9](phases/PHASE_9.md) §5): that replay raced, so the ceiling is probably
-optimistic.** The tier's pinned staging buffers are shared by every layer and were only safe because
-the per-layer index sync happened to drain each copy before the next layer refilled them. The replay
-removes that sync, so under load a step could attend to the wrong blocks, and it skipped a wait a
-correct replay must pay. The race is fixed and guarded by a test; no quality result is affected,
-since normal decode always synced. The ceiling itself has **not been re-measured** — that needs an
-idle machine — but a lower ceiling only strengthens the conclusion above.
+**These are re-measured figures.** Phase 6's replay raced ([Phase 9](phases/PHASE_9.md) §5): the
+tier's pinned staging buffers were refilled before the previous layer's copy had read them, a hazard
+normal decode never hits, so no quality result was affected. [Phase 11](phases/PHASE_11.md) re-ran
+the ablation on the fixed replay. On the
+{{ phase11.ceiling.previous.shared_conditions | int }} conditions both measured, the ceiling fell from
+{{ phase11.ceiling.previous.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.previous.ceiling_speedup.max | .2f }}×
+to {{ phase11.ceiling.previous.ceiling_speedup_now_shared.min | .2f }}–{{ phase11.ceiling.previous.ceiling_speedup_now_shared.max | .2f }}×,
+lower at {{ phase11.ceiling.previous.shrank | int }} of
+{{ phase11.ceiling.previous.shared_conditions | int }}: the direction the race predicted, and a small
+correction.
 
 ## 5. What perplexity sees, and what it misses
 

@@ -33,7 +33,7 @@ Individual gate reports carry the detail and the provenance:
 [Phase 0](phases/PHASE_0.md) · [Phase 1](phases/PHASE_1.md) · [Phase 2](phases/PHASE_2.md) ·
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
-[Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md).
+[Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md) · [Phase 11](phases/PHASE_11.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -224,7 +224,7 @@ Five independent attacks on bytes moved, none of which made decode faster:
 | Double the VRAM slots, cutting on-demand fetches roughly tenfold | 4 | ~5% faster |
 | Layer-ahead prefetch, hiding 100% of copies inside the compute window | 4 | **slower** than synchronous fetch |
 | int8 warm/cold tier, halving the bytes on the wire | 5 | **1.14× slower** |
-| Removing the per-layer host sync entirely (replay ablation) | 6 | 1.11–1.16× faster, and that is the ceiling (optimistic: see the erratum below) |
+| Removing the per-layer host sync entirely (replay ablation) | 6, 11 | 1.10–1.25× faster, and that is the ceiling |
 | Removing the transfer altogether: attend to the cold blocks where they are (rung 9) | 7 | **2.28–4.23× slower**, and exact |
 
 The last row is the argument's end point. Rung 9 moves no KV at all — only
@@ -249,21 +249,27 @@ per token.
 **The ceiling on fixing it is measured, not guessed.** A replay ablation records each layer's
 selection and decodes again driven by that record, so the bound and its sync never run while the
 blocks fetched stay identical. Removing them is worth
-1.11–1.16×.
+1.10–1.25×,
+over 3 independent runs at every budget
+([Phase 11](phases/PHASE_11.md)).
 Removing *all* host select time would be
 1.63–1.90×,
 but that figure is arithmetic rather than measured and this project has twice found such arithmetic
-wrong. Either way the full cache decodes a token in
-21.7 ms, so a device-side residency decision would close
-part of the tier's own gap and never the gap to keeping KV in VRAM.
+wrong. Either way the fastest the replay ever decodes is
+23.8 ms per token against the full cache's
+18.8 ms, so a device-side residency decision would
+narrow the tier's gap to keeping KV in VRAM and never close it.
 
-**Erratum ([Phase 9](phases/PHASE_9.md) §5): that replay raced, so the ceiling is probably
-optimistic.** The tier's pinned staging buffers are shared by every layer and were only safe because
-the per-layer index sync happened to drain each copy before the next layer refilled them. The replay
-removes that sync, so under load a step could attend to the wrong blocks, and it skipped a wait a
-correct replay must pay. The race is fixed and guarded by a test; no quality result is affected,
-since normal decode always synced. The ceiling itself has **not been re-measured** — that needs an
-idle machine — but a lower ceiling only strengthens the conclusion above.
+**These are re-measured figures.** Phase 6's replay raced ([Phase 9](phases/PHASE_9.md) §5): the
+tier's pinned staging buffers were refilled before the previous layer's copy had read them, a hazard
+normal decode never hits, so no quality result was affected. [Phase 11](phases/PHASE_11.md) re-ran
+the ablation on the fixed replay. On the
+6 conditions both measured, the ceiling fell from
+1.11–1.16×
+to 1.10–1.14×,
+lower at 6 of
+6: the direction the race predicted, and a small
+correction.
 
 ## 5. What perplexity sees, and what it misses
 
