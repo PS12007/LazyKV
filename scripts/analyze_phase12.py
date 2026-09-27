@@ -91,6 +91,10 @@ def retention(rows: list[dict[str, Any]], kind: str, policy: str, budget: float,
         "worse": worse,
         "better": better,
         "sign_test_p": sign_test_p(worse, better),
+        # Answers with some but not all required values. vt gives partial credit per variable, so a
+        # policy that keeps only the chain's later hops (which fall after its start, toward the end)
+        # scores partial answers rather than zeros; this is how that shows up.
+        "partial": sum(1 for a in num if 0 < a < 1),
         # Descriptive: for vt the depth is where the chain starts, for single where the needle sits.
         "retention_by_depth": {str(d): (sum(num[i] for i in ix) / sum(den[i] for i in ix)) if sum(den[i] for i in ix) else None
                                for d, ix in sorted(by_depth.items())},
