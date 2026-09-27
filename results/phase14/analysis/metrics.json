@@ -1,0 +1,1487 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-27T21:35:02+00:00",
+    "git_commit": "3592a2243cd1692de1d8cece50cf39561bf7b685",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts/analyze_phase14.py"
+    ],
+    "python": "3.12.10"
+  },
+  "source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-27T21:33:07+00:00",
+    "git_commit": "da2948b4c016c375ddf057aa2255fbbb2538daa6",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\05_longbench.py",
+      "--config",
+      "configs\\phase14.yaml",
+      "--out",
+      "longbench"
+    ],
+    "python": "3.12.10"
+  },
+  "tasks": {
+    "2wikimqa": {
+      "block_full_100": {
+        "policy": "block_full",
+        "budget": 1.0,
+        "prompts": 50,
+        "mean_f1": 0.2557416267942584,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "h2o_75": {
+        "policy": "h2o",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.2557416267942584,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "h2o_50": {
+        "policy": "h2o",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.25812257917521075,
+        "retention": 1.0093099915363715,
+        "retention_ci95": [
+          0.9639344262295082,
+          1.078859940549047
+        ],
+        "worse": 1,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "h2o_25": {
+        "policy": "h2o",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.2282004662004662,
+        "retention": 0.8923086517473795,
+        "retention_ci95": [
+          0.751131221719457,
+          0.9994728434504793
+        ],
+        "worse": 4,
+        "better": 0,
+        "sign_test_p": 0.125
+      },
+      "h2o_12_5": {
+        "policy": "h2o",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.22747030747030744,
+        "retention": 0.8894535876762256,
+        "retention_ci95": [
+          0.7349084158123145,
+          1.0194016638119427
+        ],
+        "worse": 4,
+        "better": 2,
+        "sign_test_p": 0.6875
+      },
+      "h2o_6_25": {
+        "policy": "h2o",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.21413697413697413,
+        "retention": 0.8373176350725462,
+        "retention_ci95": [
+          0.6262044853756289,
+          1.012282502304454
+        ],
+        "worse": 4,
+        "better": 2,
+        "sign_test_p": 0.6875
+      },
+      "quest_75": {
+        "policy": "quest",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.2557416267942584,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "quest_50": {
+        "policy": "quest",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.2557416267942584,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "quest_25": {
+        "policy": "quest",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.24907496012759173,
+        "retention": 0.9739320236981603,
+        "retention_ci95": [
+          0.8916938110749184,
+          1.0282432432432433
+        ],
+        "worse": 2,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "quest_12_5": {
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.26396969696969697,
+        "retention": 1.0321733707514813,
+        "retention_ci95": [
+          0.9430051813471503,
+          1.1300904541955352
+        ],
+        "worse": 2,
+        "better": 3,
+        "sign_test_p": 1.0
+      },
+      "quest_6_25": {
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.20957287157287158,
+        "retention": 0.8194710974505176,
+        "retention_ci95": [
+          0.6062717770034844,
+          0.9957983193277311
+        ],
+        "worse": 5,
+        "better": 2,
+        "sign_test_p": 0.453125
+      },
+      "window_sink_75": {
+        "policy": "window_sink",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.22463051568314726,
+        "retention": 0.878349443924748,
+        "retention_ci95": [
+          0.6884057971014492,
+          1.0
+        ],
+        "worse": 3,
+        "better": 0,
+        "sign_test_p": 0.25
+      },
+      "window_sink_50": {
+        "policy": "window_sink",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.24963636363636366,
+        "retention": 0.9761272217025259,
+        "retention_ci95": [
+          0.7782258064516129,
+          1.1625192848715855
+        ],
+        "worse": 3,
+        "better": 4,
+        "sign_test_p": 1.0
+      },
+      "window_sink_25": {
+        "policy": "window_sink",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.2185077086656034,
+        "retention": 0.8544080656896372,
+        "retention_ci95": [
+          0.6305555555555555,
+          1.0611944368693755
+        ],
+        "worse": 4,
+        "better": 3,
+        "sign_test_p": 1.0
+      },
+      "window_sink_12_5": {
+        "policy": "window_sink",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.21735064935064932,
+        "retention": 0.8498837364693305,
+        "retention_ci95": [
+          0.6423645320197044,
+          1.0253968253968253
+        ],
+        "worse": 5,
+        "better": 2,
+        "sign_test_p": 0.453125
+      },
+      "window_sink_6_25": {
+        "policy": "window_sink",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.21846176046176047,
+        "retention": 0.8542283991863039,
+        "retention_ci95": [
+          0.6377658241270943,
+          1.0538138659719207
+        ],
+        "worse": 5,
+        "better": 3,
+        "sign_test_p": 0.7265625
+      }
+    },
+    "hotpotqa": {
+      "block_full_100": {
+        "policy": "block_full",
+        "budget": 1.0,
+        "prompts": 50,
+        "mean_f1": 0.3545952380952381,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "h2o_75": {
+        "policy": "h2o",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.3605952380952381,
+        "retention": 1.0169207010004702,
+        "retention_ci95": [
+          1.0,
+          1.0638675340035482
+        ],
+        "worse": 0,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "h2o_50": {
+        "policy": "h2o",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.34526190476190477,
+        "retention": 0.9736789095548245,
+        "retention_ci95": [
+          0.8850023957834212,
+          1.031496062992126
+        ],
+        "worse": 1,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "h2o_25": {
+        "policy": "h2o",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.3491666666666666,
+        "retention": 0.9846907943329081,
+        "retention_ci95": [
+          0.8821689911814372,
+          1.092485549132948
+        ],
+        "worse": 3,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "h2o_12_5": {
+        "policy": "h2o",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.2963974358974359,
+        "retention": 0.8358753983544153,
+        "retention_ci95": [
+          0.6520825121534621,
+          1.0182135245107535
+        ],
+        "worse": 7,
+        "better": 3,
+        "sign_test_p": 0.34375
+      },
+      "h2o_6_25": {
+        "policy": "h2o",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.29973076923076925,
+        "retention": 0.8452757877991209,
+        "retention_ci95": [
+          0.670719646285415,
+          1.0230344911195977
+        ],
+        "worse": 6,
+        "better": 3,
+        "sign_test_p": 0.5078125
+      },
+      "quest_75": {
+        "policy": "quest",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.3545952380952381,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "quest_50": {
+        "policy": "quest",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.3585952380952381,
+        "retention": 1.0112804673336466,
+        "retention_ci95": [
+          1.0,
+          1.0385674931129476
+        ],
+        "worse": 0,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "quest_25": {
+        "policy": "quest",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.3519285714285714,
+        "retention": 0.9924796884442356,
+        "retention_ci95": [
+          0.8986700443318556,
+          1.0694789081885856
+        ],
+        "worse": 1,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "quest_12_5": {
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.3439285714285715,
+        "retention": 0.9699187537769423,
+        "retention_ci95": [
+          0.8528528528528527,
+          1.087890625
+        ],
+        "worse": 3,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "quest_6_25": {
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.32192857142857145,
+        "retention": 0.9078761834418855,
+        "retention_ci95": [
+          0.7913139492086859,
+          1.0116078214606508
+        ],
+        "worse": 6,
+        "better": 2,
+        "sign_test_p": 0.2890625
+      },
+      "window_sink_75": {
+        "policy": "window_sink",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.34459523809523807,
+        "retention": 0.9717988316658833,
+        "retention_ci95": [
+          0.876481273246259,
+          1.0553314121037463
+        ],
+        "worse": 2,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "window_sink_50": {
+        "policy": "window_sink",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.3145952380952381,
+        "retention": 0.8871953266635332,
+        "retention_ci95": [
+          0.7386468952734012,
+          1.015783540022548
+        ],
+        "worse": 5,
+        "better": 2,
+        "sign_test_p": 0.453125
+      },
+      "window_sink_25": {
+        "policy": "window_sink",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.3365952380952381,
+        "retention": 0.9492378969985901,
+        "retention_ci95": [
+          0.8467153284671532,
+          1.051228437009932
+        ],
+        "worse": 4,
+        "better": 2,
+        "sign_test_p": 0.6875
+      },
+      "window_sink_12_5": {
+        "policy": "window_sink",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.30660526315789477,
+        "retention": 0.8646626638441939,
+        "retention_ci95": [
+          0.7225042301184433,
+          1.0096696212731668
+        ],
+        "worse": 7,
+        "better": 4,
+        "sign_test_p": 0.548828125
+      },
+      "window_sink_6_25": {
+        "policy": "window_sink",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.2742416267942584,
+        "retention": 0.7733934281446889,
+        "retention_ci95": [
+          0.606475369971514,
+          0.9444444444444444
+        ],
+        "worse": 8,
+        "better": 4,
+        "sign_test_p": 0.3876953125
+      }
+    },
+    "multifieldqa_en": {
+      "block_full_100": {
+        "policy": "block_full",
+        "budget": 1.0,
+        "prompts": 50,
+        "mean_f1": 0.3847381784006719,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "h2o_75": {
+        "policy": "h2o",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.3677161925236075,
+        "retention": 0.9557569619219399,
+        "retention_ci95": [
+          0.8740560810784809,
+          1.031718151685883
+        ],
+        "worse": 10,
+        "better": 7,
+        "sign_test_p": 0.629058837890625
+      },
+      "h2o_50": {
+        "policy": "h2o",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.3537542006562599,
+        "retention": 0.9194673690216808,
+        "retention_ci95": [
+          0.8262438026743164,
+          1.0052284902178064
+        ],
+        "worse": 12,
+        "better": 10,
+        "sign_test_p": 0.8318119049072266
+      },
+      "h2o_25": {
+        "policy": "h2o",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.34864071353565385,
+        "retention": 0.9061765457873909,
+        "retention_ci95": [
+          0.7806190641112197,
+          1.0309256754823015
+        ],
+        "worse": 18,
+        "better": 13,
+        "sign_test_p": 0.47312965989112854
+      },
+      "h2o_12_5": {
+        "policy": "h2o",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.3304532465495172,
+        "retention": 0.8589042239665085,
+        "retention_ci95": [
+          0.7044790916966404,
+          1.042623092091925
+        ],
+        "worse": 24,
+        "better": 14,
+        "sign_test_p": 0.14330665429588407
+      },
+      "h2o_6_25": {
+        "policy": "h2o",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.30607320740115135,
+        "retention": 0.7955363532506053,
+        "retention_ci95": [
+          0.617139164138185,
+          1.0135186264452731
+        ],
+        "worse": 26,
+        "better": 15,
+        "sign_test_p": 0.11727520595741225
+      },
+      "quest_75": {
+        "policy": "quest",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.38782884863065165,
+        "retention": 1.0080331778947111,
+        "retention_ci95": [
+          0.9569410281975789,
+          1.0544900303923992
+        ],
+        "worse": 7,
+        "better": 8,
+        "sign_test_p": 1.0
+      },
+      "quest_50": {
+        "policy": "quest",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.36481849529661053,
+        "retention": 0.9482253537019226,
+        "retention_ci95": [
+          0.8698088880769095,
+          1.0233434690927348
+        ],
+        "worse": 15,
+        "better": 11,
+        "sign_test_p": 0.557197093963623
+      },
+      "quest_25": {
+        "policy": "quest",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.349678775935711,
+        "retention": 0.9088746466215019,
+        "retention_ci95": [
+          0.807687855005806,
+          1.0098913387722785
+        ],
+        "worse": 18,
+        "better": 13,
+        "sign_test_p": 0.47312965989112854
+      },
+      "quest_12_5": {
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.3480283589316807,
+        "retention": 0.9045849319618053,
+        "retention_ci95": [
+          0.7726615413713278,
+          1.0436019568992911
+        ],
+        "worse": 19,
+        "better": 14,
+        "sign_test_p": 0.48685024166479707
+      },
+      "quest_6_25": {
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.30233052509546304,
+        "retention": 0.7858084850124015,
+        "retention_ci95": [
+          0.646082097045033,
+          0.9425347284778607
+        ],
+        "worse": 27,
+        "better": 11,
+        "sign_test_p": 0.013852965261321515
+      },
+      "window_sink_75": {
+        "policy": "window_sink",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.2938722791429905,
+        "retention": 0.7638240643665668,
+        "retention_ci95": [
+          0.6331558062387768,
+          0.8979235969146513
+        ],
+        "worse": 21,
+        "better": 9,
+        "sign_test_p": 0.04277394525706768
+      },
+      "window_sink_50": {
+        "policy": "window_sink",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.2871680229637816,
+        "retention": 0.7463985616335705,
+        "retention_ci95": [
+          0.6184593037932045,
+          0.8799666357085221
+        ],
+        "worse": 21,
+        "better": 12,
+        "sign_test_p": 0.16275565745308995
+      },
+      "window_sink_25": {
+        "policy": "window_sink",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.2778796902472106,
+        "retention": 0.7222566042245557,
+        "retention_ci95": [
+          0.6045454880944483,
+          0.8526965630544346
+        ],
+        "worse": 25,
+        "better": 8,
+        "sign_test_p": 0.004551384132355452
+      },
+      "window_sink_12_5": {
+        "policy": "window_sink",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.28595689748007236,
+        "retention": 0.7432506403933552,
+        "retention_ci95": [
+          0.595463515795641,
+          0.9039472515910726
+        ],
+        "worse": 23,
+        "better": 13,
+        "sign_test_p": 0.13249816396273673
+      },
+      "window_sink_6_25": {
+        "policy": "window_sink",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.2497733875383284,
+        "retention": 0.6492035403832753,
+        "retention_ci95": [
+          0.508197062043829,
+          0.8188784043642534
+        ],
+        "worse": 30,
+        "better": 11,
+        "sign_test_p": 0.00432400493446039
+      }
+    },
+    "musique": {
+      "block_full_100": {
+        "policy": "block_full",
+        "budget": 1.0,
+        "prompts": 50,
+        "mean_f1": 0.21101253132832082,
+        "retention": 1.0,
+        "retention_ci95": [
+          1.0,
+          1.0
+        ],
+        "worse": 0,
+        "better": 0,
+        "sign_test_p": 1.0
+      },
+      "h2o_75": {
+        "policy": "h2o",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.17604378762999454,
+        "retention": 0.8342811989496617,
+        "retention_ci95": [
+          0.5870922970159612,
+          1.0195824032363345
+        ],
+        "worse": 3,
+        "better": 1,
+        "sign_test_p": 0.625
+      },
+      "h2o_50": {
+        "policy": "h2o",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.16282539682539682,
+        "retention": 0.7716385173923715,
+        "retention_ci95": [
+          0.5247270391779062,
+          0.9576490464376493
+        ],
+        "worse": 4,
+        "better": 0,
+        "sign_test_p": 0.125
+      },
+      "h2o_25": {
+        "policy": "h2o",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.12741414141414142,
+        "retention": 0.6038226289788159,
+        "retention_ci95": [
+          0.3225488990035674,
+          0.8717948717948718
+        ],
+        "worse": 6,
+        "better": 0,
+        "sign_test_p": 0.03125
+      },
+      "h2o_12_5": {
+        "policy": "h2o",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.0703915343915344,
+        "retention": 0.3335893557999646,
+        "retention_ci95": [
+          0.10291315001361287,
+          0.6064690026954178
+        ],
+        "worse": 10,
+        "better": 0,
+        "sign_test_p": 0.001953125
+      },
+      "h2o_6_25": {
+        "policy": "h2o",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.06924675324675325,
+        "retention": 0.328164174946606,
+        "retention_ci95": [
+          0.09671718324116443,
+          0.6027241770715096
+        ],
+        "worse": 10,
+        "better": 0,
+        "sign_test_p": 0.001953125
+      },
+      "quest_75": {
+        "policy": "quest",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.21493267651888343,
+        "retention": 1.0185777838211094,
+        "retention_ci95": [
+          1.0,
+          1.0644779327260334
+        ],
+        "worse": 0,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "quest_50": {
+        "policy": "quest",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.2092183908045977,
+        "retention": 0.9914974693093863,
+        "retention_ci95": [
+          0.9357142857142858,
+          1.0497140928200983
+        ],
+        "worse": 2,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "quest_25": {
+        "policy": "quest",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.18032950191570885,
+        "retention": 0.8545914348334539,
+        "retention_ci95": [
+          0.6166394779771616,
+          1.0224480887946623
+        ],
+        "worse": 3,
+        "better": 1,
+        "sign_test_p": 0.625
+      },
+      "quest_12_5": {
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.1403295019157088,
+        "retention": 0.6650292332513934,
+        "retention_ci95": [
+          0.35795454545454547,
+          0.9799189190451504
+        ],
+        "worse": 6,
+        "better": 2,
+        "sign_test_p": 0.2890625
+      },
+      "quest_6_25": {
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.1022375478927203,
+        "retention": 0.4845093665723852,
+        "retention_ci95": [
+          0.22348484848484848,
+          0.7473958333333333
+        ],
+        "worse": 8,
+        "better": 1,
+        "sign_test_p": 0.0390625
+      },
+      "window_sink_75": {
+        "policy": "window_sink",
+        "budget": 0.75,
+        "prompts": 50,
+        "mean_f1": 0.1354850948509485,
+        "retention": 0.6420713215375021,
+        "retention_ci95": [
+          0.35207823960880197,
+          0.9028077753779697
+        ],
+        "worse": 6,
+        "better": 0,
+        "sign_test_p": 0.03125
+      },
+      "window_sink_50": {
+        "policy": "window_sink",
+        "budget": 0.5,
+        "prompts": 50,
+        "mean_f1": 0.1403295019157088,
+        "retention": 0.6650292332513934,
+        "retention_ci95": [
+          0.36837284174518703,
+          0.9344362253494006
+        ],
+        "worse": 5,
+        "better": 1,
+        "sign_test_p": 0.21875
+      },
+      "window_sink_25": {
+        "policy": "window_sink",
+        "budget": 0.25,
+        "prompts": 50,
+        "mean_f1": 0.07066666666666667,
+        "retention": 0.33489322279497347,
+        "retention_ci95": [
+          0.11268581991835479,
+          0.5897719266739422
+        ],
+        "worse": 10,
+        "better": 0,
+        "sign_test_p": 0.001953125
+      },
+      "window_sink_12_5": {
+        "policy": "window_sink",
+        "budget": 0.125,
+        "prompts": 50,
+        "mean_f1": 0.0404,
+        "retention": 0.19145782359788108,
+        "retention_ci95": [
+          0.054498269896193774,
+          0.3749648217636023
+        ],
+        "worse": 12,
+        "better": 0,
+        "sign_test_p": 0.00048828125
+      },
+      "window_sink_6_25": {
+        "policy": "window_sink",
+        "budget": 0.0625,
+        "prompts": 50,
+        "mean_f1": 0.03907692307692308,
+        "retention": 0.18518768923785908,
+        "retention_ci95": [
+          0.0480286486676263,
+          0.3683700444755768
+        ],
+        "worse": 12,
+        "better": 0,
+        "sign_test_p": 0.00048828125
+      }
+    }
+  },
+  "comparison": {
+    "h2o_75": {
+      "policy": "h2o",
+      "budget": 0.75,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.26412688417316366,
+        "retention": 0.9647303037760511,
+        "retention_ci95": [
+          0.8976174819161313,
+          1.014838683277037
+        ],
+        "worse": 3,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.3677161925236075,
+        "retention": 0.9557569619219399,
+        "retention_ci95": [
+          0.8740560810784809,
+          1.031718151685883
+        ],
+        "worse": 10,
+        "better": 7,
+        "sign_test_p": 0.629058837890625
+      },
+      "gap": 0.008973341854111139,
+      "separated": false,
+      "gap_ci95": [
+        -0.08882019226847182,
+        0.10457507436938918
+      ]
+    },
+    "h2o_50": {
+      "policy": "h2o",
+      "budget": 0.5,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.25540329358750413,
+        "retention": 0.9328671626116565,
+        "retention_ci95": [
+          0.8555020679368092,
+          0.9955219830627174
+        ],
+        "worse": 6,
+        "better": 2,
+        "sign_test_p": 0.2890625
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.3537542006562599,
+        "retention": 0.9194673690216808,
+        "retention_ci95": [
+          0.8262438026743164,
+          1.0052284902178064
+        ],
+        "worse": 12,
+        "better": 10,
+        "sign_test_p": 0.8318119049072266
+      },
+      "gap": 0.013399793589975673,
+      "separated": false,
+      "gap_ci95": [
+        -0.1047298667072426,
+        0.12334430112440298
+      ]
+    },
+    "h2o_25": {
+      "policy": "h2o",
+      "budget": 0.25,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.2349270914270914,
+        "retention": 0.8580773024570048,
+        "retention_ci95": [
+          0.7552080392931745,
+          0.951764659270275
+        ],
+        "worse": 13,
+        "better": 2,
+        "sign_test_p": 0.00738525390625
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.34864071353565385,
+        "retention": 0.9061765457873909,
+        "retention_ci95": [
+          0.7806190641112197,
+          1.0309256754823015
+        ],
+        "worse": 18,
+        "better": 13,
+        "sign_test_p": 0.47312965989112854
+      },
+      "gap": -0.04809924333038618,
+      "separated": false,
+      "gap_ci95": [
+        -0.21053061621371194,
+        0.10664989074266529
+      ]
+    },
+    "h2o_12_5": {
+      "policy": "h2o",
+      "budget": 0.125,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.19808642591975925,
+        "retention": 0.7235158149451948,
+        "retention_ci95": [
+          0.5963404057345679,
+          0.8501207049296128
+        ],
+        "worse": 21,
+        "better": 5,
+        "sign_test_p": 0.002493917942047119
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.3304532465495172,
+        "retention": 0.8589042239665085,
+        "retention_ci95": [
+          0.7044790916966404,
+          1.042623092091925
+        ],
+        "worse": 24,
+        "better": 14,
+        "sign_test_p": 0.14330665429588407
+      },
+      "gap": -0.13538840902131366,
+      "separated": false,
+      "gap_ci95": [
+        -0.35479110185258855,
+        0.06583076470616922
+      ]
+    },
+    "h2o_6_25": {
+      "policy": "h2o",
+      "budget": 0.0625,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.19437149887149888,
+        "retention": 0.7099469474253536,
+        "retention_ci95": [
+          0.5784981561079575,
+          0.8373951935329534
+        ],
+        "worse": 20,
+        "better": 5,
+        "sign_test_p": 0.004077315330505371
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.30607320740115135,
+        "retention": 0.7955363532506053,
+        "retention_ci95": [
+          0.617139164138185,
+          1.0135186264452731
+        ],
+        "worse": 26,
+        "better": 15,
+        "sign_test_p": 0.11727520595741225
+      },
+      "gap": -0.08558940582525176,
+      "separated": false,
+      "gap_ci95": [
+        -0.3414951973297903,
+        0.13318698723346722
+      ]
+    },
+    "quest_75": {
+      "policy": "quest",
+      "budget": 0.75,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.2750898471361266,
+        "retention": 1.0047728107046943,
+        "retention_ci95": [
+          1.0,
+          1.0161556453226916
+        ],
+        "worse": 0,
+        "better": 1,
+        "sign_test_p": 1.0
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.38782884863065165,
+        "retention": 1.0080331778947111,
+        "retention_ci95": [
+          0.9569410281975789,
+          1.0544900303923992
+        ],
+        "worse": 7,
+        "better": 8,
+        "sign_test_p": 1.0
+      },
+      "gap": -0.0032603671900168774,
+      "separated": false,
+      "gap_ci95": [
+        -0.051062916325187224,
+        0.04759355155038314
+      ]
+    },
+    "quest_50": {
+      "policy": "quest",
+      "budget": 0.5,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.27451841856469805,
+        "retention": 1.0026856530076416,
+        "retention_ci95": [
+          0.9861825553055458,
+          1.0210047688015365
+        ],
+        "worse": 2,
+        "better": 2,
+        "sign_test_p": 1.0
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.36481849529661053,
+        "retention": 0.9482253537019226,
+        "retention_ci95": [
+          0.8698088880769095,
+          1.0233434690927348
+        ],
+        "worse": 15,
+        "better": 11,
+        "sign_test_p": 0.557197093963623
+      },
+      "gap": 0.05446029930571894,
+      "separated": false,
+      "gap_ci95": [
+        -0.024265150815966918,
+        0.1332099345203266
+      ]
+    },
+    "quest_25": {
+      "policy": "quest",
+      "budget": 0.25,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.260444344490624,
+        "retention": 0.9512797319505994,
+        "retention_ci95": [
+          0.8745641620234283,
+          1.01176467417507
+        ],
+        "worse": 6,
+        "better": 4,
+        "sign_test_p": 0.75390625
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.349678775935711,
+        "retention": 0.9088746466215019,
+        "retention_ci95": [
+          0.807687855005806,
+          1.0098913387722785
+        ],
+        "worse": 18,
+        "better": 13,
+        "sign_test_p": 0.47312965989112854
+      },
+      "gap": 0.04240508532909759,
+      "separated": false,
+      "gap_ci95": [
+        -0.08566323154534428,
+        0.16112603443348172
+      ]
+    },
+    "quest_12_5": {
+      "policy": "quest",
+      "budget": 0.125,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.24940925677132572,
+        "retention": 0.910973787476373,
+        "retention_ci95": [
+          0.7993011561189278,
+          1.0111628228292922
+        ],
+        "worse": 11,
+        "better": 7,
+        "sign_test_p": 0.480682373046875
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.3480283589316807,
+        "retention": 0.9045849319618053,
+        "retention_ci95": [
+          0.7726615413713278,
+          1.0436019568992911
+        ],
+        "worse": 19,
+        "better": 14,
+        "sign_test_p": 0.48685024166479707
+      },
+      "gap": 0.006388855514567693,
+      "separated": false,
+      "gap_ci95": [
+        -0.1702848009939658,
+        0.1707862185494281
+      ]
+    },
+    "quest_6_25": {
+      "policy": "quest",
+      "budget": 0.0625,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.21124633029805445,
+        "retention": 0.7715827074475614,
+        "retention_ci95": [
+          0.6539119455870973,
+          0.8808009316406612
+        ],
+        "worse": 19,
+        "better": 5,
+        "sign_test_p": 0.006610751152038574
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.30233052509546304,
+        "retention": 0.7858084850124015,
+        "retention_ci95": [
+          0.646082097045033,
+          0.9425347284778607
+        ],
+        "worse": 27,
+        "better": 11,
+        "sign_test_p": 0.013852965261321515
+      },
+      "gap": -0.014225777564840114,
+      "separated": false,
+      "gap_ci95": [
+        -0.21050518291854303,
+        0.16556411613733713
+      ]
+    },
+    "window_sink_75": {
+      "policy": "window_sink",
+      "budget": 0.75,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.23490361620977793,
+        "retention": 0.8579915586161196,
+        "retention_ci95": [
+          0.7504638347475981,
+          0.9506241682081978
+        ],
+        "worse": 11,
+        "better": 2,
+        "sign_test_p": 0.0224609375
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.2938722791429905,
+        "retention": 0.7638240643665668,
+        "retention_ci95": [
+          0.6331558062387768,
+          0.8979235969146513
+        ],
+        "worse": 21,
+        "better": 9,
+        "sign_test_p": 0.04277394525706768
+      },
+      "gap": 0.09416749424955284,
+      "separated": false,
+      "gap_ci95": [
+        -0.07590687393974938,
+        0.25077676371502344
+      ]
+    },
+    "window_sink_50": {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.2348537012157702,
+        "retention": 0.8578092428042219,
+        "retention_ci95": [
+          0.743166666726884,
+          0.9663336762964839
+        ],
+        "worse": 13,
+        "better": 7,
+        "sign_test_p": 0.26317596435546875
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.2871680229637816,
+        "retention": 0.7463985616335705,
+        "retention_ci95": [
+          0.6184593037932045,
+          0.8799666357085221
+        ],
+        "worse": 21,
+        "better": 12,
+        "sign_test_p": 0.16275565745308995
+      },
+      "gap": 0.11141068117065134,
+      "separated": false,
+      "gap_ci95": [
+        -0.06309978985764642,
+        0.2785083990257148
+      ]
+    },
+    "window_sink_25": {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.20858987114250274,
+        "retention": 0.7618799213940831,
+        "retention_ci95": [
+          0.6369756501028209,
+          0.8801155982170944
+        ],
+        "worse": 18,
+        "better": 5,
+        "sign_test_p": 0.010622024536132812
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.2778796902472106,
+        "retention": 0.7222566042245557,
+        "retention_ci95": [
+          0.6045454880944483,
+          0.8526965630544346
+        ],
+        "worse": 25,
+        "better": 8,
+        "sign_test_p": 0.004551384132355452
+      },
+      "gap": 0.03962331716952738,
+      "separated": false,
+      "gap_ci95": [
+        -0.1370111293174774,
+        0.20702329145137166
+      ]
+    },
+    "window_sink_12_5": {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.18811863750284802,
+        "retention": 0.6871082088905317,
+        "retention_ci95": [
+          0.5600883803050931,
+          0.8120912448164169
+        ],
+        "worse": 24,
+        "better": 6,
+        "sign_test_p": 0.001430906355381012
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.28595689748007236,
+        "retention": 0.7432506403933552,
+        "retention_ci95": [
+          0.595463515795641,
+          0.9039472515910726
+        ],
+        "worse": 23,
+        "better": 13,
+        "sign_test_p": 0.13249816396273673
+      },
+      "gap": -0.0561424315028235,
+      "separated": false,
+      "gap_ci95": [
+        -0.2580747746730566,
+        0.13353005261778705
+      ]
+    },
+    "window_sink_6_25": {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "hard": {
+        "prompts": 150,
+        "mean_f1": 0.17726010344431398,
+        "retention": 0.6474471312473172,
+        "retention_ci95": [
+          0.5191859157522517,
+          0.7760709953702695
+        ],
+        "worse": 25,
+        "better": 7,
+        "sign_test_p": 0.0021024015732109547
+      },
+      "easy": {
+        "prompts": 50,
+        "mean_f1": 0.2497733875383284,
+        "retention": 0.6492035403832753,
+        "retention_ci95": [
+          0.508197062043829,
+          0.8188784043642534
+        ],
+        "worse": 30,
+        "better": 11,
+        "sign_test_p": 0.00432400493446039
+      },
+      "gap": -0.0017564091359580924,
+      "separated": false,
+      "gap_ci95": [
+        -0.21391423747398675,
+        0.18850557800665135
+      ]
+    }
+  },
+  "summary": {
+    "viability_floor": 0.15,
+    "full_f1": {
+      "2wikimqa": 0.2557416267942584,
+      "hotpotqa": 0.3545952380952381,
+      "multifieldqa_en": 0.3847381784006719,
+      "musique": 0.21101253132832082
+    },
+    "viable_tasks": [
+      "2wikimqa",
+      "hotpotqa",
+      "multifieldqa_en",
+      "musique"
+    ],
+    "excluded_tasks": [],
+    "hard_tasks_used": [
+      "hotpotqa",
+      "2wikimqa",
+      "musique"
+    ],
+    "control_task_used": "multifieldqa_en",
+    "prompts_per_task": {
+      "2wikimqa": 50,
+      "hotpotqa": 50,
+      "multifieldqa_en": 50,
+      "musique": 50
+    },
+    "truncated_prompts": 0,
+    "prompt_len": {
+      "min": 4191,
+      "max": 16432
+    },
+    "control_exact": true,
+    "tightest_budget": 0.0625,
+    "comparisons": 15,
+    "separated_below": [],
+    "separated_above": [],
+    "gap_ci_below": [],
+    "gap_ci_above": [],
+    "wall_s": 7173.70839710001
+  }
+}
