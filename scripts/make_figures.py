@@ -1087,6 +1087,80 @@ def fig_ladder_pareto(a: dict[str, Any], t: Theme) -> None:
     save(fig, "ladder_pareto", t)
 
 
+
+# Rungs 2, 4 and 5 keep their Phase 3 colours; rung 8 takes the fourth slot. Markers differ too, so
+# identity never rests on colour alone (the light theme's green and amber sit under 3:1 contrast).
+P10_POLICIES = (("window_sink", "Window + sink (2)", "o"), ("h2o", "H2O-style (4)", "s"),
+                ("quest", "Quest-style (5)", "D"), ("tiered_int8", "int8 tier (8)", "^"))
+
+
+def fig_p10_perplexity(a: dict[str, Any], t: Theme) -> None:
+    """Perplexity cost against retrieval kept, per condition, and the perplexity cost across context.
+
+    Left: every condition at the longest context. If perplexity tracked what NIAH measures, points
+    would fall along a diagonal; a point far down and barely right is a condition perplexity would
+    call nearly lossless while it loses most of its retrieval. Right: the same ratio at every context
+    for the tightest budget, where perplexity moves most.
+    """
+    sm = a["summary"]
+    longest = str(sm["longest_context"])
+    conds = a["contexts"][longest]["conditions"]
+    fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.8), dpi=160, gridspec_kw={"width_ratios": [1.35, 1.0]})
+    fig.patch.set_facecolor(t.surface)
+    ax = axes[0]
+    style_axes(ax, t)
+    ax.axvline(1.0, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    ax.axhline(100.0, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    ax.annotate("full cache", (1.0, 100.0), xytext=(5, 5), textcoords="offset points", color=t.ink2, fontsize=8.5)
+    for (pol, pretty, marker), color in zip(P10_POLICIES, t.series):
+        rs = sorted((c for c in conds.values() if c["policy"] == pol and c.get("niah_retention") is not None), key=lambda c: -c["budget"])
+        if not rs:
+            continue
+        xs = [c["ppl_ratio"] for c in rs]
+        ys = [100 * c["niah_retention"] for c in rs]
+        xerr = [[c["ppl_ratio"] - c["ppl_ratio_ci95"][0] for c in rs], [c["ppl_ratio_ci95"][1] - c["ppl_ratio"] for c in rs]]
+        ax.errorbar(xs, ys, xerr=xerr, color=color, linewidth=2, marker=marker, markersize=6, markeredgecolor=t.surface,
+                    markeredgewidth=1.2, capsize=0, elinewidth=1, alpha=0.9, label=pretty)
+        # Quest's endpoint sits just above H2O's line, so its label goes below-left instead.
+        dx, ha = (-8, "right") if pol == "quest" else (6, "left")
+        ax.annotate(pretty, (xs[-1], ys[-1]), xytext=(dx, -4), textcoords="offset points", color=t.ink2, fontsize=8, va="top", ha=ha)
+    ax.set_xlabel("Perplexity / full-cache perplexity (95% CI over windows)")
+    ax.set_ylabel("NIAH retention, % of full cache")
+    ax.set_ylim(0, 108)
+    ax.set_title(f"Each condition at {int(longest):,} tokens (budgets 75% → {100 * sm['tightest_budget']:g}%)", color=t.ink, fontsize=10, loc="left")
+
+    ax = axes[1]
+    style_axes(ax, t)
+    ctxs = [str(c) for c in sm["contexts"]]
+    ax.axhline(1.0, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+    key_budget = sm["tightest_budget"]
+    for (pol, pretty, marker), color in zip(P10_POLICIES, t.series):
+        lab = f"{pol}_{100 * key_budget:g}".replace(".", "_")
+        pts = [(int(c), a["contexts"][c]["conditions"].get(lab)) for c in ctxs]
+        pts = [(x, c) for x, c in pts if c is not None]
+        if not pts:
+            continue
+        xs = [x for x, _ in pts]
+        ys = [c["ppl_ratio"] for _, c in pts]
+        yerr = [[c["ppl_ratio"] - c["ppl_ratio_ci95"][0] for _, c in pts], [c["ppl_ratio_ci95"][1] - c["ppl_ratio"] for _, c in pts]]
+        ax.errorbar(xs, ys, yerr=yerr, color=color, linewidth=2, marker=marker, markersize=6, markeredgecolor=t.surface,
+                    markeredgewidth=1.2, capsize=0, elinewidth=1, alpha=0.9)
+    ax.set_xscale("log", base=2)
+    ax.set_xticks([int(c) for c in ctxs])
+    ax.set_xticklabels([f"{int(c) // 1024}K" for c in ctxs])
+    ax.minorticks_off()
+    ax.set_xlabel("Context length, tokens")
+    ax.set_title(f"Perplexity ratio at a {100 * key_budget:g}% budget", color=t.ink, fontsize=10, loc="left")
+
+    leg = axes[0].legend(loc="upper center", bbox_to_anchor=(0.85, -0.16), ncol=4, frameon=False, fontsize=9)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, "Perplexity barely registers the retrieval a budget loses",
+          f"{sm['windows']} book windows, {sm['tokens_per_condition']:,} scored tokens per condition; "
+          f"NIAH retention from the ladder at the same context")
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.82, bottom=0.25, wspace=0.2)
+    save(fig, "p10_perplexity", t)
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -1103,6 +1177,8 @@ def main() -> None:
     p7 = json.loads(p7_path.read_text(encoding="utf-8")) if p7_path.exists() else None
     p8_path = RESULTS_DIR / "phase8" / "analysis" / "metrics.json"
     p8 = json.loads(p8_path.read_text(encoding="utf-8")) if p8_path.exists() else None
+    p10_path = RESULTS_DIR / "phase10" / "analysis" / "metrics.json"
+    p10 = json.loads(p10_path.read_text(encoding="utf-8")) if p10_path.exists() else None
     ladder_path = RESULTS_DIR / "ladder" / "metrics.json"
     ladder = json.loads(ladder_path.read_text(encoding="utf-8")) if ladder_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
@@ -1137,6 +1213,8 @@ def main() -> None:
             fig_p7_exactness(p7, t)
         if p8 is not None:
             fig_p8_context(p8, t)
+        if p10 is not None:
+            fig_p10_perplexity(p10, t)
         if ladder is not None:
             fig_ladder_pareto(ladder, t)
     print("figures written to", FIG_DIR)
