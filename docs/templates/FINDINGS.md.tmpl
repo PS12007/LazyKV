@@ -73,6 +73,26 @@ Six times the prompts narrowed that interval without moving it off the line, so 
 headline for rung 5 at 75% is the interval, not a pass or a fail. The 99% bar is finer than NIAH can
 resolve on this machine for any policy that lands near it.
 
+**KL, beside the headline rather than instead of it.** The 99% bar stays the headline because the
+brief defined it before any data existed; replacing it with a metric chosen after Phase 9 would be
+choosing a question to fit the answer. What teacher-forced KL adds is resolution. On Phase 10's
+{{ kl.summary.windows | int }} paired book windows it orders **every** adjacent pair of budgets
+within a rung, at every context
+({{ kl.summary.within_resolved | int }} of {{ kl.summary.within_comparisons | int }} comparisons
+resolved by an exact sign test over windows, {{ kl.summary.within_resolved_wrong_way | int }} the
+wrong way), including the case NIAH could not settle: Quest-style selection at 50% moves the
+distribution further from the full cache than at 75% in
+{{ kl.summary.quest_50_over_75_windows_above | int }} of {{ kl.summary.windows | int }} windows
+(p = {{ kl.summary.quest_50_over_75_sign_test_p | .1g }}; mean KL
+{{ kl.summary.quest_50_kl | .1e }} against {{ kl.summary.quest_75_kl | .1e }} nats). Across rungs at
+the same budget it resolves {{ kl.summary.across_resolved | int }} of
+{{ kl.summary.across_comparisons | int }} pairs. Of the
+{{ kl.summary.across_unresolved | int }} it does not,
+{{ kl.summary.across_unresolved_rung5_vs_rung8 | int }} are rung 5 against rung 8, which make the same
+selection, and the next largest group is the window against H2O-style eviction. KL says which condition is closer to the full cache, reliably; it does not
+say whether a difference matters for an answer, which is why it supports the headline and does not
+replace it.
+
 **One rung clears it, and it is the one that does not approximate.** Rung 9 computes attention over
 the non-resident blocks where they already live — on the CPU — and merges the two partial results
 with their log-sum-exp normalizers, which is exact. It meets the target at a

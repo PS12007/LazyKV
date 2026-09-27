@@ -89,6 +89,26 @@ Six times the prompts narrowed that interval without moving it off the line, so 
 headline for rung 5 at 75% is the interval, not a pass or a fail. The 99% bar is finer than NIAH can
 resolve on this machine for any policy that lands near it.
 
+**KL, beside the headline rather than instead of it.** The 99% bar stays the headline because the
+brief defined it before any data existed; replacing it with a metric chosen after Phase 9 would be
+choosing a question to fit the answer. What teacher-forced KL adds is resolution. On Phase 10's
+12 paired book windows it orders **every** adjacent pair of budgets
+within a rung, at every context
+(64 of 64 comparisons
+resolved by an exact sign test over windows, 0 the
+wrong way), including the case NIAH could not settle: Quest-style selection at 50% moves the
+distribution further from the full cache than at 75% in
+12 of 12 windows
+(p = 0.0005; mean KL
+7.5e-03 against 2.3e-03 nats). Across rungs at
+the same budget it resolves 75 of
+120 pairs. Of the
+45 it does not,
+19 are rung 5 against rung 8, which make the same
+selection, and the next largest group is the window against H2O-style eviction. KL says which condition is closer to the full cache, reliably; it does not
+say whether a difference matters for an answer, which is why it supports the headline and does not
+replace it.
+
 **One rung clears it, and it is the one that does not approximate.** Rung 9 computes attention over
 the non-resident blocks where they already live — on the CPU — and merges the two partial results
 with their log-sum-exp normalizers, which is exact. It meets the target at a
