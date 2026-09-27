@@ -62,3 +62,12 @@ def test_pilot_reproduction_requires_identical_text_and_score() -> None:
     assert a.pilot_reproduction(pilot, same)["reproduces"]
     r = a.pilot_reproduction(pilot, moved)
     assert r["compared"] == 1 and r["identical"] == 0 and not r["reproduces"]
+
+
+def test_gap_ci_excludes_zero_only_for_a_real_difference() -> None:
+    a = _analysis()
+    full = [1.0] * 20
+    same = a.gap_ci(([1.0] * 10 + [0.0] * 10, full), ([1.0] * 10 + [0.0] * 10, full), iters=500, seed=0)
+    assert same[0] < 0 < same[1]
+    worse = a.gap_ci(([1.0] * 2 + [0.0] * 18, full), ([1.0] * 18 + [0.0] * 2, full), iters=500, seed=0)
+    assert worse[1] < 0

@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import random
 import sys
 from collections import defaultdict
 from pathlib import Path
@@ -96,6 +97,28 @@ def retention(rows: list[dict[str, Any]], kind: str, policy: str, budget: float,
     }
 
 
+def gap_ci(hard: tuple[list[float], list[float]], easy: tuple[list[float], list[float]], iters: int, seed: int) -> list[float]:
+    """95% CI of retention(hard) - retention(easy), resampling each kind's prompts independently.
+
+    POST HOC. The pre-committed separation test is disjoint CIs (`separated`), which is
+    conservative; this interval was added after the 32K run had been read, because the disjoint
+    test cannot separate effects of the size seen at 30 prompts per kind. It is reported beside the
+    pre-committed test and labelled as post hoc wherever it is quoted, never in place of it.
+    Within a kind the pairs (policy score, full score) are resampled together, as in Phase 9.
+    """
+    rng = random.Random(seed)
+    (hn, hd), (en, ed) = hard, easy
+    out = []
+    for _ in range(iters):
+        hi = [rng.randrange(len(hn)) for _ in hn]
+        ei = [rng.randrange(len(en)) for _ in en]
+        dh, de = sum(hd[i] for i in hi), sum(ed[i] for i in ei)
+        if dh > 0 and de > 0:
+            out.append(sum(hn[i] for i in hi) / dh - sum(en[i] for i in ei) / de)
+    out.sort()
+    return [out[int(0.025 * len(out))], out[int(0.975 * len(out)) - 1]]
+
+
 def pilot_reproduction(pilot_rows: dict[int, list[dict[str, Any]]], runs: dict[int, list[dict[str, Any]]]) -> dict[str, Any]:
     """Whether the main run's full cache answered the pilot's prompts identically, text and score.
 
@@ -144,6 +167,7 @@ def main() -> None:
     for ctx, d in per_ctx.items():
         if hard not in d["kinds"] or easy not in d["kinds"]:
             continue
+        rows = runs[int(ctx)]
         for key, h in d["kinds"][hard].items():
             e = d["kinds"][easy][key]
             if h["policy"] == CONTROL or h["retention"] is None or e["retention"] is None:
@@ -151,7 +175,8 @@ def main() -> None:
             gaps.append({"context": int(ctx), "label": key, "policy": h["policy"], "budget": h["budget"],
                          "hard": h["retention"], "easy": e["retention"], "gap": h["retention"] - e["retention"],
                          # Disjoint CIs are a conservative separation test for two unpaired retentions.
-                         "separated": h["retention_ci95"][1] < e["retention_ci95"][0] or e["retention_ci95"][1] < h["retention_ci95"][0]})
+                         "separated": h["retention_ci95"][1] < e["retention_ci95"][0] or e["retention_ci95"][1] < h["retention_ci95"][0],
+                         "gap_ci95_post_hoc": gap_ci(paired(rows, hard, h["policy"], h["budget"])[1:], paired(rows, easy, h["policy"], h["budget"])[1:], iters, seed)})
     by_policy: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for g in gaps:
         by_policy[g["policy"]].append(g)
@@ -174,6 +199,9 @@ def main() -> None:
         "hard_above_easy": sum(1 for g in gaps if g["gap"] > 0),
         "gaps_compared": len(gaps),
         "gaps_separated": sum(1 for g in gaps if g["separated"]),
+        "gaps_separated_post_hoc": sum(1 for g in gaps if g["gap_ci95_post_hoc"][1] < 0 or g["gap_ci95_post_hoc"][0] > 0),
+        "gaps_below_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][1] < 0),
+        "gaps_above_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][0] > 0),
         "mean_gap_by_policy": {pol: sum(g["gap"] for g in gs) / len(gs) for pol, gs in by_policy.items()},
         "wall_s": sum(pv["wall_s"] for pv in prov),
     }
