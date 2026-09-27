@@ -267,6 +267,22 @@ def main() -> None:
             (c["nll_delta_ci95"][1] - c["nll_delta_ci95"][0]) / 2
             for d in per_ctx.values() for c in d["conditions"].values() if c["policy"] != CONTROL
         )[len(policy_conds) * len(contexts) // 2],
+        # Does a fixed fraction cost less perplexity at the longest context than at the shortest?
+        # Counted over the conditions whose cost is resolved at the shortest context, since an
+        # unresolved one has no cost to shrink.
+        "cost_falls_with_context": sum(
+            1 for k, c in per_ctx[str(contexts[0])]["conditions"].items()
+            if c["policy"] != CONTROL and c["nll_delta_ci95"][0] > 0 and per_ctx[longest]["conditions"][k]["nll_delta"] < c["nll_delta"]
+        ),
+        "cost_resolved_at_shortest": sum(1 for c in per_ctx[str(contexts[0])]["conditions"].values() if c["policy"] != CONTROL and c["nll_delta_ci95"][0] > 0),
+        "shortest_context": contexts[0],
+        # Readings better than the full cache with a CI excluding no change, over every condition at
+        # every context: the base rate the two at the longest context should be judged against.
+        "resolved_better_all_contexts": sum(1 for d in per_ctx.values() for c in d["conditions"].values() if c["policy"] != CONTROL and c["nll_delta_ci95"][1] < 0),
+        "policy_conditions_all_contexts": sum(1 for d in per_ctx.values() for c in d["conditions"].values() if c["policy"] != CONTROL),
+        "full_ppl_ratio_shortest_over_longest": context_effect[str(contexts[0])]["ppl_ratio_over_longest"] if str(contexts[0]) in context_effect else None,
+        "full_ppl_ratio_shortest_over_longest_ci95": [math.exp(x) for x in context_effect[str(contexts[0])]["nll_over_longest_ci95"]] if str(contexts[0]) in context_effect else None,
+        "full_windows_worse_shortest": context_effect[str(contexts[0])]["windows_worse"] if str(contexts[0]) in context_effect else None,
         "wall_s": sum(pv["wall_s"] for pv in prov),
     }
     write_metrics(base / "analysis", {"sources": prov, "contexts": per_ctx, "context_effect": context_effect, "collapse": col, "summary": summary})
