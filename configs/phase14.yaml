@@ -42,6 +42,11 @@ longbench:
   tasks: [hotpotqa, 2wikimqa, musique, multifieldqa_en]
   samples: 50
   max_length: 31500
+  # Added after a 2-prompt smoke test, before the real run: a 6.25% budget of a ~2K-token prompt is
+  # smaller than a window policy's sink plus one window block, so that condition cannot be built.
+  # Only prompts of at least this many tokens are used; the first `samples` in file order that
+  # qualify, per task. The driver records how many were skipped.
+  min_prompt_tokens: 4096
 
 viability_floor: 0.15
 hard_tasks: [hotpotqa, 2wikimqa, musique]

@@ -58,8 +58,22 @@ def main() -> None:
 
     # Build every prompt first: the cache and the host pools are sized once, for the longest.
     data_dir = Path(lb["data_dir"])
-    prompts = [build_prompt(lm.tokenizer, row, task, i, lb["max_length"])
-               for task in tasks for i, row in enumerate(load_task(data_dir, task)[:samples])]
+    # The first `samples` prompts per task, in file order, of at least `min_prompt_tokens`: below
+    # that, a 6.25% budget is smaller than a window policy's sink plus one window block, and the
+    # condition cannot be built. Length is the only criterion, so the filter is blind to content.
+    min_len = lb.get("min_prompt_tokens", 0)
+    prompts, skipped_short = [], {}
+    for task in tasks:
+        kept = 0
+        for i, row in enumerate(load_task(data_dir, task)):
+            if kept == samples:
+                break
+            pr = build_prompt(lm.tokenizer, row, task, i, lb["max_length"])
+            if pr.length < min_len:
+                skipped_short[task] = skipped_short.get(task, 0) + 1
+                continue
+            prompts.append(pr)
+            kept += 1
     longest = max(pr.length for pr in prompts) + max(MAX_NEW_TOKENS[t] for t in tasks) + 16
     full = FullGPUCache(lm.num_layers, -(-longest // 1024) * 1024)
     scorer = make_scorer(cfg, conds, lm.num_layers, full.max_len)
@@ -97,6 +111,7 @@ def main() -> None:
         "config": {**cfg, "longbench": {**lb, "tasks": tasks, "samples": samples}},
         "attention_strategy": QUALITY_STRATEGY,
         "conditions": [c.label for c in conds],
+        "skipped_short": skipped_short,
         "rows": rows,
         "wall_s": time.perf_counter() - t_start,
         "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": process_gpu_memory().shared_bytes},
