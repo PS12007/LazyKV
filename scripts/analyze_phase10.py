@@ -12,6 +12,11 @@ The effect is reported as a paired NLL delta in nats and as the perplexity ratio
 to. Its CI is a bootstrap over *windows*, not tokens: the 256 tokens of one window share a context
 and are not independent, and resampling them would report an interval several times too narrow.
 No pass/fail bar is applied; the config says why.
+
+At the ladder's context the analysis also joins each condition's NIAH retention from
+`results/ladder/metrics.json`, measured on the same model, block size and slot setting. That is
+the comparison this phase exists for: whether a perplexity budget would have told a reader what the
+retrieval budget did.
 """
 
 from __future__ import annotations
@@ -76,6 +81,36 @@ def paired_delta(cond: dict[Window, float], ref: dict[Window, float], iters: int
             "windows_worse": worse, "windows_better": better, "sign_test_p": sign_test_p(worse, better)}
 
 
+def spearman(xs: list[float], ys: list[float]) -> float:
+    """Rank correlation, ties given their mean rank. Across conditions, so n is ~20: descriptive."""
+    def ranks(v: list[float]) -> list[float]:
+        order = sorted(range(len(v)), key=lambda i: v[i])
+        out = [0.0] * len(v)
+        i = 0
+        while i < len(order):
+            j = i
+            while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
+                j += 1
+            for k in range(i, j + 1):
+                out[order[k]] = (i + j) / 2
+            i = j + 1
+        return out
+    rx, ry = ranks(xs), ranks(ys)
+    mx, my = sum(rx) / len(rx), sum(ry) / len(ry)
+    cov = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
+    return cov / math.sqrt(sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry))
+
+
+def ladder_retention(path: Path, context: int) -> dict[str, float]:
+    """NIAH retention per condition label from the ladder, if it was measured at `context`."""
+    if not path.exists():
+        return {}
+    m = json.loads(path.read_text(encoding="utf-8"))
+    if m["summary"]["context"] != context:
+        return {}
+    return {label(r["policy"], r["budget"]): r["retention"] for r in m["rows"]}
+
+
 def condition(rows: list[dict[str, Any]], policy: str, budget: float, iters: int, seed: int) -> dict[str, Any]:
     ref = by_window(rows, FULL, 1.0, "mean_nll")
     nll = by_window(rows, policy, budget, "mean_nll")
@@ -138,7 +173,15 @@ def main() -> None:
         context_effect[str(ctx)] = {"nll_over_longest": d["delta"], "nll_over_longest_ci95": d["delta_ci95"],
                                     "ppl_ratio_over_longest": math.exp(d["delta"]), "windows_worse": d["windows_worse"]}
 
+    niah = ladder_retention(RESULTS_DIR / "ladder" / "metrics.json", contexts[-1])
+    for k, c in per_ctx[longest]["conditions"].items():
+        c["niah_retention"] = niah.get(k)
     policy_conds = [c for c in per_ctx[longest]["conditions"].values() if c["policy"] != CONTROL]
+    joined = [c for c in policy_conds if c["niah_retention"] is not None]
+    # "Blind" = NIAH lost at least a tenth of the full cache's retrieval, while the perplexity CI
+    # still includes no change: a reader holding only perplexity would call the condition lossless.
+    blind = [c for c in joined if c["niah_retention"] < 0.9 and c["ppl_ratio_ci95"][0] <= 1.0 <= c["ppl_ratio_ci95"][1]]
+    worst_blind = min(blind, key=lambda c: c["niah_retention"]) if blind else None
     tightest = min(cfg["budgets"])
     summary = {
         "contexts": contexts,
@@ -155,6 +198,17 @@ def main() -> None:
         # Conditions whose whole CI excludes no change, at the longest context (either direction).
         "resolved_worse_longest": sorted(label(c["policy"], c["budget"]) for c in policy_conds if c["nll_delta_ci95"][0] > 0),
         "resolved_better_longest": sorted(label(c["policy"], c["budget"]) for c in policy_conds if c["nll_delta_ci95"][1] < 0),
+        "niah_joined_conditions": len(joined),
+        "ppl_blind_conditions": sorted(label(c["policy"], c["budget"]) for c in blind),
+        "ppl_blind_count": len(blind),
+        "ppl_blind_worst": None if worst_blind is None else {
+            "label": label(worst_blind["policy"], worst_blind["budget"]), "policy": worst_blind["policy"],
+            "budget": worst_blind["budget"], "niah_retention": worst_blind["niah_retention"],
+            "ppl_ratio": worst_blind["ppl_ratio"], "ppl_ratio_ci95": worst_blind["ppl_ratio_ci95"]},
+        # How well each quality signal orders the conditions by their NIAH loss.
+        "spearman_nll_vs_niah_loss": spearman([c["nll_delta"] for c in joined], [1 - c["niah_retention"] for c in joined]) if len(joined) > 2 else None,
+        "spearman_kl_vs_niah_loss": spearman([c["mean_kl"] for c in joined], [1 - c["niah_retention"] for c in joined]) if len(joined) > 2 else None,
+        "resolved_conditions_longest": len(policy_conds),
         "wall_s": sum(pv["wall_s"] for pv in prov),
     }
     write_metrics(base / "analysis", {"sources": prov, "contexts": per_ctx, "context_effect": context_effect, "summary": summary})

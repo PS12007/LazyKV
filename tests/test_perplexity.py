@@ -72,3 +72,10 @@ def test_runs_from_different_commits_are_refused(tmp_path) -> None:  # noqa: ANN
         (d / "metrics.json").write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(SystemExit, match="disagree"):
         _analysis().load_runs(tmp_path)
+
+
+def test_spearman_handles_ties_and_order() -> None:
+    a = _analysis()
+    assert a.spearman([1, 2, 3, 4], [10, 20, 30, 40]) == 1.0
+    assert a.spearman([1, 2, 3, 4], [4, 3, 2, 1]) == -1.0
+    assert abs(a.spearman([1, 1, 2, 3], [1, 2, 3, 4]) - 0.9486832980505138) < 1e-12
