@@ -71,3 +71,15 @@ def test_gap_ci_excludes_zero_only_for_a_real_difference() -> None:
     assert same[0] < 0 < same[1]
     worse = a.gap_ci(([1.0] * 2 + [0.0] * 18, full), ([1.0] * 18 + [0.0] * 2, full), iters=500, seed=0)
     assert worse[1] < 0
+
+
+def test_phase13_refuses_to_pool_runs_that_disagree_on_a_shared_prompt() -> None:
+    spec = importlib.util.spec_from_file_location("analyze_phase13", ROOT / "scripts" / "analyze_phase13.py")
+    assert spec is not None and spec.loader is not None
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    old = [dict(_row("vt", 0.0, 5, "quest", 0.125, 0.4), answer="VAR A")]
+    same = [dict(_row("vt", 0.0, 5, "quest", 0.125, 0.4), answer="VAR A")]
+    moved = [dict(_row("vt", 0.0, 5, "quest", 0.125, 0.6), answer="VAR A, VAR B")]
+    assert m.overlap_check(old, same, {"quest"})["reproduces"]
+    assert not m.overlap_check(old, moved, {"quest"})["reproduces"]
