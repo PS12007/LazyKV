@@ -1,0 +1,154 @@
+# Phase 12 gate report: multi-hop retrieval, where query-aware selection loses the chain
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Every quality number in Phases 2-9 came from needle retrieval, where the answer sits in one or a few
+blocks and the question names what to look for. That is the most favorable case for query-aware
+selection (rung 5, and every tier rung built on it), which picks blocks by how well they match the
+current query. Brief §B7.2 asks for RULER's task definitions where feasible; this phase adds two of
+RULER's harder tasks to the harness and asks whether the ladder's ordering survives them.
+
+- **Variable tracking (vt)**: a chain of five assignments (`VAR A = 12345`, `VAR B = VAR A`, ...)
+  hidden in the book. The question names only the value, which appears in the first hop alone; every
+  later hop has to be found by following names the model is itself generating.
+- **Common words extraction (cwe)**: a numbered word list in which ten words appear 30 times and the
+  rest 3 times; the evidence is spread over the whole context.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing. New: `tests/test_ruler_kinds.py` (vt and cwe prompts
+  are exactly the target length and deterministic, vt's chain is in order and only its first hop
+  carries the value, cwe's frequencies are RULER's, scoring is RULER's case-insensitive match, and
+  the original needle prompts are unchanged, checked against Phase 9's recorded rows) and
+  `tests/test_phase12_analysis.py`.
+- [x] **Real experiment run.** A full-cache pilot (`configs/phase12_pilot.yaml`), then
+  `scripts/02_policy_quality.py --config configs/phase12.yaml` at every context, detached from a
+  worktree pinned at the commit under test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## How the tasks were chosen: a pilot, and a rule fixed before most of it was read
+
+Retention is a policy's score over the full cache's, so a task the full cache cannot do yields a
+ratio of noise. The pilot ran the full cache alone at four contexts. The rule — run a kind at a
+context only if the full cache scores at least
+{{ phase12.analysis.summary.viability_floor | pct0 }} there — was committed after the 32K pilot had
+been read (vt viable, cwe at the floor) and before the other three contexts were.
+
+{{> p12_pilot }}
+
+**Common words extraction is out, everywhere.** Llama-3.2-1B cannot do RULER's aggregation task at
+any context tested, with or without a residency policy: its answers mostly repeat one word. That is
+a limit of the model, recorded as a negative result, and it means this study cannot say how
+residency policies fare when evidence is spread over the whole context. Variable tracking clears the
+floor at every context and is run everywhere.
+
+The main run's first two vt samples repeat the pilot's prompts, and the full cache answered
+{{ phase12.analysis.summary.pilot_rows_identical | int }} of
+{{ phase12.analysis.summary.pilot_rows_compared | int }} identically, text and score.
+
+## What was measured
+
+| Axis | Setting | Why |
+|---|---|---|
+| Kinds | vt, and the single needle as an in-run control | The control runs in the same invocation, so a rung's two retentions share a commit, a context and the prompt machinery. |
+| Prompts | {{ phase12.analysis.summary.prompts_per_kind.32768.vt | int }} per kind per context (5 depths × 6 samples) | For vt the depth is where the chain starts; the later hops fall after it. |
+| Policies | Rungs 2, 4, 5 | Rungs 6-7 answer as rung 5 does, bit for bit (Phase 4); rung 8 is within noise of it (Phase 5); rung 9 is exact. |
+| Budgets | 75% to 6.25% | The study's sweep. |
+
+The pre-committed comparison is each rung's vt retention against its single-needle retention, with a
+gap counted as real only if the two paired 95% CIs are disjoint (a conservative test).
+
+## 1. The answer at {{ phase12.analysis.summary.longest_context | int }} tokens
+
+{{> p12_table }}
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p12_ruler-dark.png">
+  <img alt="Retention against budget for window, H2O-style and Quest-style selection at 32K, on the single needle and on RULER variable tracking scored with partial credit and all-or-nothing" src="../figures/p12_ruler-light.png">
+</picture>
+
+**At generous budgets the query-aware rung is unaffected.** At 75%, Quest-style selection and
+H2O-style eviction retain about as much on variable tracking as on the single needle, and Quest-style
+selection holds both near the full cache down to 50%. (The window with a sink reads higher on
+variable tracking at almost every budget and context; the partial-credit paragraph below explains why that is scoring,
+not skill.)
+
+**At tight budgets, query-aware selection loses the chain.** At
+{{ phase12.analysis.summary.tightest_budget | budget }}, Quest-style selection retains
+{{ phase12.analysis.summary.tightest_by_policy.quest.easy.min | pct0 }}–{{ phase12.analysis.summary.tightest_by_policy.quest.easy.max | pct0 }} of the single needle across the
+four contexts but only
+{{ phase12.analysis.summary.tightest_by_policy.quest.hard.min | pct0 }}–{{ phase12.analysis.summary.tightest_by_policy.quest.hard.max | pct0 }} on variable tracking. The mechanism
+is the one the task was built to probe: selection ranks blocks by how well they match the current
+query, the question names only the value, and the value appears in the first hop alone. Every later
+hop has to be recognized from a variable name the model has not generated yet.
+
+How firmly that is established depends on the test, and both are reported:
+
+- **Pre-committed (disjoint 95% CIs, conservative):** separated at
+  {{ phase12.analysis.summary.tightest_budget | budget }} in
+  {{ phase12.analysis.summary.tightest_by_policy.quest.below_precommitted | int }} of {{ phase12.analysis.summary.tightest_by_policy.quest.contexts | int }} contexts, and in
+  {{ phase12.analysis.summary.separated_below_count | int }} of
+  {{ phase12.analysis.summary.gaps_compared | int }} rung-budget-context cells in that direction overall.
+- **Post hoc (bootstrap CI of the difference, added after the 32K run was read):** resolved at
+  {{ phase12.analysis.summary.tightest_budget | budget }} in
+  {{ phase12.analysis.summary.tightest_by_policy.quest.below_post_hoc | int }} of {{ phase12.analysis.summary.tightest_by_policy.quest.contexts | int }} contexts, and in
+  {{ phase12.analysis.summary.gaps_below_post_hoc_count | int }} cells overall, all but one of them
+  Quest-style selection at 12.5% or 6.25%.
+
+**The partial-credit asymmetry, and what it hides.** RULER scores variable tracking per variable, so
+an answer naming three of five chain members earns 0.6; the single needle is all or nothing. That
+flatters variable tracking for every rung that loses context, and it is why the window with a sink
+reads *better* on variable tracking than on the needle in
+{{ phase12.analysis.summary.separated_above_count | int }} pre-committed cells: the later hops fall
+after the chain's start, toward the end of the prompt, where a window always keeps them. Scored
+all-or-nothing instead (post hoc, and labelled so), the window's advantage mostly disappears and
+Quest-style selection completes the whole chain on only
+{{ phase12.analysis.summary.tightest_by_policy.quest.hard_all_or_nothing.min | pct0 }}–{{ phase12.analysis.summary.tightest_by_policy.quest.hard_all_or_nothing.max | pct0 }} of
+the prompts the full cache solves at {{ phase12.analysis.summary.tightest_budget | budget }}, fewer
+than the window with a sink
+({{ phase12.analysis.summary.tightest_by_policy.window_sink.hard_all_or_nothing.min | pct0 }}–{{ phase12.analysis.summary.tightest_by_policy.window_sink.hard_all_or_nothing.max | pct0 }})
+or H2O-style eviction
+({{ phase12.analysis.summary.tightest_by_policy.h2o.hard_all_or_nothing.min | pct0 }}–{{ phase12.analysis.summary.tightest_by_policy.h2o.hard_all_or_nothing.max | pct0 }}).
+The cheap baselines' floor comes mostly from prompts whose whole chain sits at the end of the
+context, which recency keeps and query matching does not
+(Quest-style selection at {{ phase12.analysis.summary.tightest_budget | budget }} retains
+{{ phase12.analysis.contexts.32768.kinds.vt.quest_6_25.retention_by_depth.100 | pct0 }} of the chains that start at the very end,
+the window {{ phase12.analysis.contexts.32768.kinds.vt.window_sink_6_25.retention_by_depth.100 | pct0 }}, at
+{{ phase12.analysis.summary.longest_context | int }} tokens).
+
+**So the ladder's ordering is a property of the task, at the tightest budgets.** On the single
+needle, query-aware selection is the only family that gets near the full cache, and every later rung
+of the ladder builds on it. On multi-hop retrieval at
+{{ phase12.analysis.summary.tightest_budget | budget }}, its lead over the cheap baselines is gone.
+Down to 25%, Quest-style selection is still the best rung on both tasks. The study's headline, which is about budgets near the
+99% bar, is unaffected; its claim that Quest-style selection is the best approximating family should
+carry the qualifier "for retrieval the query can see".
+
+## 2. Across context
+
+Retention on variable tracking, with the single needle's in brackets, per rung, budget and context:
+
+{{> p12_grid }}
+
+The full cache itself solves fewer chains at longer context
+({{ phase12.analysis.contexts.4096.full_accuracy.vt | pct0 }} at 4K,
+{{ phase12.analysis.contexts.32768.full_accuracy.vt | pct0 }} at 32K, against
+{{ phase12.analysis.contexts.32768.full_accuracy.single | pct0 }} on the single needle everywhere), so
+the retentions above are relative to a reference that is itself imperfect on this task; a policy's
+retention can exceed 100% when it happens to solve a chain the full cache misses. The Quest-style
+shortfall at the tightest budget appears at every context, so it is not an artifact of one length.
+
+## 3. What this changes
+
+- **One more quality axis on which the ladder is measured.** Multi-hop retrieval, per RULER's
+  definition, at four contexts.
+- **A qualifier on the study's best approximating family.** Query-aware selection's advantage is
+  real for single- and multi-needle retrieval and survives to 25% budgets on multi-hop, but at the
+  tightest budgets it depends on the query being able to see what it needs.
+- **A negative result on aggregation.** Common words extraction is beyond this model at every
+  context, so how residency interacts with evidence spread over the whole context is not measured.
+
+## Provenance
+
+{{> p12_provenance }}
