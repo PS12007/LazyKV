@@ -1,0 +1,69 @@
+# Phase 10: long-document perplexity (brief §B7.3), per policy, budget and context length.
+#
+# Every earlier phase judged quality by NIAH retrieval and by teacher-forced KL against the full
+# cache. Neither says what a policy costs the model on ordinary running text: NIAH asks about one
+# planted fact, and KL measures how far the distribution moved, not whether the move landed on the
+# token that actually comes next. Perplexity of the true continuation is the missing third metric.
+#
+# Design, fixed before the run:
+#   - Fixed scored tokens. Each target is a book position; a run at context C scores the 256 tokens
+#     from that position with the C tokens before it as context. So the same 3,072 tokens are
+#     scored at every context and under every condition, and every comparison is paired.
+#   - Two books, twelve windows, spread evenly and not overlapping in their scored tokens. Both are
+#     public-domain Project Gutenberg novels (PG-19-style long documents); this is NOT the PG-19
+#     benchmark split, and no number here should be compared to a published PG-19 perplexity.
+#   - Per condition, perplexity = exp(mean NLL over all 3,072 tokens). Its uncertainty is a paired
+#     bootstrap over the twelve windows (tokens within a window are not independent, so resampling
+#     tokens would understate the interval).
+#   - The reported effect is the paired NLL delta against the full cache, in nats, and the ratio
+#     of perplexities that is its exponential. No pass/fail bar is set: the brief does not define
+#     one for perplexity, and choosing one after seeing Phase 9 would be choosing it to fit.
+#
+# Policies: rungs 2, 4, 5 and 8. Rung 3 (block LRU) is omitted because Phase 2 found it identical
+# to a window without a sink on every prompt; rungs 6-7 are rung 5's answers bit for bit; rung 9 is
+# exact by construction (Phase 7 measured its KL at ~1e-3 nats) and costs ~6x the decode time, so
+# it is left out and its perplexity is reported as not measured.
+phase: phase10
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+
+context: 32768
+contexts: [4096, 8192, 16384, 32768]
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [window_sink, h2o, quest, tiered_int8]
+
+tier:
+  fetch: gather
+  spare: 1.0
+  cpu_threads: 8
+
+h2o:
+  stride: 32
+  query_batch: 4
+
+# No NIAH this phase. The section is kept (the driver sizes its cache from max_new_tokens) with no
+# kinds, so the NIAH loop runs zero prompts.
+niah:
+  book: moby_dick
+  kinds: []
+  depths: []
+  samples: 0
+  max_new_tokens: {single: 16}
+  seed: 0
+
+teacher_forced:
+  continuation: 256
+  # Book token index where each scored window starts. Every target has >= 32,768 tokens before it.
+  targets:
+    pride_and_prejudice: [40000, 72000, 104000, 136000, 168000]
+    moby_dick: [40000, 80000, 120000, 160000, 200000, 240000, 280000]
+
+bootstrap:
+  iters: 10000
+  seed: 0
