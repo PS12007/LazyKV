@@ -7,6 +7,46 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 10, long-document perplexity, and how little it sees
+
+The brief's third quality measure (§B7.3) had never been run. It came almost free: the teacher-forced
+pass already produced every condition's log-probabilities, so the true tokens' NLL is read off the
+same rows as the KL. The design choice that mattered was scoring *fixed* tokens and varying only the
+context in front of them, so 4 contexts and
+20 conditions are all paired against the same 3,072
+tokens, with intervals bootstrapped over windows rather than over correlated tokens.
+
+### The answer
+
+Perplexity is a poor proxy for what this study measures.
+9 of
+20 conditions at
+32,768 tokens lose a tenth or more of NIAH retrieval
+while perplexity cannot tell them from the full cache; the worst keeps
+24.4% of retrieval at
+1.024× the perplexity. It orders the
+conditions well and sizes them badly. LongPPL (arXiv 2410.23771) describes the same failure; it was
+verified and added to the related work, not adopted after the fact.
+
+### The surprise
+
+The cost of a fixed fraction *falls* with context under perplexity — in all
+13 conditions with a resolved cost at
+4,096 tokens — where Phase 8 found retrieval's cost
+set by the fraction. Phase 8's collapse test agrees, weakly: blocks kept hold perplexity
+1.30× tighter than the fraction does.
+
+### Incidents
+
+- The analysis was first regenerated before its own script change was committed, so its provenance
+  read dirty; it was rerun on the clean commit before anything cited it.
+- Two conditions read *better* than the full cache with intervals excluding no change. They are
+  2 of
+  80 across every context, about the
+  chance rate, and are reported as noise.
+
+---
+
 ## 2026-09-24: Phase 9, resolving the 99% bar, and a race the suite caught
 
 Phase 8 left the headline as "within one prompt of the bar, on either side". This phase bought the
