@@ -43,6 +43,8 @@ OUTPUTS = {
     "PHASE_11.md.tmpl": "docs/phases/PHASE_11.md",
     "PHASE_12.md.tmpl": "docs/phases/PHASE_12.md",
     "PHASE_13.md.tmpl": "docs/phases/PHASE_13.md",
+    "PHASE_14.md.tmpl": "docs/phases/PHASE_14.md",
+    "PHASE_15.md.tmpl": "docs/phases/PHASE_15.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -2032,6 +2034,39 @@ def block_p12_provenance(ctx: Mapping[str, Any]) -> str:
     if not rows:
         return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+def block_p14_tasks(ctx: Mapping[str, Any]) -> str:
+    """Each LongBench task: prompts, the full cache's F1, and whether it cleared the floor."""
+    sm = lookup(ctx, "phase14.analysis.summary")
+    if not isinstance(sm, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for t, f in sorted(sm["full_f1"].items()):
+        role = "multi-hop" if t in sm.get("hard_tasks_used", []) or t in ("hotpotqa", "2wikimqa", "musique") else "control"
+        rows.append([t, role, str(sm["prompts_per_task"][t]), f"{100 * f:.1f}", "yes" if t in sm["viable_tasks"] else "**no**"])
+    return table(["Task", "Role", "Prompts", "Full-cache F1", f"Clears the {100 * sm['viability_floor']:.0f} F1 floor"], rows, ["---", "---", "---:", "---:", "---"])
+
+
+def block_p14_table(ctx: Mapping[str, Any]) -> str:
+    """Pooled multi-hop retention beside the single-document control, per rung and budget."""
+    comp = lookup(ctx, "phase14.analysis.comparison")
+    if not isinstance(comp, Mapping) or not comp:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in comp.values():
+        h, e = c["hard"], c["easy"]
+        verdict = ("**below**" if c["gap"] < 0 else "**above**") if c["separated"] else "overlapping"
+        rows.append([
+            POLICY_NAMES.get(c["policy"], c["policy"]),
+            _pct_budget(c["budget"]),
+            f"{100 * e['retention']:.1f}%", _ci(e["retention_ci95"]),
+            f"{100 * h['retention']:.1f}%", _ci(h["retention_ci95"]),
+            verdict,
+            f"{100 * c['gap_ci95'][0]:+.1f} to {100 * c['gap_ci95'][1]:+.1f} pp",
+        ])
+    header = ["Policy", "Budget", "Single-doc retention", "95% CI", "Multi-hop retention", "95% CI", "Disjoint-CI test", "Difference CI"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---", "---:"])
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
