@@ -1,8 +1,8 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-27T06:19:44+00:00",
-    "git_commit": "a00121996480108ce5153ab1ba33414afb5faaaf",
+    "generated_at_utc": "2026-09-27T06:20:09+00:00",
+    "git_commit": "b8bf92825b288c61bca52210a553f0a13b2b1b67",
     "git_dirty": true,
     "git_dirty_files": [
       "README.md",
@@ -303,6 +303,10 @@
     "decode_ms": {
       "min": 29.823999997461215,
       "max": 60.68790000426816
+    },
+    "replay_ms": {
+      "min": 23.835699998016935,
+      "max": 54.90655000176048
     },
     "token_agreement": {
       "min": 0.9850746268656716,
