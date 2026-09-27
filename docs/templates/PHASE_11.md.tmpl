@@ -1,0 +1,94 @@
+# Phase 11 gate report: the Phase 6 ceiling, re-measured on a replay that does not race
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+[Phase 6](PHASE_6.md) priced the one redesign the data pointed at — taking the residency decision
+off the host — with a replay ablation, and found a ceiling of
+{{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}×.
+[Phase 9](PHASE_9.md) §5 then found that the replay raced: the tier's pinned staging buffers were
+refilled by the next layer before the previous layer's copy had read them, a hazard the normal path
+never hits because its per-layer index sync drains every copy. The fix (commit `2be6251`) waits on a
+CUDA event before a buffer is reused. That made the Phase 6 number suspect in one known direction,
+and it has been quoted with a caveat in `FINDINGS.md` and the README since. This phase replaces the
+caveat with a measurement.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing, including the race test from Phase 9 (it stalls the
+  device with `torch.cuda._sleep` so the host always runs ahead; it fails without the fix).
+- [x] **Real experiment run.** `scripts/03_host_ceiling.py --config configs/phase11.yaml`, three
+  independent runs (`--run-id 1..3`), launched detached from a worktree pinned at the commit under
+  test, on an idle machine overnight; then `scripts/analyze_ceiling.py --phase phase11
+  --compare-to phase5`.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What changed, and what did not
+
+`configs/phase11.yaml` is `configs/phase5.yaml` with the phase name changed: the same policies,
+context ({{ phase11.ceiling.summary.context | int }} tokens), block size, decode length and warmup,
+through the same script. **One claim in that config was wrong and is corrected in it:** Phase 6 ran
+the script with a `--budgets 0.25 0.125 0.0625` override (its recorded `argv` says so), so this run's
+75% and 50% conditions are additional. Every comparison with Phase 6 below is on the
+{{ phase11.ceiling.previous.shared_conditions | int }} conditions both phases measured. Two things
+differ on purpose. The ceiling is now
+{{ phase11.ceiling.summary.runs | int }} independent runs rather than one, so it carries a
+run-to-run range like every other latency in this study; and it ran with nothing else on the
+machine. The expected direction was written into the config before the run: a correct replay must
+wait for a copy the racy one skipped, so the ceiling should shrink or hold.
+
+## 1. The ceiling
+
+{{> p11_ceiling }}
+
+**The ceiling shrank, as predicted, and not by much.** On the
+{{ phase11.ceiling.previous.shared_conditions | int }} shared conditions it is now
+{{ phase11.ceiling.previous.ceiling_speedup_now_shared.min | .2f }}–{{ phase11.ceiling.previous.ceiling_speedup_now_shared.max | .2f }}×,
+against Phase 6's
+{{ phase11.ceiling.previous.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.previous.ceiling_speedup.max | .2f }}×.
+It is lower at **{{ phase11.ceiling.previous.shrank | int }} of
+{{ phase11.ceiling.previous.shared_conditions | int }}**, keeping
+{{ phase11.ceiling.previous.gain_ratio.min | pct0 }}–{{ phase11.ceiling.previous.gain_ratio.max | pct0 }}
+of the speedup Phase 6 reported. That is the direction the race predicts — the racy replay skipped a
+wait a correct one must pay — and the size says the race was a small part of the old number, not
+most of it. Phase 6 was a single run, so the per-condition changes are individually within
+run-to-run noise; the consistent direction is the finding, not any one ratio.
+
+**Token agreement does not settle how much of Phase 6's disagreement was the race.** The replay
+agrees with normal decode on
+{{ phase11.ceiling.summary.token_agreement.min | pct }}–{{ phase11.ceiling.summary.token_agreement.max | pct }}
+of tokens, against Phase 6's
+{{ phase11.ceiling.previous.token_agreement.min | pct }}–{{ phase11.ceiling.previous.token_agreement.max | pct }},
+but condition by condition it moves in both directions, by a token or two out of the decode. That
+is the size of the fast kernel's own nondeterminism (Phase 1: not bit-repeatable for single-query
+decode, which is why quality is never measured on it), so the race's share of the old disagreement
+is not measurable here. Fetched pairs match between the two passes in every condition, so the replay
+does exactly the normal pass's gathers.
+
+**The conclusion Phase 6 drew is unchanged.** Across all
+{{ phase11.ceiling.summary.runs | int }} runs and every budget, including the two new ones, a perfect
+device-side decision is worth
+{{ phase11.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.summary.ceiling_speedup.max | .2f }}×.
+The top of that range is at the new 75% and 50% budgets, above anything Phase 6 reported; not because
+the decision costs more there — the milliseconds saved are similar — but because those budgets
+decode about twice as fast, so the same saving is a larger fraction.
+The fastest the replay ever decodes is
+{{ phase11.ceiling.summary.replay_ms.min | .1f }} ms per token, still slower than the full cache's
+{{ phase11.ceiling.summary.full_decode_ms | .1f }} ms. The redesign would narrow the tier's gap to
+keeping KV in VRAM and never close it, which is what `FINDINGS.md` §4 says; the caveat
+it carried can now be replaced by this number.
+
+**Two instruments still agree.** The replay's saving differs from the rank-and-sync time counted
+independently on normal decode by
+{{ phase11.ceiling.summary.saved_vs_counted_rank_ms.min | +.1f }} to
+{{ phase11.ceiling.summary.saved_vs_counted_rank_ms.max | +.1f }} ms per token, so the ceiling measures what it claims to.
+
+**A note on the machine.** The runs were meant to be on an idle laptop, and mostly were, but the
+system ran critically short of RAM at one point during them, and a few isolated repeats were slow (in run 1, the
+full cache's second repeat decoded at about 60% of its usual speed). Every condition is a
+median over three repeats and the ceiling pools three runs, so a single slow repeat does not move
+it; the per-repeat logs are kept with the runs.
+
+## Provenance
+
+{{> p11_provenance }}
