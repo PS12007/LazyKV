@@ -9,6 +9,11 @@
 # policies, budgets, context, block size, tier settings, decode length and warmup as
 # configs/phase5.yaml, run through the same script (scripts/03_host_ceiling.py).
 #
+# Correction, written after the run: the claim above is wrong about budgets. Phase 6 ran the script
+# with `--budgets 0.25 0.125 0.0625` (see results/phase5/host_ceiling/run_1 provenance argv), so the
+# 75% and 50% conditions here are additional and have no Phase 6 counterpart. The comparison with
+# Phase 6 is made on the three shared budgets only (analyze_ceiling.py `previous.*_shared`).
+#
 # Two things change, both deliberate:
 #   - Three independent runs instead of one, each with its own model load, so the ceiling carries a
 #     run-to-run range like every other latency in the study.
