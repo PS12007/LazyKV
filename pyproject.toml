@@ -21,6 +21,9 @@ Repository = "https://github.com/PS12007/LazyKV"
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1"]
+# Only for the 3B stress model: 4-bit weights are what let a 3B model and a 32K KV cache share 8 GB.
+# Verified on this machine's Blackwell GPU (sm_120) with torch 2.12.0+cu130 before it was adopted.
+quant = ["bitsandbytes==0.50.2"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

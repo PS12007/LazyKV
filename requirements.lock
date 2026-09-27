@@ -5,6 +5,7 @@
 # torch is the cu130 build: the default PyPI wheel is CPU-only on Windows.
 annotated-doc==0.0.5
 anyio==4.15.1
+bitsandbytes==0.50.2
 certifi==2026.7.22
 click==8.5.0
 colorama==0.4.6
@@ -45,8 +46,8 @@ shellingham==1.5.4
 six==1.17.0
 sympy==1.14.0
 tokenizers==0.23.2
+torch @ file:///C:/Users/priya/AppData/Local/Temp/claude/C---CS-LazyKV/af33c157-626b-4e7e-ad33-4a1dc80b393f/scratchpad/torch-2.12.0+cu130-cp312-cp312-win_amd64.whl
 tqdm==4.70.1
 transformers==5.16.1
 typer==0.27.2
 typing-extensions==4.16.0
-torch==2.12.0+cu130
