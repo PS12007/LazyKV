@@ -1164,6 +1164,50 @@ def fig_p10_perplexity(a: dict[str, Any], t: Theme) -> None:
     fig.subplots_adjust(left=0.06, right=0.985, top=0.82, bottom=0.25, wspace=0.2)
     save(fig, "p10_perplexity", t)
 
+
+P12_POLICIES = (("window_sink", "Window + sink (rung 2)"), ("h2o", "H2O-style (rung 4)"), ("quest", "Quest-style (rung 5)"))
+
+
+def fig_p12_ruler(a: dict[str, Any], t: Theme) -> None:
+    """Retention on the single needle and on RULER variable tracking, one panel per rung.
+
+    Colour follows the task. vt is drawn twice in its colour: solid with RULER's partial credit per
+    variable, dotted scored all-or-nothing (post hoc), because the single needle is all-or-nothing
+    and partial credit alone would flatter vt for any rung that loses context.
+    """
+    sm = a["summary"]
+    ctx = str(sm["longest_context"])
+    kinds = a["contexts"][ctx]["kinds"]
+    hard, easy = sm["hard_kind"], sm["control_kind"]
+    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.4), dpi=160, sharey=True)
+    fig.patch.set_facecolor(t.surface)
+    budgets = sorted({v["budget"] for v in kinds[hard].values() if v["policy"] != "block_full"})
+    for ax, (pol, pretty) in zip(axes, P12_POLICIES):
+        style_axes(ax, t)
+        ax.axhline(100, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
+        rows = {k: sorted((v for v in kinds[k].values() if v["policy"] == pol), key=lambda v: v["budget"]) for k in (easy, hard)}
+        series = (
+            (easy, "retention", t.series[0], "-", "o", "single needle"),
+            (hard, "retention", t.series[1], "-", "s", "variable tracking (partial credit)"),
+            (hard, "retention_all_or_nothing_post_hoc", t.series[1], (0, (1, 1.6)), "s", "variable tracking, all-or-nothing (post hoc)"),
+        )
+        for kind, field, color, dash, marker, name in series:
+            r = rows[kind]
+            ax.plot([v["budget"] for v in r], [100 * v[field] for v in r], color=color, linestyle=dash, linewidth=2,
+                    marker=marker, markersize=5, markeredgecolor=t.surface, markeredgewidth=1.2, label=name if pol == "quest" else None)
+        _budget_axis(ax, budgets)
+        ax.set_title(pretty, color=t.ink, fontsize=10, loc="left")
+        ax.set_xlabel("Budget")
+        ax.set_ylim(-3, 112)
+    axes[0].set_ylabel("Retention, % of full cache")
+    leg = axes[2].legend(loc="upper center", bbox_to_anchor=(-0.75, -0.2), ncol=3, frameon=False, fontsize=9)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+    title(fig, t, f"Multi-hop retrieval at {int(ctx):,} tokens: where query-aware selection loses the chain",
+          f"{sm['prompts_per_kind'][ctx][hard]} prompts per kind; RULER variable tracking beside the single needle, in the same run")
+    fig.subplots_adjust(left=0.06, right=0.985, top=0.81, bottom=0.27, wspace=0.08)
+    save(fig, "p12_ruler", t)
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -1182,6 +1226,8 @@ def main() -> None:
     p8 = json.loads(p8_path.read_text(encoding="utf-8")) if p8_path.exists() else None
     p10_path = RESULTS_DIR / "phase10" / "analysis" / "metrics.json"
     p10 = json.loads(p10_path.read_text(encoding="utf-8")) if p10_path.exists() else None
+    p12_path = RESULTS_DIR / "phase12" / "analysis" / "metrics.json"
+    p12 = json.loads(p12_path.read_text(encoding="utf-8")) if p12_path.exists() else None
     ladder_path = RESULTS_DIR / "ladder" / "metrics.json"
     ladder = json.loads(ladder_path.read_text(encoding="utf-8")) if ladder_path.exists() else None
     lr_path = RESULTS_DIR / "phase1" / "latency_regimes" / "metrics.json"
@@ -1218,6 +1264,8 @@ def main() -> None:
             fig_p8_context(p8, t)
         if p10 is not None:
             fig_p10_perplexity(p10, t)
+        if p12 is not None:
+            fig_p12_ruler(p12, t)
         if ladder is not None:
             fig_ladder_pareto(ladder, t)
     print("figures written to", FIG_DIR)
