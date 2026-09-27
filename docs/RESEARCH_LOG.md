@@ -7,6 +7,35 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 11, the Phase 6 ceiling on a replay that does not race
+
+Phase 9 found the replay ablation behind Phase 6's ceiling reused staging buffers before their copy
+had read them, and the study had carried a "probably optimistic" caveat since. This phase re-ran it
+on the fixed code, 3 runs overnight, and replaced the caveat.
+
+### The answer
+
+On the 6 conditions both phases measured, the
+ceiling is 1.10–1.14×
+against Phase 6's 1.11–1.16×,
+lower at 6 of them: the predicted direction, and a small
+correction. The conclusion stands: the fastest replay, 23.8
+ms per token, is still slower than the full cache's 18.8.
+
+### Incidents
+
+- **The config was wrong about its own comparability.** It claimed Phase 6's budgets; Phase 6 had
+  run with a three-budget override, which its recorded `argv` shows. The config was corrected in a
+  separate commit, and the analysis now compares only shared conditions.
+- **The first draft of the report overclaimed twice**: that the fix raised token agreement (it moved
+  both ways within kernel noise) and that the conclusion got "stronger" (the new budgets' larger
+  ratios come from faster decode, not a costlier decision). Both were caught against the rendered
+  table before commit.
+- **The machine was not fully idle.** RAM ran critically short at one point and a few repeats were
+  slow; medians over repeats and runs absorb single outliers, and the report says so.
+
+---
+
 ## 2026-09-27: Phase 10, long-document perplexity, and how little it sees
 
 The brief's third quality measure (§B7.3) had never been run. It came almost free: the teacher-forced
