@@ -71,6 +71,7 @@ def main() -> None:
                 # Phase 12's pre-committed rule, unchanged.
                 "separated": h["retention_ci95"][1] < e["retention_ci95"][0] or e["retention_ci95"][1] < h["retention_ci95"][0],
                 "gap_ci95": gap_ci,
+                "verdict": "established" if (h["retention_ci95"][1] < e["retention_ci95"][0] and h["retention"] < e["retention"]) else "not established",
                 "phase12_separated_at_30": None,
             }
     # What Phase 12's 30 prompts said at 32K, for the before/after.
