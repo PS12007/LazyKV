@@ -98,7 +98,7 @@ independently on normal decode by
 
 **A note on the machine.** The runs were meant to be on an idle laptop, and mostly were, but the
 system ran critically short of RAM at one point during them, and a few isolated repeats were slow (in run 1, the
-full cache's second repeat decoded at about 60% of its usual speed). Every condition is a
+full cache's second repeat was markedly slower than its other two). Every condition is a
 median over three repeats and the ceiling pools three runs, so a single slow repeat does not move
 it; the per-repeat logs are kept with the runs.
 
