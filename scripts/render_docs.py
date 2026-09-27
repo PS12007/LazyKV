@@ -39,6 +39,7 @@ OUTPUTS = {
     "PHASE_7.md.tmpl": "docs/phases/PHASE_7.md",
     "PHASE_8.md.tmpl": "docs/phases/PHASE_8.md",
     "PHASE_9.md.tmpl": "docs/phases/PHASE_9.md",
+    "PHASE_10.md.tmpl": "docs/phases/PHASE_10.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1845,6 +1846,76 @@ def block_p9_provenance(ctx: Mapping[str, Any]) -> str:
     rows = [_provenance_row(f"NIAH samples {s['sample_start']}–{s['sample_start'] + s['samples'] - 1}", s) for s in src]
     return table(["Chunk", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
+
+
+def _ratio_ci(ci: Any) -> str:
+    return f"{ci[0]:.3f}–{ci[1]:.3f}" if isinstance(ci, list) and len(ci) == 2 else NOT_MEASURED
+
+
+def block_p10_context(ctx: Mapping[str, Any]) -> str:
+    """The reference alone across context: does this corpus reward long context at all?"""
+    per = lookup(ctx, "phase10.analysis.contexts")
+    eff = lookup(ctx, "phase10.analysis.context_effect")
+    if not isinstance(per, Mapping) or not per:
+        return f"_{NOT_MEASURED}_"
+    eff = eff if isinstance(eff, Mapping) else {}
+    rows = []
+    for c in sorted(per, key=int):
+        e = eff.get(c)
+        rows.append([f"{int(c):,}", f"{per[c]['full_perplexity']:.3f}", f"{per[c]['full_nll']:.4f}",
+                     "reference" if e is None else f"{e['ppl_ratio_over_longest']:.3f}",
+                     "" if e is None else f"{e['windows_worse']} / {per[c]['windows']}"])
+    return table(["Context", "Full-cache perplexity", "Mean NLL (nats)", "Perplexity over the longest context", "Windows worse than at the longest"],
+                 rows, ["---:", "---:", "---:", "---:", "---:"])
+
+
+def block_p10_table(ctx: Mapping[str, Any]) -> str:
+    """Every condition at the longest context, with the paired effect and the divergence beside it."""
+    longest = lookup(ctx, "phase10.analysis.summary.longest_context")
+    conds = lookup(ctx, f"phase10.analysis.contexts.{longest}.conditions")
+    if not isinstance(conds, Mapping) or not conds:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in conds.values():
+        rows.append([
+            POLICY_NAMES.get(c["policy"], c["policy"]),
+            _pct_budget(c["budget"]),
+            f"{c['perplexity']:.3f}",
+            f"{c['nll_delta']:+.4f}",
+            f"{c['ppl_ratio']:.3f}",
+            _ratio_ci(c["ppl_ratio_ci95"]),
+            f"{c['windows_worse']} / {c['windows_better']}",
+            f"{c['mean_kl']:.2e}",
+            f"{100 * c['top1_agreement']:.1f}%",
+        ])
+    header = ["Policy", "Budget", "Perplexity", "NLL delta (nats)", "Perplexity ratio", "95% CI (paired, by window)", "Windows worse / better", "Mean KL", "Top-1 agreement"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---:"])
+
+
+def block_p10_grid(ctx: Mapping[str, Any]) -> str:
+    """Perplexity ratio to the full cache, one column per context: does the cost travel?"""
+    per = lookup(ctx, "phase10.analysis.contexts")
+    if not isinstance(per, Mapping) or not per:
+        return f"_{NOT_MEASURED}_"
+    cols = sorted(per, key=int)
+    keys = [k for k, c in per[cols[-1]]["conditions"].items() if c["policy"] != "block_full"]
+    rows = []
+    for k in keys:
+        c0 = per[cols[-1]]["conditions"][k]
+        cells = []
+        for col in cols:
+            c = per[col]["conditions"].get(k)
+            cells.append(NOT_MEASURED if c is None else f"{c['ppl_ratio']:.3f}")
+        rows.append([POLICY_NAMES.get(c0["policy"], c0["policy"]), _pct_budget(c0["budget"]), *cells])
+    return table(["Policy", "Budget", *[f"{int(c):,}" for c in cols]], rows, ["---", "---:", *["---:"] * len(cols)])
+
+
+def block_p10_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase10.analysis.sources")
+    if not isinstance(src, list) or not src:
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row(f"{s['context']:,} tokens", s) for s in sorted(src, key=lambda s: s["context"])]
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
