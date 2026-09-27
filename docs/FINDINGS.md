@@ -33,7 +33,7 @@ Individual gate reports carry the detail and the provenance:
 [Phase 0](phases/PHASE_0.md) · [Phase 1](phases/PHASE_1.md) · [Phase 2](phases/PHASE_2.md) ·
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
-[Phase 9](phases/PHASE_9.md).
+[Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -265,7 +265,41 @@ correct replay must pay. The race is fixed and guarded by a test; no quality res
 since normal decode always synced. The ceiling itself has **not been re-measured** — that needs an
 idle machine — but a lower ceiling only strengthens the conclusion above.
 
-## 5. Why these phases can be put on one frontier
+## 5. What perplexity sees, and what it misses
+
+The brief lists long-document perplexity as the third quality measure (§B7.3).
+[Phase 10](phases/PHASE_10.md) ran it for rungs 2, 4, 5 and 8 at every budget and at
+4 contexts, on the same
+3,072 tokens of two novels each time, and its
+main result is a warning about the metric rather than about any policy.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/p10_perplexity-dark.png">
+  <img alt="NIAH retention against perplexity ratio for each policy and budget at 32K, and the perplexity ratio at the tightest budget across context lengths" src="figures/p10_perplexity-light.png">
+</picture>
+
+**Perplexity barely registers the retrieval a budget loses.** At
+32,768 tokens,
+9 of
+20 conditions lose at least a tenth of the
+full cache's NIAH retrieval while their perplexity interval still includes no change. The window
+with a sink at a 25% budget keeps
+24.4% of retrieval at a perplexity
+ratio of 1.024. Perplexity does rank the
+conditions in roughly the right order (Spearman
+0.94 against NIAH loss); what it cannot do is
+show how large the loss is, because the few tokens that need distant context are averaged in with
+the many that do not. This is the failure LongPPL (arXiv 2410.23771) was designed around.
+
+**It also scales the other way.** A fixed budget fraction costs *less* perplexity at longer context
+(every one of the 13 conditions with a
+resolved cost at 4,096 tokens costs less at
+32,768), because a fraction of a long document is
+still a lot of recent text. Retrieval does not behave that way: Phase 8 found its cost set by the
+fraction. So a perplexity budget is the wrong proxy for this study's question at any context, and
+the headline stays on retrieval.
+
+## 6. Why these phases can be put on one frontier
 
 The rungs were measured weeks apart in four separate gates, so combining them is a claim that needs
 evidence rather than an assumption. Adjacent phases deliberately overlap, and every overlapping
@@ -302,10 +336,11 @@ combined frontier. Decode speed is not: it varies by up to
 different phases, which is thermal and run-to-run variation on a laptop and is why every latency
 claim in this study is quoted with a range over independent runs.
 
-## 6. Limitations
+## 7. Limitations
 
-- **One model and one task.** Llama-3.2-1B, scored on needle-in-a-haystack with
-  45 prompts per condition. The 3B stress model in the brief was never
+- **One model and one retrieval task.** Llama-3.2-1B, scored on needle-in-a-haystack with
+  45 prompts per condition, plus long-document perplexity (§5), which
+  turned out to be a poor proxy for retrieval. The 3B stress model in the brief was never
   run, so nothing here speaks to a regime where KV dominates VRAM more aggressively.
 - **One context, for everything except [Phase 8](phases/PHASE_8.md).** The frontier above is at
   32,768 tokens. Phase 8 swept
@@ -338,4 +373,4 @@ claim in this study is quoted with a range over independent runs.
 - **The fast kernel is not bit-repeatable** for single-query decode, so quality is measured on a
   separate deterministic kernel and agreement is reported rather than assumed.
 - **This is a laptop.** Thermal behaviour is controlled for by interleaving and repeating, not
-  eliminated; see §5's speed variation.
+  eliminated; see §6's speed variation.
