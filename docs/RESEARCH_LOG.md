@@ -7,6 +7,43 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 12, RULER's harder tasks, and where query-aware selection loses the chain
+
+Every retrieval number through Phase 11 was a needle, the best case for query-aware selection. This
+phase added RULER's variable tracking and common words extraction to the harness, ran a full-cache
+pilot, and then ran rungs 2, 4 and 5 on the viable task beside an in-run single-needle control.
+
+### The answer
+
+At a 6.25% budget Quest-style selection retains
+15%–37%
+of variable tracking against
+50%–63%
+of the single needle, and its lead over the cheap baselines disappears. Down to 25% it is still the
+best rung on both. Common words extraction was beyond the model at every context and was dropped by
+a rule committed before most of the pilot was read.
+
+### Decisions made after seeing data, and labelled so
+
+- **A difference CI.** The pre-committed test (disjoint CIs) is conservative and separated the
+  shortfall in 2 of
+  4 contexts. A bootstrap CI of the
+  difference, added after the 32K run was read, resolves it in
+  4. Both are reported.
+- **All-or-nothing scoring.** vt gives partial credit per variable and the needle does not, which
+  made the window look better on the harder task. Rescoring vt all-or-nothing removes most of that
+  and shows Quest-style selection finishing fewer chains than either baseline at the tightest budget.
+
+### Incidents
+
+- The first pilot crashed on cwe prompts, which have no needle position; the driver indexed one
+  unconditionally. The unit tests covered the prompt builder but not that path; a 4K smoke run of
+  the real driver now precedes every relaunch.
+- A report draft said the window reads higher on vt "at every budget"; one cell of twenty goes the
+  other way, caught against the rendered grid.
+
+---
+
 ## 2026-09-27: Phase 11, the Phase 6 ceiling on a replay that does not race
 
 Phase 9 found the replay ablation behind Phase 6's ceiling reused staging buffers before their copy
