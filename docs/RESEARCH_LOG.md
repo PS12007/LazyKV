@@ -7,6 +7,33 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 13, powering Phase 12's multi-hop test
+
+Phase 12's pre-committed test could not separate Quest-style selection's variable-tracking shortfall
+at 32K with 30 prompts per task. Following Phase 9's precedent, this phase added prompts under the
+same rule: 150 per task, pooled with Phase 12's
+after all 30 overlapping answers reproduced exactly.
+
+### The answer
+
+At 6.25% the shortfall is established
+(41.5% against
+61.3%); at 12.5% it is not
+(69.4% against
+81.3%, intervals overlapping). The
+difference test Phase 12 added after the fact excludes zero at both; it was not promoted to the rule.
+
+### What it corrected
+
+Phase 12's 32K gaps shrank with five times the prompts, from
+-23.8 pp to
+-11.9 pp at 12.5% and from
+-27.3 pp to
+-19.8 pp at 6.25%. The direction held; the size was
+overstated by the small sample, and FINDINGS now quotes the pooled numbers.
+
+---
+
 ## 2026-09-27: Phase 12, RULER's harder tasks, and where query-aware selection loses the chain
 
 Every retrieval number through Phase 11 was a needle, the best case for query-aware selection. This

@@ -5,6 +5,33 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 13, powering Phase 12's multi-hop test
+
+Phase 12's pre-committed test could not separate Quest-style selection's variable-tracking shortfall
+at 32K with 30 prompts per task. Following Phase 9's precedent, this phase added prompts under the
+same rule: {{ phase13.analysis.summary.prompts_per_kind.vt | int }} per task, pooled with Phase 12's
+after all {{ phase13.analysis.summary.overlap_compared | int }} overlapping answers reproduced exactly.
+
+### The answer
+
+At 6.25% the shortfall is established
+({{ phase13.analysis.conditions.quest_6_25.hard.retention | pct }} against
+{{ phase13.analysis.conditions.quest_6_25.easy.retention | pct }}); at 12.5% it is not
+({{ phase13.analysis.conditions.quest_12_5.hard.retention | pct }} against
+{{ phase13.analysis.conditions.quest_12_5.easy.retention | pct }}, intervals overlapping). The
+difference test Phase 12 added after the fact excludes zero at both; it was not promoted to the rule.
+
+### What it corrected
+
+Phase 12's 32K gaps shrank with five times the prompts, from
+{{ phase13.analysis.conditions.quest_12_5.phase12_gap_at_30 | pp }} to
+{{ phase13.analysis.conditions.quest_12_5.gap | pp }} at 12.5% and from
+{{ phase13.analysis.conditions.quest_6_25.phase12_gap_at_30 | pp }} to
+{{ phase13.analysis.conditions.quest_6_25.gap | pp }} at 6.25%. The direction held; the size was
+overstated by the small sample, and FINDINGS now quotes the pooled numbers.
+
+---
+
 ## 2026-09-27: Phase 12, RULER's harder tasks, and where query-aware selection loses the chain
 
 Every retrieval number through Phase 11 was a needle, the best case for query-aware selection. This
