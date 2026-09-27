@@ -123,6 +123,9 @@ def main() -> None:
         "ceiling_speedup": span([r["ceiling_speedup"] for r in tiered]),
         "saved_ms": span([r["saved_ms"] for r in tiered]),
         "decode_ms": span([r["decode_ms"] for r in tiered]),
+        # The replay is the fastest the tier could decode with a perfect device-side decision, so
+        # its minimum against the full cache is the gap such a redesign would leave.
+        "replay_ms": span([r["replay_ms"] for r in tiered]),
         "token_agreement": span([r["token_agreement"] for r in tiered if r["token_agreement"] is not None]),
         "all_fetched_pairs_match": all(r["fetched_pairs_match"] for r in tiered),
         "full_inter_layer_gap_ms": None if full_gap is None else 1e3 * full_gap,
