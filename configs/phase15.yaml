@@ -1,0 +1,64 @@
+# Phase 15: the 3B stress model the brief planned (§B8), at the largest context it fits.
+#
+# Every result so far is Llama-3.2-1B. The brief named a 3B model as the stress case, where KV is a
+# larger share of VRAM. It needs 4-bit weights to fit at all (bitsandbytes nf4; KV stays bf16), and
+# a feasibility check (2026-09-27) settled the context: at 16K the full cache peaks at 4.25 GiB with
+# 1.17 GiB free, while at 32K the model plus its full KV (3.5 GiB) spilled into shared memory and a
+# single prefill took 267 s instead of 7.8 s -- the same wall Phase 8 hit at 64K on the 1B model,
+# for the same reason: the reference is a full-size KV copy. So this phase runs at 16K.
+#
+# Why 16K is a clean comparison rather than a compromise: Phase 8 measured the 1B model at 16K on
+# exactly these prompts (NIAH seed 0, samples 0-2 per kind x depth), so the two models' answers are
+# paired prompt by prompt, for the rungs both ran (2, 5, 6).
+#
+# Questions, fixed before any 3B output was read:
+#   1. Does each rung keep its 1B retention at the same budget fraction? Reported per rung and budget
+#      with both models' paired CIs; at 45 prompts only large differences can resolve, and the
+#      report says so rather than reading non-significance as agreement.
+#   2. Does the ladder's order at each budget (rung 5 >= rung 4 >= rung 2 on the 1B) hold?
+#   3. Rung 6 must answer as rung 5 does, prompt for prompt, as on the 1B (Phase 4); a difference
+#      would mean the tier behaves differently under a quantized model.
+#
+# The reference is the 3B model's own full cache with the same 4-bit weights, so a retention is a
+# policy's effect on this model, not quantization's.
+phase: phase15
+
+model:
+  # A local copy: the Hugging Face cache needs symlinks, which Windows refuses without admin rights.
+  repo: D:\CompSci\lazykv-data\models\Llama-3.2-3B-Instruct
+  revision: null
+  source_repo: unsloth/Llama-3.2-3B-Instruct
+  source_revision: 006f5dcd1393c3add266de40994ba96225e9689d
+  quant: nf4
+
+block_size: 64
+prefill_chunk: 2048
+context: 16384
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [window_sink, h2o, quest, tiered_sync]
+
+tier:
+  fetch: gather
+  spare: 1.0
+
+h2o:
+  stride: 32
+  query_batch: 4
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+bootstrap:
+  iters: 10000
+  seed: 0
