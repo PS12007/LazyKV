@@ -7,7 +7,8 @@ from a cache derived from that prefill. Scored on lazykv.quality.QUALITY_STRATEG
 fast kernel is not bit-repeatable), so a condition's delta against "full" is the policy's alone.
 
   NIAH             greedy answer after the prompt; score = fraction of needle values present
-  teacher-forced   256 continuation positions of a book passage; KL and top-1 vs "full"
+  teacher-forced   256 continuation positions of a book passage; KL and top-1 vs "full", and the
+                   true tokens' NLL (perplexity, brief §B7.3) from the same rows
 
 Launch detached:
     .venv\\Scripts\\python.exe scripts\\02_policy_quality.py > logs\\policy_quality.log 2>&1
@@ -38,6 +39,23 @@ from lazykv.quality import QUALITY_STRATEGY, compare_stream  # noqa: E402
 from lazykv.sweep import build_cache, cache_facts, conditions, load_config, make_host_memory, make_scorer, results_subdir  # noqa: E402
 
 log = logging.getLogger("policy_quality")
+
+
+def tf_windows(tf: dict[str, Any], ctx: int) -> list[tuple[str, int, int]]:
+    """(book, offset, target) per teacher-forced window; the continuation starts at book token `target`.
+
+    `offsets` fixes where the *context* starts, so a different context length scores different
+    tokens. `targets` fixes the *scored tokens* and puts `ctx` tokens of the book before them, so
+    runs at different contexts score the same text and their perplexities are paired: any change
+    is the context's, not the passage's.
+    """
+    if "targets" in tf:
+        out = [(book, t - ctx, t) for book, ts in tf["targets"].items() for t in ts]
+    else:
+        out = [(tf["book"], o, o + ctx) for o in tf["offsets"]]
+    if bad := [w for w in out if w[1] < 0]:
+        raise ValueError(f"teacher-forced targets need {ctx} tokens of context before them: {bad}")
+    return out
 
 
 def main() -> None:
@@ -130,12 +148,15 @@ def main() -> None:
 
     # ---- teacher-forced divergence --------------------------------------------------------
     tf = cfg["teacher_forced"]
-    text_ids = load_tokens(tf["book"], lm.tokenizer)
+    books: dict[str, torch.Tensor] = {}
     tf_rows: list[dict[str, Any]] = []
-    for offset in [] if args.skip_teacher_forced else tf["offsets"]:
+    for book_name, offset, target in [] if args.skip_teacher_forced else tf_windows(tf, ctx):
+        text_ids = books.setdefault(book_name, load_tokens(book_name, lm.tokenizer))
         # BOS, then a stretch of the book: the same shape as the Phase 1 quality reference.
         ids = torch.cat([text_ids[:1], text_ids[1 + offset : offset + ctx + tf["continuation"]]])
         context, cont = ids[:ctx], ids[ctx : ctx + tf["continuation"]]
+        if cont.numel() != tf["continuation"]:
+            raise ValueError(f"{book_name} target {target}: only {cont.numel()} continuation tokens left")
         pre = run_prefill(context)
         total = ctx + tf["continuation"]
         reference = torch.stack([row.cpu() for row in teacher_forced_decode(lm.model, full, pre.last_logits, cont)])
@@ -144,13 +165,14 @@ def main() -> None:
         rng.shuffle(order)
         for cond in order:
             built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
-            div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont))
+            div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont), targets=cont)
             built.close()
-            tf_rows.append({"offset": offset, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
+            tf_rows.append({"book": book_name, "offset": offset, "target": target, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
             if built.shares_full:
                 full.truncate(ctx)
             del built
-            log.info("teacher-forced offset %d %s: top1 %.3f, KL %.2e", offset, cond.label, tf_rows[-1]["top1_agreement"], tf_rows[-1]["mean_kl"])
+            r = tf_rows[-1]
+            log.info("teacher-forced %s @%d %s: top1 %.3f, KL %.2e, NLL %.4f (ref %.4f)", book_name, target, cond.label, r["top1_agreement"], r["mean_kl"], r["mean_nll"], r["ref_mean_nll"])
         del reference
 
     write_metrics(
