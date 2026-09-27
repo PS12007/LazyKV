@@ -109,6 +109,10 @@ def main() -> None:
         "within_resolved_wrong_way": sum(1 for w in within_all if w["resolved"] and w["a_below"] > w["a_above"]),
         "across_comparisons": len(across_all),
         "across_resolved": sum(1 for a in across_all if a["resolved"]),
+        # Rungs 5 and 8 make the same selection (rung 8 only narrows the cold tier's precision), so
+        # their KLs are expected to be indistinguishable; counted apart so the rest can be read alone.
+        "across_unresolved": sum(1 for a in across_all if not a["resolved"]),
+        "across_unresolved_rung5_vs_rung8": sum(1 for a in across_all if not a["resolved"] and {a["a"], a["b"]} == {"quest", "tiered_int8"}),
         # The case the headline could not settle: rung 5 at 75% against rung 5 at 50%.
         "quest_75_kl": q.get(label("quest", 0.75), {}).get("mean_kl"),
         "quest_75_kl_ci95": q.get(label("quest", 0.75), {}).get("kl_ci95"),
