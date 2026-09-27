@@ -42,6 +42,7 @@ OUTPUTS = {
     "PHASE_10.md.tmpl": "docs/phases/PHASE_10.md",
     "PHASE_11.md.tmpl": "docs/phases/PHASE_11.md",
     "PHASE_12.md.tmpl": "docs/phases/PHASE_12.md",
+    "PHASE_13.md.tmpl": "docs/phases/PHASE_13.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
