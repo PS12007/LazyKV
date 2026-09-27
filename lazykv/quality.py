@@ -1,4 +1,4 @@
-"""Teacher-forced divergence between a policy and the full-cache reference (brief §B7.1)."""
+"""Teacher-forced divergence from the full-cache reference (brief §B7.1), and perplexity (§B7.3)."""
 
 from __future__ import annotations
 
@@ -29,6 +29,13 @@ class Divergence:
     kl_ci95: tuple[float, float]
     top1_ci95: tuple[float, float]
     exact_match: bool
+    # Mean negative log-likelihood of the true continuation, in nats (perplexity = exp of it).
+    # Taken from the same rows as the KL, so perplexity costs no extra decoding. KL says how far a
+    # policy moved the distribution; NLL says whether the move cost the model on real text, which
+    # KL cannot: a policy can diverge in the tail of the distribution without touching the token
+    # that actually comes next. None when the caller has no targets (NIAH has no ground truth rows).
+    mean_nll: float | None = None
+    ref_mean_nll: float | None = None
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -41,7 +48,12 @@ def per_position_kl(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> torch.Ten
     return (ref.exp() * (ref - pol)).sum(dim=-1).clamp_min(0.0)
 
 
-def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) -> Divergence:
+def mean_nll(logp: torch.Tensor, targets: torch.Tensor) -> float:
+    """Mean -log p(target) over positions, in nats. `logp` is [positions, vocab]."""
+    return float(-logp.double().gather(-1, targets.view(-1, 1).to(logp.device)).mean())
+
+
+def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor], targets: torch.Tensor | None = None) -> Divergence:
     """Same result as `compare`, but consumes policy rows one at a time on their device.
 
     Each reference row is moved next to the policy row and compared in float64 there, so
@@ -51,6 +63,8 @@ def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) 
     """
     kl: list[float] = []
     agree: list[float] = []
+    nll: list[float] = []
+    tgt = None if targets is None else targets.view(-1).tolist()
     exact = True
     n = 0
     for i, row in enumerate(policy_rows):
@@ -59,6 +73,8 @@ def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) 
         r, p = ref.double(), row.double()
         kl.append(float((r.exp() * (r - p)).sum().clamp_min(0.0)))
         agree.append(float(ref.argmax() == row.argmax()))
+        if tgt is not None:
+            nll.append(-float(p[tgt[i]]))
         n += 1
     if n != ref_logp.shape[0]:
         raise ValueError(f"policy produced {n} rows, reference has {ref_logp.shape[0]}")
@@ -70,10 +86,12 @@ def compare_stream(ref_logp: torch.Tensor, policy_rows: Iterable[torch.Tensor]) 
         kl_ci95=bootstrap_mean_ci(kl),
         top1_ci95=bootstrap_mean_ci(agree),
         exact_match=exact,
+        mean_nll=None if targets is None else sum(nll) / n,
+        ref_mean_nll=None if targets is None else mean_nll(ref_logp, targets),
     )
 
 
-def compare(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> Divergence:
+def compare(ref_logp: torch.Tensor, pol_logp: torch.Tensor, targets: torch.Tensor | None = None) -> Divergence:
     if ref_logp.shape != pol_logp.shape:
         raise ValueError(f"shape mismatch {tuple(ref_logp.shape)} vs {tuple(pol_logp.shape)}")
     kl = per_position_kl(ref_logp, pol_logp).tolist()
@@ -86,4 +104,6 @@ def compare(ref_logp: torch.Tensor, pol_logp: torch.Tensor) -> Divergence:
         kl_ci95=bootstrap_mean_ci(kl),
         top1_ci95=bootstrap_mean_ci(agree),
         exact_match=bool(torch.equal(ref_logp, pol_logp)),
+        mean_nll=None if targets is None else mean_nll(pol_logp, targets),
+        ref_mean_nll=None if targets is None else mean_nll(ref_logp, targets),
     )

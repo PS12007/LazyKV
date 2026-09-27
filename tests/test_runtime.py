@@ -209,3 +209,23 @@ def test_streaming_compare_matches_full_compare(tiny_models) -> None:  # noqa: A
     assert streamed.positions == full.positions == 26
     assert streamed.top1_agreement == full.top1_agreement and streamed.exact_match == full.exact_match
     assert abs(streamed.mean_kl - full.mean_kl) < 1e-9
+
+
+def test_nll_scores_the_true_token_and_matches_between_compare_paths() -> None:
+    """Perplexity is read off the same rows as KL; both paths must agree, and a self-comparison
+    must report the reference's own NLL, so a policy's perplexity delta is the policy's alone."""
+    import math
+
+    from lazykv.quality import compare, compare_stream
+
+    ref = torch.log_softmax(torch.tensor([[2.0, 0.0, 0.0], [0.0, 3.0, 0.0]]), -1)
+    pol = torch.log_softmax(torch.tensor([[0.0, 2.0, 0.0], [0.0, 3.0, 0.0]]), -1)
+    targets = torch.tensor([0, 1])
+    whole, streamed = compare(ref, pol, targets), compare_stream(ref, iter(pol), targets)
+    expected = -(pol[0, 0] + pol[1, 1]).item() / 2
+    assert math.isclose(whole.mean_nll, expected, rel_tol=1e-6) and math.isclose(streamed.mean_nll, expected, rel_tol=1e-6)
+    assert math.isclose(whole.ref_mean_nll, streamed.ref_mean_nll)
+    assert whole.mean_nll > whole.ref_mean_nll  # pol moved mass off the true first token
+    same = compare(ref, ref, targets)
+    assert same.mean_nll == same.ref_mean_nll
+    assert compare(ref, pol).mean_nll is None
