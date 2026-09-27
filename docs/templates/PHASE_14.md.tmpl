@@ -1,0 +1,91 @@
+# Phase 14 gate report: the ladder on LongBench, real long-document question answering
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Everything through Phase 13 is synthetic: needles, RULER chains and book perplexity. LongBench v1
+(arXiv 2308.14508) asks questions about Wikipedia passages, papers and reports at their natural
+length, scored by token F1. It is the brief's fourth quality measure (§B7.4, "a couple of LongBench
+subsets if time allows"). Phases 12-13 found Quest-style selection losing multi-hop chains at the
+tightest budget, so the subsets chosen were LongBench's multi-document, multi-hop QA (HotpotQA,
+2WikiMQA, MuSiQue), with single-document QA (MultiFieldQA-en) as the in-run control.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing. New: `tests/test_longbench.py` (F1 as LongBench computes
+  it, maximum over reference answers, middle truncation that keeps both the instruction and the
+  question) and `tests/test_phase14_analysis.py` (a task below the floor is excluded, pairing uses
+  only prompts both conditions answered). The transcribed prompts, generation lengths and F1 were
+  also checked byte for byte against the reference repository's files before any run.
+- [x] **Real experiment run.** `scripts/05_longbench.py --config configs/phase14.yaml`, detached
+  from a worktree pinned at the commit under test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was measured
+
+Prompts, truncation, generation lengths and scoring follow the LongBench reference code at commit
+`2e00731`, on the official data release. Every task takes the first
+{{ phase14.analysis.summary.prompts_per_task.hotpotqa | int }} prompts in file order that are at
+least 4,096 tokens long; that length rule was added after a two-prompt smoke test showed a 6.25%
+budget of a 2K-token prompt is smaller than a window policy's minimum, and before the run. Prompts
+ran {{ phase14.analysis.summary.prompt_len.min | int }}–{{ phase14.analysis.summary.prompt_len.max | int }}
+tokens, and {{ phase14.analysis.summary.truncated_prompts | int }} needed truncation. Rungs 2, 4
+and 5 at every budget. The 100% block-pool control matched the full cache on every prompt.
+
+{{> p14_tasks }}
+
+Every task cleared the floor, fixed in the config before the run, so all four are analyzed.
+
+## 1. The answer: no multi-hop shortfall detected, at intervals too wide to exclude one
+
+Pooled multi-hop retention (HotpotQA, 2WikiMQA and MuSiQue together) beside the single-document
+control, per rung and budget, with both of Phase 12's tests:
+
+{{> p14_table }}
+
+**No cell separates, under either test.** At the tightest budget Quest-style selection retains
+{{ phase14.analysis.comparison.quest_6_25.hard.retention | pct }} of the full cache's F1 on multi-hop
+QA and {{ phase14.analysis.comparison.quest_6_25.easy.retention | pct }} on the control. The RULER
+shortfall Phase 13 established at this budget does not reappear here.
+
+**That is "not detected", not "absent".** The difference interval at that budget runs from
+{{ phase14.analysis.comparison.quest_6_25.gap_ci95.0 | pp }} to
+{{ phase14.analysis.comparison.quest_6_25.gap_ci95.1 | pp }}, which contains the gap Phase 13
+measured on variable tracking
+({{ phase13.analysis.conditions.quest_6_25.gap | pp }}). With
+{{ phase14.analysis.summary.prompts_per_task.hotpotqa | int }} prompts per task and F1's partial
+credit, this phase cannot see an effect of that size. One reading consistent with both phases:
+if LongBench's multi-hop questions name the entities they are about, a query-aware selector can see
+what it needs from the question alone, which RULER's variable tracking was built to prevent. Neither
+the premise nor the reading is checked here.
+
+**Every rung loses much less here than on needles.** The window with a sink at 25% retains
+{{ phase14.analysis.comparison.window_sink_25.easy.retention | pct }} of the control's F1 and
+{{ phase14.analysis.comparison.window_sink_25.hard.retention | pct }} of multi-hop F1, against
+{{ phase10.analysis.contexts.32768.conditions.window_sink_25.niah_retention | pct }} of NIAH retrieval at
+the same budget on the ladder. The
+contexts are shorter (at most {{ phase14.analysis.summary.prompt_len.max | int }} tokens against the
+ladder's 32K) and F1 gives partial credit, so this is not a like-for-like comparison, but it is the
+direction every earlier phase would predict: needle retrieval is the harshest test a residency
+policy faces.
+
+**The ladder's order mostly holds.** Below 75%, Quest-style selection retains at least as much as
+H2O-style eviction, which retains at least as much as the window, in every budget-and-group cell but
+one: on the control at {{ phase14.analysis.summary.tightest_budget | budget }}, H2O-style eviction
+({{ phase14.analysis.comparison.h2o_6_25.easy.retention | pct }}) edges Quest-style selection
+({{ phase14.analysis.comparison.quest_6_25.easy.retention | pct }}). These are point estimates; the
+rung-to-rung differences were not tested.
+
+## 2. What this changes
+
+- **§B7.4 is measured.** Four LongBench QA subsets, every budget, rungs 2, 4 and 5.
+- **The multi-hop qualifier stays scoped to RULER.** FINDINGS says Quest-style selection's lead
+  holds "for retrieval the query can see"; real multi-hop QA did not break it at this sample size.
+- **Needle retrieval remains the study's hardest and most discriminating quality test**, which
+  supports keeping it as the headline.
+
+## Provenance
+
+Run at commit `{{ phase14.analysis.source.git_commit | str }}` (uncommitted tracked changes:
+{{ phase14.analysis.source.git_dirty | str }}); {{ phase14.analysis.summary.wall_s | .0f }} s of
+machine time.
