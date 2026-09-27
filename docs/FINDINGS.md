@@ -224,7 +224,7 @@ Five independent attacks on bytes moved, none of which made decode faster:
 | Double the VRAM slots, cutting on-demand fetches roughly tenfold | 4 | ~5% faster |
 | Layer-ahead prefetch, hiding 100% of copies inside the compute window | 4 | **slower** than synchronous fetch |
 | int8 warm/cold tier, halving the bytes on the wire | 5 | **1.14× slower** |
-| Removing the per-layer host sync entirely (replay ablation) | 6 | 1.11–1.16× faster, and that is the ceiling |
+| Removing the per-layer host sync entirely (replay ablation) | 6 | 1.11–1.16× faster, and that is the ceiling (optimistic: see the erratum below) |
 | Removing the transfer altogether: attend to the cold blocks where they are (rung 9) | 7 | **2.28–4.23× slower**, and exact |
 
 The last row is the argument's end point. Rung 9 moves no KV at all — only
@@ -256,6 +256,14 @@ but that figure is arithmetic rather than measured and this project has twice fo
 wrong. Either way the full cache decodes a token in
 21.7 ms, so a device-side residency decision would close
 part of the tier's own gap and never the gap to keeping KV in VRAM.
+
+**Erratum ([Phase 9](phases/PHASE_9.md) §5): that replay raced, so the ceiling is probably
+optimistic.** The tier's pinned staging buffers are shared by every layer and were only safe because
+the per-layer index sync happened to drain each copy before the next layer refilled them. The replay
+removes that sync, so under load a step could attend to the wrong blocks, and it skipped a wait a
+correct replay must pay. The race is fixed and guarded by a test; no quality result is affected,
+since normal decode always synced. The ceiling itself has **not been re-measured** — that needs an
+idle machine — but a lower ceiling only strengthens the conclusion above.
 
 ## 5. Why these phases can be put on one frontier
 
