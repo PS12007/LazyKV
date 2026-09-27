@@ -34,7 +34,8 @@ Individual gate reports carry the detail and the provenance:
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
 [Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md) · [Phase 11](phases/PHASE_11.md) ·
-[Phase 12](phases/PHASE_12.md) · [Phase 13](phases/PHASE_13.md).
+[Phase 12](phases/PHASE_12.md) · [Phase 13](phases/PHASE_13.md) ·
+[Phase 14](phases/PHASE_14.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -361,6 +362,21 @@ intervals overlapping). Both gaps are smaller than Phase 12's 30-prompt estimate
 small samples do to effects that clear a bar. RULER's aggregation task (common words) was
 beyond this model at every context, so evidence spread across the whole context is not measured.
 
+## 5c. Real documents: LongBench
+
+[Phase 14](phases/PHASE_14.md) ran rungs 2, 4 and 5 on four LongBench QA subsets (the brief's
+§B7.4), with multi-hop QA beside a single-document control, as in Phase 12. **No multi-hop
+shortfall was detected**: at 6.25% Quest-style
+selection retains 77.2% of multi-hop F1 and
+78.6% of the control's. But the difference interval
+(-21.1 pp to +16.6 pp) is wide enough to
+contain Phase 13's variable-tracking gap, so the right statement is "not detected at this sample
+size", not "absent". Every rung loses far less on LongBench than on needles (the window with a sink
+at 25% keeps 72.2%–76.2%
+of F1, against 24.4% of
+NIAH retrieval), on shorter contexts and with F1's partial credit, which is one more reason the
+headline stays on needle retrieval: it is the test that discriminates.
+
 ## 6. Why these phases can be put on one frontier
 
 The rungs were measured weeks apart in four separate gates, so combining them is a claim that needs
@@ -402,8 +418,9 @@ claim in this study is quoted with a range over independent runs.
 
 - **One model, and retrieval that the query can mostly see.** Llama-3.2-1B, scored on
   needle-in-a-haystack with 45 prompts per condition, plus long-document
-  perplexity (§5), which turned out to be a poor proxy for retrieval, and RULER variable tracking
-  for rungs 2, 4 and 5 only (§5b). Aggregation tasks were beyond the model. The 3B stress model in the brief was never
+  perplexity (§5), which turned out to be a poor proxy for retrieval, RULER variable tracking
+  for rungs 2, 4 and 5 only (§5b), and four LongBench QA subsets at 50 prompts each (§5c).
+  Aggregation tasks were beyond the model. The 3B stress model in the brief was never
   run, so nothing here speaks to a regime where KV dominates VRAM more aggressively.
 - **One context, for everything except [Phase 8](phases/PHASE_8.md).** The frontier above is at
   32,768 tokens. Phase 8 swept
