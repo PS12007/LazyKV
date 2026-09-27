@@ -33,7 +33,7 @@ def test_retention_pairs_prompts_and_splits_by_depth() -> None:
             rows.append(_row("vt", depth, sample, "quest", 0.5, 0.0 if depth == 0.0 else 1.0))
     r = a.retention(rows, "vt", "quest", 0.5, iters=300, seed=0)
     assert r["prompts"] == 6 and r["retention"] == 0.5 and r["worse"] == 3 and r["better"] == 0
-    assert r["retention_by_depth"] == {"0.0": 0.0, "1.0": 1.0}
+    assert r["retention_by_depth"] == {"0": 0.0, "100": 1.0}
 
 
 def test_retention_is_none_when_the_full_cache_scores_nothing() -> None:

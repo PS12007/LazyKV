@@ -101,7 +101,9 @@ def retention(rows: list[dict[str, Any]], kind: str, policy: str, budget: float,
         # same footing. Descriptive; the pre-committed retention above is the primary number.
         "retention_all_or_nothing_post_hoc": (sum(1 for a in num if a == 1) / sum(1 for b in den if b == 1)) if any(b == 1 for b in den) else None,
         # Descriptive: for vt the depth is where the chain starts, for single where the needle sits.
-        "retention_by_depth": {str(d): (sum(num[i] for i in ix) / sum(den[i] for i in ix)) if sum(den[i] for i in ix) else None
+        # Keyed by depth in whole percent ("0", "25", ..., "100"): a dotted template lookup cannot
+        # address a key that itself contains a dot.
+        "retention_by_depth": {f"{round(100 * d)}": (sum(num[i] for i in ix) / sum(den[i] for i in ix)) if sum(den[i] for i in ix) else None
                                for d, ix in sorted(by_depth.items())},
     }
 
