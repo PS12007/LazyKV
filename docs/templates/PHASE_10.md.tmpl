@@ -1,0 +1,174 @@
+# Phase 10 gate report: long-document perplexity, and how little it sees
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Brief §B7 lists four quality measurements in order of cost. Phases 1-9 ran the first two
+(teacher-forced divergence, and NIAH retrieval); the third, **perplexity on long documents,
+reported per context length**, was never run. This phase runs it for rungs 2, 4, 5 and 8 at every
+budget in the sweep and at {{ phase10.analysis.summary.contexts_measured | int }} context lengths.
+
+It was also chosen for a practical reason: it is a quality measurement, run on the deterministic
+kernel, so unlike a timing run nothing else on the machine can move its numbers.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing. New: `tests/test_perplexity.py` pins the fixed-target
+  windows (the same tokens are scored at every context, and a target without room for its context
+  is refused), the NLL read-out (both comparison paths agree, and a self-comparison reports the
+  reference's own NLL), the perplexity ratio as an exponentiated paired delta, the rank correlation,
+  and the refusal to merge runs from different commits.
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase10.yaml`, once
+  per context, launched detached from a worktree pinned at the commit under test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## What was measured, and what was fixed before the run
+
+| Axis | Setting | Why |
+|---|---|---|
+| Documents | {{ phase10.analysis.summary.windows | int }} windows of 256 tokens across two Project Gutenberg novels | Long, public-domain, and already verified by SHA-256 in `data/corpus/manifest.json`. PG-19-style text, **not** the PG-19 benchmark split, so no number here is comparable to a published PG-19 perplexity. |
+| Scored tokens | {{ phase10.analysis.summary.tokens_per_condition | int }} per condition, the *same* tokens at every context | Each window is a fixed book position; a run at context C puts the C tokens before it in the cache. Every comparison is paired, by condition and by context. |
+| Policies | Rungs 2, 4, 5, 8 | Rung 3 is rung 2 without a sink on every prompt (Phase 2); rungs 6-7 are rung 5 bit for bit (Phase 4); rung 9 is exact by construction and decodes at {{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}× the full cache's time, so its perplexity is not measured. |
+| Budgets | 75% to 6.25% | The study's sweep. |
+| Contexts | 4K, 8K, 16K, 32K | Brief §B7.3 asks for perplexity per context length. |
+
+Perplexity is read off the rows the KL was already computed from — the log-probability each
+condition assigned to the token that actually came next — so it costs no extra decoding. The
+effect reported is the **paired NLL delta against the full cache**, and the perplexity ratio it
+exponentiates to. Its 95% CI is a bootstrap over the windows: the 256 tokens of one window share a
+context and are not independent, and resampling them would make the interval several times too
+narrow. `configs/phase10.yaml` sets no pass/fail bar, because the brief defines none for
+perplexity and choosing one after Phase 9 would be choosing it to fit.
+
+## 1. The answer: perplexity barely registers what a budget loses
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="../figures/p10_perplexity-dark.png">
+  <img alt="NIAH retention against perplexity ratio for each policy and budget at 32K, and the perplexity ratio at the tightest budget across context lengths" src="../figures/p10_perplexity-light.png">
+</picture>
+
+At {{ phase10.analysis.summary.longest_context | int }} tokens, NIAH retention for every condition
+is already measured on the ladder (same model, block size and slot setting), so each point on the
+left panel is one condition's two quality costs side by side.
+
+**{{ phase10.analysis.summary.ppl_blind_count | int }} of
+{{ phase10.analysis.summary.niah_joined_conditions | int }} conditions lose at least a tenth of the
+full cache's retrieval while their perplexity CI still includes no change at all.** The starkest is
+the sliding window with a sink at a
+{{ phase10.analysis.summary.ppl_blind_worst.budget | budget }} budget: it keeps
+{{ phase10.analysis.summary.ppl_blind_worst.niah_retention | pct }} of the full cache's NIAH
+retrieval, and its perplexity is
+{{ phase10.analysis.summary.ppl_blind_worst.ppl_ratio | .3f }}× the full cache's
+(95% CI {{ phase10.analysis.summary.ppl_blind_worst.ppl_ratio_ci95.0 | .3f }}–{{ phase10.analysis.summary.ppl_blind_worst.ppl_ratio_ci95.1 | .3f }}).
+The same window at 75% keeps
+{{ phase10.analysis.contexts.32768.conditions.window_sink_75.niah_retention | pct }} of retrieval,
+at a perplexity ratio of
+{{ phase10.analysis.contexts.32768.conditions.window_sink_75.ppl_ratio | .3f }}.
+
+The ordering is not the problem. Across the {{ phase10.analysis.summary.niah_joined_conditions | int }}
+conditions, the NLL delta ranks them by NIAH loss with a Spearman correlation of
+{{ phase10.analysis.summary.spearman_nll_vs_niah_loss | .2f }} (teacher-forced KL:
+{{ phase10.analysis.summary.spearman_kl_vs_niah_loss | .2f }}), mostly because both get worse as the
+budget shrinks. The problem is the *size* of what perplexity sees. Most next-token predictions in running text lean
+on nearby text (§3 finds the same thing from another direction), so removing three quarters of the
+context changes little of the average, and the few tokens that needed the distant context are
+diluted by the rest. This is
+the failure that LongPPL (arXiv 2410.23771, ICLR 2025; see [related work](../RELATED_WORK.md))
+describes and designs around. This phase measures it rather than adopting their fix after the fact.
+
+**So a perplexity budget would badly mislead a reader of this study.** At
+{{ phase10.analysis.summary.longest_context | int }} tokens, perplexity alone would put every
+policy at every budget down to 25% within a few percent of the full cache (the table in §2), and the headline question — how
+much *context* a budget retains — is exactly what it cannot see.
+
+## 2. Every condition at {{ phase10.analysis.summary.longest_context | int }} tokens
+
+{{> p10_table }}
+
+The 100% block-pool control reproduces the full cache's NLL to
+{{ phase10.analysis.summary.control_max_abs_nll_delta | .1e }} nats at every context, so none of the
+deltas come from the block layout.
+
+At {{ phase10.analysis.summary.longest_context | int }} tokens,
+{{ phase10.analysis.summary.resolved_worse_count_longest | int }} of
+{{ phase10.analysis.summary.resolved_conditions_longest | int }} conditions are worse than the full
+cache with a CI that excludes "no change", and none of them at a budget above
+{{ phase10.analysis.summary.largest_budget_resolved_worse_longest | budget }}.
+{{ phase10.analysis.summary.resolved_better_count_longest | int }} read slightly *better*, both at
+75%: Quest-style selection
+({{ phase10.analysis.contexts.32768.conditions.quest_75.ppl_ratio | .4f }}, CI
+{{ phase10.analysis.contexts.32768.conditions.quest_75.ppl_ratio_ci95.0 | .4f }}–{{ phase10.analysis.contexts.32768.conditions.quest_75.ppl_ratio_ci95.1 | .4f }})
+and the int8 tier
+({{ phase10.analysis.contexts.32768.conditions.tiered_int8_75.ppl_ratio | .4f }}, CI
+{{ phase10.analysis.contexts.32768.conditions.tiered_int8_75.ppl_ratio_ci95.0 | .4f }}–{{ phase10.analysis.contexts.32768.conditions.tiered_int8_75.ppl_ratio_ci95.1 | .4f }}).
+**Treat these as noise, not a gain.** Across all
+{{ phase10.analysis.summary.policy_conditions_all_contexts | int }} policy conditions at every context,
+{{ phase10.analysis.summary.resolved_better_all_contexts | int }} read better than the full cache with
+an interval excluding no change — these two — which is about what a 2.5% one-sided miss rate
+predicts by chance alone. Both upper bounds are within a thousandth of 1, and the two conditions
+share nearly all of their selection (rung 8 is rung 5's selection with int8 cold blocks), so they
+are not two independent observations. Phase 5 and Phase 7 made the same call about similar
+apparent gains.
+
+## 3. Across context
+
+{{> p10_context }}
+
+**The corpus does reward long context, modestly.** The full cache's perplexity at
+{{ phase10.analysis.summary.shortest_context | int }} tokens is
+{{ phase10.analysis.summary.full_ppl_ratio_shortest_over_longest | .3f }}× its perplexity at
+{{ phase10.analysis.summary.longest_context | int }} on the same scored tokens (95% CI
+{{ phase10.analysis.summary.full_ppl_ratio_shortest_over_longest_ci95.0 | .3f }}–{{ phase10.analysis.summary.full_ppl_ratio_shortest_over_longest_ci95.1 | .3f }};
+{{ phase10.analysis.summary.full_windows_worse_shortest | int }} of
+{{ phase10.analysis.summary.windows | int }} windows worse). Beyond that first step it is not monotone
+(the table has 16K reading worse than 8K), so no trend between 8K and 32K is claimed. That matters for reading everything below: if more
+context barely helps the reference, removing context can barely hurt a policy, which is §1's
+finding seen from the other side.
+
+**A fixed budget fraction costs less perplexity as the context grows — the opposite of what
+retrieval does.** Of the {{ phase10.analysis.summary.cost_resolved_at_shortest | int }} conditions
+whose cost is resolved at {{ phase10.analysis.summary.shortest_context | int }} tokens, **all
+{{ phase10.analysis.summary.cost_falls_with_context | int }}** cost less at
+{{ phase10.analysis.summary.longest_context | int }}. The mechanism is the obvious one once seen:
+most tokens are predicted from the text just before them, and 25% of 32K is still 8K tokens of
+recent text, while 25% of 4K is 1K.
+
+Phase 8's collapse test puts a number on it. Grouping each policy's NLL delta across contexts by the
+budget fraction leaves a mean spread of
+{{ phase10.analysis.summary.collapse_mean_spread_by_budget_nats | .3f }} nats; grouping it by the
+blocks kept leaves {{ phase10.analysis.summary.collapse_mean_spread_by_k_nats | .3f }}, so the blocks
+kept hold perplexity {{ phase10.analysis.summary.collapse_fraction_over_k | .2f }}× tighter. For
+NIAH retrieval, [Phase 8](PHASE_8.md) found the reverse, with the fraction
+{{ phase8.analysis.summary.collapse_k_over_fraction | .1f }}× tighter. Taken alone this collapse is
+weak evidence: both spreads are only two to two and a half times the median half-width of a single
+condition's interval ({{ phase10.analysis.summary.median_delta_ci_halfwidth_nats | .3f }} nats). The
+every-condition trend above is the stronger evidence, and the two point the same way.
+
+**So the two quality metrics disagree about scaling, not only about size.** A residency policy's
+retrieval cost is a function of the share of the document it keeps; its perplexity cost is closer
+to a function of how much recent text it keeps. A perplexity result measured at one context says
+little about retrieval at that context, and less at any other.
+
+Perplexity ratio to the full cache for every condition, by context:
+
+{{> p10_grid }}
+
+## 4. What this changes
+
+- **§B7.3 is now measured.** Long-document perplexity is reported for four rungs, five budgets and
+  four contexts.
+- **Perplexity is not a usable headline for this study.** Retrieval is what a residency policy
+  loses, and perplexity dilutes it into the average. NIAH (and teacher-forced KL, which resolves
+  far smaller effects per token) remain the study's quality measures.
+- **This supports Phase 9's advice rather than resolving it.** Phase 9 found the 99% NIAH bar too
+  fine for 300 prompts. A perplexity threshold would be the wrong substitute: it would pass
+  conditions that lose most of their retrieval. If the headline needs a continuous metric, the
+  candidate is teacher-forced KL, or a key-token perplexity in the LongPPL sense, and choosing one
+  is an owner decision.
+
+## Provenance
+
+{{> p10_provenance }}
+
+Total machine time: {{ phase10.analysis.summary.wall_s | .0f }} s across the
+{{ phase10.analysis.summary.contexts_measured | int }} runs.
