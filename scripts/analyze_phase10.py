@@ -34,6 +34,7 @@ import yaml  # noqa: E402
 
 from harness.results import REPO_ROOT, RESULTS_DIR, write_metrics  # noqa: E402
 from harness.stats import bootstrap_mean_ci, sign_test_p  # noqa: E402
+from lazykv.selection import blocks_for_budget  # noqa: E402
 
 FULL = "full"
 CONTROL = "block_full"
@@ -138,6 +139,49 @@ def condition(rows: list[dict[str, Any]], policy: str, budget: float, iters: int
     }
 
 
+def collapse(per_ctx: dict[str, Any], policies: list[str], block_size: int) -> dict[str, Any]:
+    """Each policy's NLL delta grouped across context by budget fraction, and by blocks kept (K).
+
+    Phase 8 asked the same question of NIAH retention and found the fraction travels: a policy at
+    25% retains about the same share of retrieval at 4K as at 32K. Perplexity need not behave the
+    same way, since most tokens are predicted from nearby text, and nearby text is an absolute
+    amount rather than a share. Whichever grouping leaves less spread is the one that governs.
+    K uses Phase 8's definition (`blocks_for_budget`), so the two phases' answers are comparable.
+    Groups spanning one context are dropped: they have zero spread by construction.
+    """
+    points = [
+        {"context": int(ctx), "policy": c["policy"], "budget": c["budget"],
+         "k_blocks": blocks_for_budget(c["budget"], int(ctx), block_size), "nll_delta": c["nll_delta"]}
+        for ctx, d in per_ctx.items() for c in d["conditions"].values() if c["policy"] in policies
+    ]
+
+    def spreads(key: str) -> list[dict[str, Any]]:
+        out = []
+        for pol in policies:
+            for k in sorted({q[key] for q in points if q["policy"] == pol}):
+                sel = [q for q in points if q["policy"] == pol and q[key] == k]
+                if len({q["context"] for q in sel}) < 2:
+                    continue
+                d = [q["nll_delta"] for q in sel]
+                out.append({"policy": pol, "value": k, "contexts": sorted(q["context"] for q in sel), "spread_nats": max(d) - min(d)})
+        return out
+
+    by_budget, by_k = spreads("budget"), spreads("k_blocks")
+    mean = lambda rows: sum(r["spread_nats"] for r in rows) / len(rows) if rows else None  # noqa: E731
+    fr, kk = mean(by_budget), mean(by_k)
+    return {
+        "by_budget": by_budget,
+        "by_k_blocks": by_k,
+        "groups_by_budget": len(by_budget),
+        "groups_by_k": len(by_k),
+        "mean_spread_by_budget_nats": fr,
+        "mean_spread_by_k_nats": kk,
+        # >1 means grouping by blocks kept holds perplexity tighter than grouping by the fraction:
+        # the opposite of Phase 8's answer for retrieval.
+        "fraction_over_k_mean_spread": fr / kk if fr is not None and kk else None,
+    }
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--base", default=str(RESULTS_DIR / "phase10"))
@@ -177,6 +221,7 @@ def main() -> None:
     for k, c in per_ctx[longest]["conditions"].items():
         c["niah_retention"] = niah.get(k)
     policy_conds = [c for c in per_ctx[longest]["conditions"].values() if c["policy"] != CONTROL]
+    col = collapse(per_ctx, cfg["policies"], cfg["block_size"]) if len(contexts) > 1 else None
     joined = [c for c in policy_conds if c["niah_retention"] is not None]
     # "Blind" = NIAH lost at least a tenth of the full cache's retrieval, while the perplexity CI
     # still includes no change: a reader holding only perplexity would call the condition lossless.
@@ -212,9 +257,19 @@ def main() -> None:
         "spearman_nll_vs_niah_loss": spearman([c["nll_delta"] for c in joined], [1 - c["niah_retention"] for c in joined]) if len(joined) > 2 else None,
         "spearman_kl_vs_niah_loss": spearman([c["mean_kl"] for c in joined], [1 - c["niah_retention"] for c in joined]) if len(joined) > 2 else None,
         "resolved_conditions_longest": len(policy_conds),
+        "collapse_mean_spread_by_budget_nats": None if col is None else col["mean_spread_by_budget_nats"],
+        "collapse_mean_spread_by_k_nats": None if col is None else col["mean_spread_by_k_nats"],
+        "collapse_fraction_over_k": None if col is None else col["fraction_over_k_mean_spread"],
+        "collapse_groups_by_k": None if col is None else col["groups_by_k"],
+        # The noise floor the collapse spreads must be read against: the median half-width of one
+        # condition's NLL-delta CI. A spread smaller than this is inside one measurement's noise.
+        "median_delta_ci_halfwidth_nats": sorted(
+            (c["nll_delta_ci95"][1] - c["nll_delta_ci95"][0]) / 2
+            for d in per_ctx.values() for c in d["conditions"].values() if c["policy"] != CONTROL
+        )[len(policy_conds) * len(contexts) // 2],
         "wall_s": sum(pv["wall_s"] for pv in prov),
     }
-    write_metrics(base / "analysis", {"sources": prov, "contexts": per_ctx, "context_effect": context_effect, "summary": summary})
+    write_metrics(base / "analysis", {"sources": prov, "contexts": per_ctx, "context_effect": context_effect, "collapse": col, "summary": summary})
 
 
 if __name__ == "__main__":
