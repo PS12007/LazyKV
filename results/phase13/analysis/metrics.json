@@ -1,0 +1,197 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-27T19:17:16+00:00",
+    "git_commit": "977aad2326f6f326ff9f7135039382a7c65893b1",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts/analyze_phase13.py"
+    ],
+    "python": "3.12.10"
+  },
+  "sources": [
+    {
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-27T06:57:05+00:00",
+      "git_commit": "0d1d9f117e74426cc71df1b83ef5a07d4dcb046d",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase12.yaml",
+        "--context",
+        "32768",
+        "--skip-teacher-forced",
+        "--out",
+        "ruler_ctx32768"
+      ],
+      "python": "3.12.10"
+    },
+    {
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-27T19:16:43+00:00",
+      "git_commit": "05857aadc15ef7590c9303033f97bba4fd4e7532",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase13.yaml",
+        "--sample-start",
+        "5",
+        "--skip-teacher-forced",
+        "--out",
+        "vt_ctx32768"
+      ],
+      "python": "3.12.10"
+    }
+  ],
+  "conditions": {
+    "quest_12_5": {
+      "policy": "quest",
+      "budget": 0.125,
+      "hard": {
+        "kind": "vt",
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 150,
+        "accuracy": 0.4746666666666667,
+        "retention": 0.6939571150097467,
+        "retention_ci95": [
+          0.6254980079681275,
+          0.7619047619047619
+        ],
+        "worse": 76,
+        "better": 9,
+        "sign_test_p": 2.405361458283649e-14,
+        "partial": 92,
+        "retention_all_or_nothing_post_hoc": 0.4603174603174603,
+        "retention_by_depth": {
+          "0": 0.6037735849056605,
+          "25": 0.8333333333333334,
+          "50": 0.648936170212766,
+          "75": 0.5977011494252874,
+          "100": 0.7615384615384616
+        }
+      },
+      "easy": {
+        "kind": "single",
+        "policy": "quest",
+        "budget": 0.125,
+        "prompts": 150,
+        "accuracy": 0.8133333333333334,
+        "retention": 0.8133333333333334,
+        "retention_ci95": [
+          0.7466666666666667,
+          0.8733333333333333
+        ],
+        "worse": 28,
+        "better": 0,
+        "sign_test_p": 7.450580596923828e-09,
+        "partial": 0,
+        "retention_all_or_nothing_post_hoc": 0.8133333333333334,
+        "retention_by_depth": {
+          "0": 0.43333333333333335,
+          "25": 0.8333333333333334,
+          "50": 0.9333333333333333,
+          "75": 0.8666666666666667,
+          "100": 1.0
+        }
+      },
+      "gap": -0.11937621832358669,
+      "separated": false,
+      "gap_ci95": [
+        -0.2110391363022941,
+        -0.026415094339622636
+      ],
+      "phase12_separated_at_30": false,
+      "phase12_gap_at_30": -0.23834808259587026
+    },
+    "quest_6_25": {
+      "policy": "quest",
+      "budget": 0.0625,
+      "hard": {
+        "kind": "vt",
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 150,
+        "accuracy": 0.28400000000000003,
+        "retention": 0.41520467836257313,
+        "retention_ci95": [
+          0.3543307086614173,
+          0.47761194029850745
+        ],
+        "worse": 110,
+        "better": 2,
+        "sign_test_p": 2.437842123605363e-30,
+        "partial": 90,
+        "retention_all_or_nothing_post_hoc": 0.14285714285714285,
+        "retention_by_depth": {
+          "0": 0.39622641509433965,
+          "25": 0.4270833333333334,
+          "50": 0.3404255319148936,
+          "75": 0.27586206896551724,
+          "100": 0.5692307692307692
+        }
+      },
+      "easy": {
+        "kind": "single",
+        "policy": "quest",
+        "budget": 0.0625,
+        "prompts": 150,
+        "accuracy": 0.6133333333333333,
+        "retention": 0.6133333333333333,
+        "retention_ci95": [
+          0.5333333333333333,
+          0.6866666666666666
+        ],
+        "worse": 58,
+        "better": 0,
+        "sign_test_p": 6.938893903907228e-18,
+        "partial": 0,
+        "retention_all_or_nothing_post_hoc": 0.6133333333333333,
+        "retention_by_depth": {
+          "0": 0.26666666666666666,
+          "25": 0.6,
+          "50": 0.7,
+          "75": 0.5333333333333333,
+          "100": 0.9666666666666667
+        }
+      },
+      "gap": -0.19812865497076015,
+      "separated": true,
+      "gap_ci95": [
+        -0.2964214711729622,
+        -0.09938697318007667
+      ],
+      "phase12_separated_at_30": false,
+      "phase12_gap_at_30": -0.2725663716814159
+    }
+  },
+  "summary": {
+    "context": 32768,
+    "prompts_per_kind": {
+      "vt": 150,
+      "single": 150
+    },
+    "overlap_compared": 30,
+    "overlap_identical": 30,
+    "full_accuracy": {
+      "vt": 0.6839999999999999,
+      "single": 1.0
+    },
+    "established": [
+      "quest_6_25"
+    ],
+    "not_established": [
+      "quest_12_5"
+    ],
+    "gap_ci_below": [
+      "quest_12_5",
+      "quest_6_25"
+    ],
+    "wall_s": 3338.496828399977
+  }
+}
