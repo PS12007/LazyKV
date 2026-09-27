@@ -95,6 +95,11 @@ def retention(rows: list[dict[str, Any]], kind: str, policy: str, budget: float,
         # policy that keeps only the chain's later hops (which fall after its start, toward the end)
         # scores partial answers rather than zeros; this is how that shows up.
         "partial": sum(1 for a in num if 0 < a < 1),
+        # POST HOC, added after the 32K run showed partial answers are common on vt and absent on the
+        # single needle: retention with every prompt scored all-or-nothing (1 only if every required
+        # value is present), so a partial-credit kind is compared with an all-or-nothing one on the
+        # same footing. Descriptive; the pre-committed retention above is the primary number.
+        "retention_all_or_nothing_post_hoc": (sum(1 for a in num if a == 1) / sum(1 for b in den if b == 1)) if any(b == 1 for b in den) else None,
         # Descriptive: for vt the depth is where the chain starts, for single where the needle sits.
         "retention_by_depth": {str(d): (sum(num[i] for i in ix) / sum(den[i] for i in ix)) if sum(den[i] for i in ix) else None
                                for d, ix in sorted(by_depth.items())},
@@ -177,6 +182,7 @@ def main() -> None:
             if h["policy"] == CONTROL or h["retention"] is None or e["retention"] is None:
                 continue
             gaps.append({"context": int(ctx), "label": key, "policy": h["policy"], "budget": h["budget"],
+                         "hard_all_or_nothing_post_hoc": h["retention_all_or_nothing_post_hoc"],
                          "hard": h["retention"], "easy": e["retention"], "gap": h["retention"] - e["retention"],
                          # Disjoint CIs are a conservative separation test for two unpaired retentions.
                          "separated": h["retention_ci95"][1] < e["retention_ci95"][0] or e["retention_ci95"][1] < h["retention_ci95"][0],
