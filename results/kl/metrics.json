@@ -1,0 +1,2899 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-27T18:26:38+00:00",
+    "git_commit": "42ba2bded12996af2333d7817542218ebfb73b15",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts/analyze_kl.py"
+    ],
+    "python": "3.12.10"
+  },
+  "contexts": {
+    "4096": {
+      "conditions": {
+        "window_sink_75": {
+          "policy": "window_sink",
+          "budget": 0.75,
+          "mean_kl": 0.014566589351875069,
+          "kl_ci95": [
+            0.011162646349224889,
+            0.018387991045152225
+          ],
+          "niah_retention": null
+        },
+        "window_sink_50": {
+          "policy": "window_sink",
+          "budget": 0.5,
+          "mean_kl": 0.051459953685653564,
+          "kl_ci95": [
+            0.028509279331417905,
+            0.08112012558127206
+          ],
+          "niah_retention": null
+        },
+        "window_sink_25": {
+          "policy": "window_sink",
+          "budget": 0.25,
+          "mean_kl": 0.10710333488580487,
+          "kl_ci95": [
+            0.0722049296728396,
+            0.1467001510384434
+          ],
+          "niah_retention": null
+        },
+        "window_sink_12_5": {
+          "policy": "window_sink",
+          "budget": 0.125,
+          "mean_kl": 0.16371077473974874,
+          "kl_ci95": [
+            0.12368717812995751,
+            0.20606817532668378
+          ],
+          "niah_retention": null
+        },
+        "window_sink_6_25": {
+          "policy": "window_sink",
+          "budget": 0.0625,
+          "mean_kl": 0.2959241694227474,
+          "kl_ci95": [
+            0.25792022919626745,
+            0.33976315873872337
+          ],
+          "niah_retention": null
+        },
+        "h2o_75": {
+          "policy": "h2o",
+          "budget": 0.75,
+          "mean_kl": 0.014280037869549005,
+          "kl_ci95": [
+            0.007239646141724454,
+            0.02584419545664778
+          ],
+          "niah_retention": null
+        },
+        "h2o_50": {
+          "policy": "h2o",
+          "budget": 0.5,
+          "mean_kl": 0.04644311761333405,
+          "kl_ci95": [
+            0.026597073190159682,
+            0.07076576221190342
+          ],
+          "niah_retention": null
+        },
+        "h2o_25": {
+          "policy": "h2o",
+          "budget": 0.25,
+          "mean_kl": 0.09252074365699035,
+          "kl_ci95": [
+            0.06487471213242753,
+            0.12447037627200286
+          ],
+          "niah_retention": null
+        },
+        "h2o_12_5": {
+          "policy": "h2o",
+          "budget": 0.125,
+          "mean_kl": 0.16692465837582918,
+          "kl_ci95": [
+            0.13259906558997028,
+            0.2099535789801861
+          ],
+          "niah_retention": null
+        },
+        "h2o_6_25": {
+          "policy": "h2o",
+          "budget": 0.0625,
+          "mean_kl": 0.2959241694227474,
+          "kl_ci95": [
+            0.25792022919626745,
+            0.33976315873872337
+          ],
+          "niah_retention": null
+        },
+        "quest_75": {
+          "policy": "quest",
+          "budget": 0.75,
+          "mean_kl": 0.0033371045826028037,
+          "kl_ci95": [
+            0.0029824670341066797,
+            0.0037218845617445566
+          ],
+          "niah_retention": null
+        },
+        "quest_50": {
+          "policy": "quest",
+          "budget": 0.5,
+          "mean_kl": 0.013303666275417278,
+          "kl_ci95": [
+            0.011590440421123423,
+            0.01501534624537692
+          ],
+          "niah_retention": null
+        },
+        "quest_25": {
+          "policy": "quest",
+          "budget": 0.25,
+          "mean_kl": 0.04769557078329089,
+          "kl_ci95": [
+            0.042133495265215294,
+            0.053012100467468876
+          ],
+          "niah_retention": null
+        },
+        "quest_12_5": {
+          "policy": "quest",
+          "budget": 0.125,
+          "mean_kl": 0.11660151104498807,
+          "kl_ci95": [
+            0.10297966579402333,
+            0.1304751685913534
+          ],
+          "niah_retention": null
+        },
+        "quest_6_25": {
+          "policy": "quest",
+          "budget": 0.0625,
+          "mean_kl": 0.2573453816664145,
+          "kl_ci95": [
+            0.23346602477640865,
+            0.2822087484478822
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_75": {
+          "policy": "tiered_int8",
+          "budget": 0.75,
+          "mean_kl": 0.003291344290374795,
+          "kl_ci95": [
+            0.0029351576966475056,
+            0.003670703458853104
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_50": {
+          "policy": "tiered_int8",
+          "budget": 0.5,
+          "mean_kl": 0.013484549860024822,
+          "kl_ci95": [
+            0.011774236936942883,
+            0.015245470290774865
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_25": {
+          "policy": "tiered_int8",
+          "budget": 0.25,
+          "mean_kl": 0.04763611097835369,
+          "kl_ci95": [
+            0.04200462384853216,
+            0.053140569176670795
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_12_5": {
+          "policy": "tiered_int8",
+          "budget": 0.125,
+          "mean_kl": 0.11864402290842867,
+          "kl_ci95": [
+            0.10317780928312059,
+            0.13511618999148994
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_6_25": {
+          "policy": "tiered_int8",
+          "budget": 0.0625,
+          "mean_kl": 0.2558126963211217,
+          "kl_ci95": [
+            0.23231489074465475,
+            0.2814248572806462
+          ],
+          "niah_retention": null
+        }
+      },
+      "within_rung": [
+        {
+          "context": 4096,
+          "policy": "window_sink",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "window_sink",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "window_sink",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "window_sink",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "h2o",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "h2o",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "h2o",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "h2o",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "quest",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "quest",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "quest",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "quest",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "tiered_int8",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "tiered_int8",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "tiered_int8",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "policy": "tiered_int8",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        }
+      ],
+      "across_rungs": [
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.75,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.5,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.25,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 4096,
+          "budget": 0.125,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 0,
+          "a_below": 0,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 4096,
+          "budget": 0.0625,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        }
+      ]
+    },
+    "8192": {
+      "conditions": {
+        "window_sink_75": {
+          "policy": "window_sink",
+          "budget": 0.75,
+          "mean_kl": 0.022137684131400156,
+          "kl_ci95": [
+            0.005903747832438276,
+            0.05311775765707482
+          ],
+          "niah_retention": null
+        },
+        "window_sink_50": {
+          "policy": "window_sink",
+          "budget": 0.5,
+          "mean_kl": 0.04464547183399637,
+          "kl_ci95": [
+            0.019208218368149614,
+            0.09039802229399597
+          ],
+          "niah_retention": null
+        },
+        "window_sink_25": {
+          "policy": "window_sink",
+          "budget": 0.25,
+          "mean_kl": 0.09697048667138587,
+          "kl_ci95": [
+            0.049073681888544746,
+            0.17318263167810236
+          ],
+          "niah_retention": null
+        },
+        "window_sink_12_5": {
+          "policy": "window_sink",
+          "budget": 0.125,
+          "mean_kl": 0.15327927666342203,
+          "kl_ci95": [
+            0.0947309292407814,
+            0.2304751836706561
+          ],
+          "niah_retention": null
+        },
+        "window_sink_6_25": {
+          "policy": "window_sink",
+          "budget": 0.0625,
+          "mean_kl": 0.20538030444885502,
+          "kl_ci95": [
+            0.14206635818056443,
+            0.28519268244480256
+          ],
+          "niah_retention": null
+        },
+        "h2o_75": {
+          "policy": "h2o",
+          "budget": 0.75,
+          "mean_kl": 0.008401565115012652,
+          "kl_ci95": [
+            0.006556288277814464,
+            0.01075248110679395
+          ],
+          "niah_retention": null
+        },
+        "h2o_50": {
+          "policy": "h2o",
+          "budget": 0.5,
+          "mean_kl": 0.0364683473560275,
+          "kl_ci95": [
+            0.021465381018687182,
+            0.05790570108367826
+          ],
+          "niah_retention": null
+        },
+        "h2o_25": {
+          "policy": "h2o",
+          "budget": 0.25,
+          "mean_kl": 0.08601560126895554,
+          "kl_ci95": [
+            0.05733986894691917,
+            0.12022469135281554
+          ],
+          "niah_retention": null
+        },
+        "h2o_12_5": {
+          "policy": "h2o",
+          "budget": 0.125,
+          "mean_kl": 0.13538408446249148,
+          "kl_ci95": [
+            0.09578422809014873,
+            0.18235648180434347
+          ],
+          "niah_retention": null
+        },
+        "h2o_6_25": {
+          "policy": "h2o",
+          "budget": 0.0625,
+          "mean_kl": 0.20405311600422593,
+          "kl_ci95": [
+            0.15556901639410084,
+            0.26471326585736615
+          ],
+          "niah_retention": null
+        },
+        "quest_75": {
+          "policy": "quest",
+          "budget": 0.75,
+          "mean_kl": 0.002804445693949033,
+          "kl_ci95": [
+            0.0024735678856858535,
+            0.003124331145234676
+          ],
+          "niah_retention": null
+        },
+        "quest_50": {
+          "policy": "quest",
+          "budget": 0.5,
+          "mean_kl": 0.01026066570345757,
+          "kl_ci95": [
+            0.00898470980878799,
+            0.011358332021469018
+          ],
+          "niah_retention": null
+        },
+        "quest_25": {
+          "policy": "quest",
+          "budget": 0.25,
+          "mean_kl": 0.03638330461002028,
+          "kl_ci95": [
+            0.031387805386387024,
+            0.041257423028258265
+          ],
+          "niah_retention": null
+        },
+        "quest_12_5": {
+          "policy": "quest",
+          "budget": 0.125,
+          "mean_kl": 0.08034005158285398,
+          "kl_ci95": [
+            0.06851948080620356,
+            0.09242027433637683
+          ],
+          "niah_retention": null
+        },
+        "quest_6_25": {
+          "policy": "quest",
+          "budget": 0.0625,
+          "mean_kl": 0.15321227180335079,
+          "kl_ci95": [
+            0.13773036314278558,
+            0.1693242411445708
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_75": {
+          "policy": "tiered_int8",
+          "budget": 0.75,
+          "mean_kl": 0.0028791497310912974,
+          "kl_ci95": [
+            0.002557463480019126,
+            0.0031809532952356313
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_50": {
+          "policy": "tiered_int8",
+          "budget": 0.5,
+          "mean_kl": 0.010259682484466607,
+          "kl_ci95": [
+            0.00900345658514821,
+            0.01137468319347828
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_25": {
+          "policy": "tiered_int8",
+          "budget": 0.25,
+          "mean_kl": 0.036229434695070624,
+          "kl_ci95": [
+            0.031378687363633646,
+            0.040828656792802044
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_12_5": {
+          "policy": "tiered_int8",
+          "budget": 0.125,
+          "mean_kl": 0.08016457188400779,
+          "kl_ci95": [
+            0.06883775398791345,
+            0.09163856015678758
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_6_25": {
+          "policy": "tiered_int8",
+          "budget": 0.0625,
+          "mean_kl": 0.15406175144525916,
+          "kl_ci95": [
+            0.13859366600415804,
+            0.16965033214799682
+          ],
+          "niah_retention": null
+        }
+      },
+      "within_rung": [
+        {
+          "context": 8192,
+          "policy": "window_sink",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "window_sink",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "window_sink",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "window_sink",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "h2o",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "h2o",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "h2o",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "h2o",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "quest",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "quest",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "quest",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "quest",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "tiered_int8",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "tiered_int8",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "tiered_int8",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "policy": "tiered_int8",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        }
+      ],
+      "across_rungs": [
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.75,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.5,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 2,
+          "a_below": 10,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.25,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 8192,
+          "budget": 0.125,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 9,
+          "a_below": 3,
+          "sign_test_p": 0.14599609375,
+          "resolved": false
+        },
+        {
+          "context": 8192,
+          "budget": 0.0625,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        }
+      ]
+    },
+    "16384": {
+      "conditions": {
+        "window_sink_75": {
+          "policy": "window_sink",
+          "budget": 0.75,
+          "mean_kl": 0.01295503775923596,
+          "kl_ci95": [
+            0.010967651254260679,
+            0.014865840315997319
+          ],
+          "niah_retention": null
+        },
+        "window_sink_50": {
+          "policy": "window_sink",
+          "budget": 0.5,
+          "mean_kl": 0.037999731251296694,
+          "kl_ci95": [
+            0.03130799834521028,
+            0.04490790503237676
+          ],
+          "niah_retention": null
+        },
+        "window_sink_25": {
+          "policy": "window_sink",
+          "budget": 0.25,
+          "mean_kl": 0.0907477826486874,
+          "kl_ci95": [
+            0.05803167308769416,
+            0.14514702866730164
+          ],
+          "niah_retention": null
+        },
+        "window_sink_12_5": {
+          "policy": "window_sink",
+          "budget": 0.125,
+          "mean_kl": 0.14404592847753392,
+          "kl_ci95": [
+            0.09322754113448899,
+            0.22417238216392535
+          ],
+          "niah_retention": null
+        },
+        "window_sink_6_25": {
+          "policy": "window_sink",
+          "budget": 0.0625,
+          "mean_kl": 0.19976787549275363,
+          "kl_ci95": [
+            0.13780537584932576,
+            0.2803633780943268
+          ],
+          "niah_retention": null
+        },
+        "h2o_75": {
+          "policy": "h2o",
+          "budget": 0.75,
+          "mean_kl": 0.011111733056315515,
+          "kl_ci95": [
+            0.005425874489110506,
+            0.021119689591927907
+          ],
+          "niah_retention": null
+        },
+        "h2o_50": {
+          "policy": "h2o",
+          "budget": 0.5,
+          "mean_kl": 0.03571948386574746,
+          "kl_ci95": [
+            0.019337949046043332,
+            0.06507462450632368
+          ],
+          "niah_retention": null
+        },
+        "h2o_25": {
+          "policy": "h2o",
+          "budget": 0.25,
+          "mean_kl": 0.08645004511917746,
+          "kl_ci95": [
+            0.0555302875722107,
+            0.13001787573033943
+          ],
+          "niah_retention": null
+        },
+        "h2o_12_5": {
+          "policy": "h2o",
+          "budget": 0.125,
+          "mean_kl": 0.13806700952002446,
+          "kl_ci95": [
+            0.09979911629339495,
+            0.18669937511629844
+          ],
+          "niah_retention": null
+        },
+        "h2o_6_25": {
+          "policy": "h2o",
+          "budget": 0.0625,
+          "mean_kl": 0.18909971369084486,
+          "kl_ci95": [
+            0.13857211429121227,
+            0.2608956117052676
+          ],
+          "niah_retention": null
+        },
+        "quest_75": {
+          "policy": "quest",
+          "budget": 0.75,
+          "mean_kl": 0.0027515257445514564,
+          "kl_ci95": [
+            0.002441343554530239,
+            0.0030718668624139453
+          ],
+          "niah_retention": null
+        },
+        "quest_50": {
+          "policy": "quest",
+          "budget": 0.5,
+          "mean_kl": 0.01031205173694797,
+          "kl_ci95": [
+            0.008878852156976749,
+            0.01164151619210666
+          ],
+          "niah_retention": null
+        },
+        "quest_25": {
+          "policy": "quest",
+          "budget": 0.25,
+          "mean_kl": 0.037323831759007386,
+          "kl_ci95": [
+            0.03237467983621419,
+            0.042068813608967415
+          ],
+          "niah_retention": null
+        },
+        "quest_12_5": {
+          "policy": "quest",
+          "budget": 0.125,
+          "mean_kl": 0.07619495850418558,
+          "kl_ci95": [
+            0.06792571612274058,
+            0.08380535552839859
+          ],
+          "niah_retention": null
+        },
+        "quest_6_25": {
+          "policy": "quest",
+          "budget": 0.0625,
+          "mean_kl": 0.13753106643217294,
+          "kl_ci95": [
+            0.12673584774341412,
+            0.14606806853393015
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_75": {
+          "policy": "tiered_int8",
+          "budget": 0.75,
+          "mean_kl": 0.0027649647451235136,
+          "kl_ci95": [
+            0.0024519129749309664,
+            0.0030865467184092803
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_50": {
+          "policy": "tiered_int8",
+          "budget": 0.5,
+          "mean_kl": 0.010438836702968428,
+          "kl_ci95": [
+            0.00901455618764208,
+            0.011765042523593243
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_25": {
+          "policy": "tiered_int8",
+          "budget": 0.25,
+          "mean_kl": 0.037139927795872704,
+          "kl_ci95": [
+            0.032259014953340166,
+            0.04173894574159648
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_12_5": {
+          "policy": "tiered_int8",
+          "budget": 0.125,
+          "mean_kl": 0.07608709537129148,
+          "kl_ci95": [
+            0.06768022439859919,
+            0.08389357804538959
+          ],
+          "niah_retention": null
+        },
+        "tiered_int8_6_25": {
+          "policy": "tiered_int8",
+          "budget": 0.0625,
+          "mean_kl": 0.13578368431194718,
+          "kl_ci95": [
+            0.1252062963288943,
+            0.14436351084049487
+          ],
+          "niah_retention": null
+        }
+      },
+      "within_rung": [
+        {
+          "context": 16384,
+          "policy": "window_sink",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "window_sink",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "window_sink",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "window_sink",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "h2o",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "h2o",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "h2o",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "h2o",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "quest",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "quest",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "quest",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "quest",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "tiered_int8",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "tiered_int8",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "tiered_int8",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "policy": "tiered_int8",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        }
+      ],
+      "across_rungs": [
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.75,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.5,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.25,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 16384,
+          "budget": 0.125,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 16384,
+          "budget": 0.0625,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        }
+      ]
+    },
+    "32768": {
+      "conditions": {
+        "window_sink_75": {
+          "policy": "window_sink",
+          "budget": 0.75,
+          "mean_kl": 0.014054509482337838,
+          "kl_ci95": [
+            0.007994664343004618,
+            0.024022756033572984
+          ],
+          "niah_retention": 0.6250000000000001
+        },
+        "window_sink_50": {
+          "policy": "window_sink",
+          "budget": 0.5,
+          "mean_kl": 0.026020497408159034,
+          "kl_ci95": [
+            0.01662946031721745,
+            0.04028540910769272
+          ],
+          "niah_retention": 0.46875000000000006
+        },
+        "window_sink_25": {
+          "policy": "window_sink",
+          "budget": 0.25,
+          "mean_kl": 0.06489191594678864,
+          "kl_ci95": [
+            0.05026201231784829,
+            0.0835486847552715
+          ],
+          "niah_retention": 0.24375000000000002
+        },
+        "window_sink_12_5": {
+          "policy": "window_sink",
+          "budget": 0.125,
+          "mean_kl": 0.11949806056489436,
+          "kl_ci95": [
+            0.07946494091073548,
+            0.18100455807738836
+          ],
+          "niah_retention": 0.21875000000000003
+        },
+        "window_sink_6_25": {
+          "policy": "window_sink",
+          "budget": 0.0625,
+          "mean_kl": 0.17097008943171355,
+          "kl_ci95": [
+            0.11588141480207707,
+            0.25653943597271933
+          ],
+          "niah_retention": 0.2
+        },
+        "h2o_75": {
+          "policy": "h2o",
+          "budget": 0.75,
+          "mean_kl": 0.006120875697241775,
+          "kl_ci95": [
+            0.005256857856327554,
+            0.006967879502105801
+          ],
+          "niah_retention": 0.925
+        },
+        "h2o_50": {
+          "policy": "h2o",
+          "budget": 0.5,
+          "mean_kl": 0.02219511437197515,
+          "kl_ci95": [
+            0.01945550793373569,
+            0.02490811882436673
+          ],
+          "niah_retention": 0.6875000000000001
+        },
+        "h2o_25": {
+          "policy": "h2o",
+          "budget": 0.25,
+          "mean_kl": 0.05798833400756501,
+          "kl_ci95": [
+            0.04729606215206983,
+            0.07295879493827441
+          ],
+          "niah_retention": 0.5875
+        },
+        "h2o_12_5": {
+          "policy": "h2o",
+          "budget": 0.125,
+          "mean_kl": 0.11246877320936276,
+          "kl_ci95": [
+            0.08520673057528473,
+            0.14760235637424332
+          ],
+          "niah_retention": 0.40625
+        },
+        "h2o_6_25": {
+          "policy": "h2o",
+          "budget": 0.0625,
+          "mean_kl": 0.16462165936378037,
+          "kl_ci95": [
+            0.12445810245122994,
+            0.21134282139929916
+          ],
+          "niah_retention": 0.36250000000000004
+        },
+        "quest_75": {
+          "policy": "quest",
+          "budget": 0.75,
+          "mean_kl": 0.002288051570216339,
+          "kl_ci95": [
+            0.001983394392822628,
+            0.002746596135473014
+          ],
+          "niah_retention": 0.9875
+        },
+        "quest_50": {
+          "policy": "quest",
+          "budget": 0.5,
+          "mean_kl": 0.0075458223327818826,
+          "kl_ci95": [
+            0.006768829121056894,
+            0.0083331830826961
+          ],
+          "niah_retention": 0.9500000000000001
+        },
+        "quest_25": {
+          "policy": "quest",
+          "budget": 0.25,
+          "mean_kl": 0.025944695729729756,
+          "kl_ci95": [
+            0.02328631677892838,
+            0.028512078605820324
+          ],
+          "niah_retention": 0.8375
+        },
+        "quest_12_5": {
+          "policy": "quest",
+          "budget": 0.125,
+          "mean_kl": 0.058116342178779375,
+          "kl_ci95": [
+            0.0518736115232804,
+            0.064668455895837
+          ],
+          "niah_retention": 0.7250000000000001
+        },
+        "quest_6_25": {
+          "policy": "quest",
+          "budget": 0.0625,
+          "mean_kl": 0.10958710631752311,
+          "kl_ci95": [
+            0.09750842990507676,
+            0.12124635198583862
+          ],
+          "niah_retention": 0.4312500000000001
+        },
+        "tiered_int8_75": {
+          "policy": "tiered_int8",
+          "budget": 0.75,
+          "mean_kl": 0.0021970242027082093,
+          "kl_ci95": [
+            0.001958584265975461,
+            0.00249841716239405
+          ],
+          "niah_retention": 0.9875
+        },
+        "tiered_int8_50": {
+          "policy": "tiered_int8",
+          "budget": 0.5,
+          "mean_kl": 0.007571775507738116,
+          "kl_ci95": [
+            0.006790602893691051,
+            0.008359347170698765
+          ],
+          "niah_retention": 0.9500000000000001
+        },
+        "tiered_int8_25": {
+          "policy": "tiered_int8",
+          "budget": 0.25,
+          "mean_kl": 0.026204569540943082,
+          "kl_ci95": [
+            0.023444921058702595,
+            0.028977130552283428
+          ],
+          "niah_retention": 0.85625
+        },
+        "tiered_int8_12_5": {
+          "policy": "tiered_int8",
+          "budget": 0.125,
+          "mean_kl": 0.05814038655893389,
+          "kl_ci95": [
+            0.052175732965174366,
+            0.06424566137077706
+          ],
+          "niah_retention": 0.7125
+        },
+        "tiered_int8_6_25": {
+          "policy": "tiered_int8",
+          "budget": 0.0625,
+          "mean_kl": 0.10931927993439496,
+          "kl_ci95": [
+            0.09727747975439892,
+            0.12137489016893664
+          ],
+          "niah_retention": 0.5062500000000001
+        }
+      },
+      "within_rung": [
+        {
+          "context": 32768,
+          "policy": "window_sink",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "window_sink",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "window_sink",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "window_sink",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "h2o",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "h2o",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "h2o",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "h2o",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "quest",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "quest",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "quest",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "quest",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "tiered_int8",
+          "smaller": 0.5,
+          "larger": 0.75,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "tiered_int8",
+          "smaller": 0.25,
+          "larger": 0.5,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "tiered_int8",
+          "smaller": 0.125,
+          "larger": 0.25,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "policy": "tiered_int8",
+          "smaller": 0.0625,
+          "larger": 0.125,
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        }
+      ],
+      "across_rungs": [
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.75,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 8,
+          "a_below": 4,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.5,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.25,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 6,
+          "a_below": 6,
+          "sign_test_p": 1.0,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 4,
+          "a_below": 8,
+          "sign_test_p": 0.3876953125,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 12,
+          "a_below": 0,
+          "sign_test_p": 0.00048828125,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.125,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 5,
+          "a_below": 7,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "h2o",
+          "windows": 12,
+          "a_above": 2,
+          "a_below": 10,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "window_sink",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 11,
+          "a_below": 1,
+          "sign_test_p": 0.00634765625,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "quest",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "h2o",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 10,
+          "a_below": 2,
+          "sign_test_p": 0.03857421875,
+          "resolved": true
+        },
+        {
+          "context": 32768,
+          "budget": 0.0625,
+          "a": "quest",
+          "b": "tiered_int8",
+          "windows": 12,
+          "a_above": 7,
+          "a_below": 5,
+          "sign_test_p": 0.7744140625,
+          "resolved": false
+        }
+      ]
+    }
+  },
+  "summary": {
+    "contexts": [
+      4096,
+      8192,
+      16384,
+      32768
+    ],
+    "longest_context": 32768,
+    "windows": 12,
+    "alpha": 0.05,
+    "within_comparisons": 64,
+    "within_resolved": 64,
+    "within_resolved_wrong_way": 0,
+    "across_comparisons": 120,
+    "across_resolved": 75,
+    "quest_75_kl": 0.002288051570216339,
+    "quest_75_kl_ci95": [
+      0.001983394392822628,
+      0.002746596135473014
+    ],
+    "quest_50_kl": 0.0075458223327818826,
+    "quest_50_kl_ci95": [
+      0.006768829121056894,
+      0.0083331830826961
+    ],
+    "quest_50_over_75_windows_above": 12,
+    "quest_50_over_75_sign_test_p": 0.00048828125
+  }
+}
