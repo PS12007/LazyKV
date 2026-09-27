@@ -137,7 +137,8 @@ def main() -> None:
                         "kind": kind, "depth": depth, "sample": sample, "prompt_len": prompt.length,
                         "policy": cond.policy, "budget": cond.budget, "score": score(prompt, text),
                         "answer": text.strip()[:120], "values": list(prompt.values),
-                        "target_needle_pos": prompt.needle_token_positions[0],
+                        # cwe has no needle: its evidence is the whole list, so there is no position.
+                        "target_needle_pos": prompt.needle_token_positions[0] if prompt.needle_token_positions else None,
                         **cache_facts(built),
                     })
                     if built.shares_full:
