@@ -1134,13 +1134,16 @@ def fig_p10_perplexity(a: dict[str, Any], t: Theme) -> None:
     ctxs = [str(c) for c in sm["contexts"]]
     ax.axhline(1.0, color=t.muted, linewidth=1, linestyle=(0, (4, 3)))
     key_budget = sm["tightest_budget"]
+    # Rungs 2 and 4, and rungs 5 and 8, land almost on top of each other; a small sideways dodge
+    # (in log2 units, so the same at every context) keeps all four error bars visible.
+    dodge = dict(zip((pol for pol, _, _ in P10_POLICIES), (-0.09, -0.03, 0.03, 0.09)))
     for (pol, pretty, marker), color in zip(P10_POLICIES, t.series):
         lab = f"{pol}_{100 * key_budget:g}".replace(".", "_")
         pts = [(int(c), a["contexts"][c]["conditions"].get(lab)) for c in ctxs]
         pts = [(x, c) for x, c in pts if c is not None]
         if not pts:
             continue
-        xs = [x for x, _ in pts]
+        xs = [x * 2 ** dodge[pol] for x, _ in pts]
         ys = [c["ppl_ratio"] for _, c in pts]
         yerr = [[c["ppl_ratio"] - c["ppl_ratio_ci95"][0] for _, c in pts], [c["ppl_ratio_ci95"][1] - c["ppl_ratio"] for _, c in pts]]
         ax.errorbar(xs, ys, yerr=yerr, color=color, linewidth=2, marker=marker, markersize=6, markeredgecolor=t.surface,
