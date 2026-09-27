@@ -3,6 +3,7 @@
 #   uv venv --python 3.12 .venv
 #   uv pip install --python .venv\Scripts\python.exe -r requirements.lock --index-url https://download.pytorch.org/whl/cu130 --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
 # torch is the cu130 build: the default PyPI wheel is CPU-only on Windows.
+accelerate==1.15.0
 annotated-doc==0.0.5
 anyio==4.15.1
 bitsandbytes==0.50.2
@@ -33,6 +34,7 @@ numpy==2.5.2
 packaging==26.3
 pillow==12.3.0
 pluggy==1.6.0
+psutil==7.2.2
 pygments==2.21.0
 pyparsing==3.3.2
 pytest==9.1.1
