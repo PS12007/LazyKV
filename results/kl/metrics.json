@@ -1,10 +1,13 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-27T18:26:38+00:00",
-    "git_commit": "42ba2bded12996af2333d7817542218ebfb73b15",
-    "git_dirty": false,
-    "git_dirty_files": [],
+    "generated_at_utc": "2026-09-27T18:27:25+00:00",
+    "git_commit": "259a096fbb4e4b5070bee39863a5aa0b8573301b",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "docs/FINDINGS.md",
+      "docs/templates/FINDINGS.md.tmpl"
+    ],
     "argv": [
       "scripts/analyze_kl.py"
     ],
@@ -2883,6 +2886,8 @@
     "within_resolved_wrong_way": 0,
     "across_comparisons": 120,
     "across_resolved": 75,
+    "across_unresolved": 45,
+    "across_unresolved_rung5_vs_rung8": 19,
     "quest_75_kl": 0.002288051570216339,
     "quest_75_kl_ci95": [
       0.001983394392822628,
