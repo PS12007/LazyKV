@@ -68,6 +68,9 @@ def main() -> None:
     p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
     p.add_argument("--policies", nargs="+", help="override config policies")
     p.add_argument("--samples", type=int, help="override NIAH samples per kind x depth")
+    # A kind is only run at a context where the full cache can do it (Phase 12's viability rule),
+    # so which kinds run can differ by context within one phase.
+    p.add_argument("--kinds", nargs="+", help="override config niah.kinds")
     # A prompt is keyed by its sample index, so a range [start, start + samples) reproduces exactly
     # the prompts a single larger run would have drawn. That lets a many-hour run be split into
     # chunks that each write their own metrics, so a crash costs one chunk rather than the run.
@@ -87,6 +90,8 @@ def main() -> None:
         cfg["budgets"] = args.budgets
     if args.policies:
         cfg["policies"] = args.policies
+    if args.kinds:
+        cfg["niah"]["kinds"] = args.kinds
     ctx = args.context or cfg["context"]
     samples = args.samples or cfg["niah"]["samples"]
     bs, chunk = cfg["block_size"], cfg["prefill_chunk"]
