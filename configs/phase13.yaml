@@ -1,0 +1,54 @@
+# Phase 13: power Phase 12's pre-committed test with more variable-tracking prompts.
+#
+# Phase 12 found Quest-style selection losing much more on RULER variable tracking than on the single
+# needle at its two tightest budgets, but at 30 prompts per kind its pre-committed test (disjoint
+# paired 95% CIs) separated the gap at 6.25% in only 2 of 4 contexts, and at 12.5% in none. That is
+# a statement about the sample, as Phase 9's was, and the remedy is the same: more paired prompts,
+# with the rule unchanged and fixed before the run.
+#
+# Rule (the same one Phase 12 committed): at 32,768 tokens, for Quest-style selection at 12.5% and
+# 6.25%, the vt-minus-single gap is established if the two retentions' paired 95% CIs are disjoint,
+# over the pooled prompts. Otherwise it is reported as not established. The post-hoc difference CI
+# is reported beside it, labelled as post hoc, as in Phase 12.
+#
+# What is pooled: Phase 12's samples 0-5 at 32K plus this run's samples 5-29, per kind and depth, so
+# 30 samples x 5 depths = 150 prompts per kind. Sample 5 is run in both, so every depth and kind has a
+# prompt that doubles as a reproducibility check; the pooled set counts it once, and the analysis
+# refuses to pool if any overlapping prompt answered differently.
+#
+# Held fixed: 32K only (the headline context, and the one where Phase 12's conservative test missed
+# at 12.5%); Quest-style selection only (the rung the finding is about); every other setting is
+# configs/phase12.yaml's.
+phase: phase13
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+context: 32768
+
+budgets: [0.125, 0.0625]
+policies: [quest]
+
+niah:
+  book: moby_dick
+  kinds: [single, vt]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 25
+  # samples 5-29: the chain passes --sample-start 5 (the driver takes the offset only on the CLI)
+  max_new_tokens: {single: 16, vt: 30}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0]
+  continuation: 256
+
+hard_kind: vt
+control_kind: single
+
+bootstrap:
+  iters: 10000
+  seed: 0
