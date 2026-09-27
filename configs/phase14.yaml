@@ -1,0 +1,52 @@
+# Phase 14: the ladder on LongBench, real long-document question answering.
+#
+# Everything through Phase 13 is synthetic: needles, RULER chains, book perplexity. LongBench v1
+# (arXiv 2308.14508) asks questions about Wikipedia passages and articles at their natural length,
+# scored by token F1. Phase 12 found query-aware selection losing multi-hop chains at the tightest
+# budgets; LongBench's multi-document QA (HotpotQA, 2WikiMQA, MuSiQue) is multi-hop by
+# construction, so it is where that result should reappear on real text if it is real. Single-
+# document QA (MultiFieldQA-en) is the in-run control, as the single needle was in Phase 12.
+#
+# Rules fixed before any LongBench output from this model was read:
+#   - A task is analyzed only if the full cache's mean F1 on it is at least `viability_floor`.
+#     Below that most prompts score zero with the full cache, and a retention would be carried by
+#     a handful of prompts. The value is set from nothing but that argument.
+#   - Retention = sum(policy F1) / sum(full F1) over the same prompts, with Phase 9's paired
+#     bootstrap CI. The multi-hop-vs-control comparison uses Phase 12's two tests: disjoint CIs
+#     (pre-committed) and the bootstrap CI of the difference (reported as Phase 12 defined it).
+#   - The first `samples` rows of each task file, in file order: no selection by length or content.
+#
+# Prompts, truncation, generation lengths and scoring follow the LongBench reference code (see
+# lazykv/longbench.py). max_length 31,500 is LongBench's own setting for 32K-context models; almost
+# every prompt in these tasks is shorter, so almost none are truncated.
+phase: phase14
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [window_sink, h2o, quest]
+
+h2o:
+  stride: 32
+  query_batch: 4
+
+longbench:
+  # Official data.zip (HF dataset THUDM/LongBench @ 5e628be450b7e67fb7ae6e201bd6d8f7056f7672),
+  # unpacked outside the repo.
+  data_dir: D:\CompSci\lazykv-data\longbench\data
+  tasks: [hotpotqa, 2wikimqa, musique, multifieldqa_en]
+  samples: 50
+  max_length: 31500
+
+viability_floor: 0.15
+hard_tasks: [hotpotqa, 2wikimqa, musique]
+control_task: multifieldqa_en
+
+bootstrap:
+  iters: 10000
+  seed: 0
