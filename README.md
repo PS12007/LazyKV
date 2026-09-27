@@ -31,7 +31,8 @@ negative results included.
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
 > [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md) ·
-> [Phase 8](docs/phases/PHASE_8.md) · [Phase 9](docs/phases/PHASE_9.md) · [Phase 10](docs/phases/PHASE_10.md) · [Phase 11](docs/phases/PHASE_11.md).
+> [Phase 8](docs/phases/PHASE_8.md) · [Phase 9](docs/phases/PHASE_9.md) · [Phase 10](docs/phases/PHASE_10.md) · [Phase 11](docs/phases/PHASE_11.md) ·
+> [Phase 12](docs/phases/PHASE_12.md).
 
 ## Where the ladder stands
 
@@ -105,6 +106,7 @@ Other measured facts from these two phases:
 | Ceiling on taking the residency decision off the host (Phases 6, 11) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes 1.10–1.25× faster over 3 runs; its fastest, 23.8 ms/token, is still slower than the full cache's 18.8 ms. Re-measured after Phase 9 found Phase 6's replay raced; the ceiling shrank at every shared condition |
 | What travels across context (Phase 8) | over 4 contexts, grouping retention by budget fraction leaves 8.7 pp of spread against 23.6 pp by blocks attended; the reference's decode is flat over a 16× span of context, and rung 9's cost is the only one proportional to it (145–160 µs per block) |
 | Perplexity as a proxy for retrieval (Phase 10) | at 32,768 tokens, 9 of 20 conditions lose at least a tenth of NIAH retrieval while their perplexity CI includes no change; the window with a sink at 25% keeps 24.4% of retrieval at 1.024× the perplexity. A fixed fraction's perplexity cost also falls with context, in all 13 conditions resolved at 4,096 tokens |
+| Multi-hop retrieval (Phase 12) | on RULER variable tracking at a 6.25% budget, Quest-style selection retains 15%–37% against 50%–63% on the single needle, across four contexts, and its lead over the cheap baselines disappears; down to 25% it is still the best rung on both |
 | The price of exactness (Phase 7) | rung 9 holds the full cache's retrieval accuracy at every budget, for 2.28–4.23× rung 6's decode time; the CPU pass costs 61–69 ms per token and only 113.8 KiB per token comes back |
 
 ## Phase 1 in brief
