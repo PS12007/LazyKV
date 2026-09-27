@@ -1,0 +1,56 @@
+# Phase 11: re-measure the Phase 6 host-decision ceiling on the race-fixed replay.
+#
+# Phase 9 §5 found that the replay ablation behind the Phase 6 ceiling reused the tier's pinned
+# staging buffers without waiting for the copy that read them (fixed in 2be6251, guarded by a test
+# that stalls the device). Normal decode was never affected -- its per-layer index sync always
+# drained the copy -- so only the replay pass, and therefore only the ceiling, is in question.
+#
+# Everything the original measured is held fixed so the two ceilings are comparable: the same
+# policies, budgets, context, block size, tier settings, decode length and warmup as
+# configs/phase5.yaml, run through the same script (scripts/03_host_ceiling.py).
+#
+# Two things change, both deliberate:
+#   - Three independent runs instead of one, each with its own model load, so the ceiling carries a
+#     run-to-run range like every other latency in the study.
+#   - Run on an idle machine (overnight), which the original could not guarantee.
+#
+# Expected direction, stated before the run: a correct replay must wait for the previous layer's
+# copy, which the racy one skipped, so the ceiling should shrink or stay put. A ceiling that grows
+# would mean something other than the race is moving it, and would be reported as such.
+phase: phase11
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+policies: [tiered_sync, tiered_int8]
+
+tier:
+  fetch: gather
+  spare: 1.0
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
+
+# Runs: three, as --run-id 1..3 (the chain launches them; the script takes one run per invocation).
