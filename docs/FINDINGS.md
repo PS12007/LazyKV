@@ -34,7 +34,7 @@ Individual gate reports carry the detail and the provenance:
 [Phase 3](phases/PHASE_3.md) · [Phase 4](phases/PHASE_4.md) · [Phase 5](phases/PHASE_5.md) ·
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
 [Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md) · [Phase 11](phases/PHASE_11.md) ·
-[Phase 12](phases/PHASE_12.md).
+[Phase 12](phases/PHASE_12.md) · [Phase 13](phases/PHASE_13.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -349,7 +349,16 @@ difference test resolves it in 4 of
 4. Scored all-or-nothing (also post hoc), it completes the whole chain on
 0%–7% of the
 prompts the full cache solves, fewer than either cheap baseline. So "the best approximating family"
-should be read as "for retrieval the query can see". RULER's aggregation task (common words) was
+should be read as "for retrieval the query can see".
+
+[Phase 13](phases/PHASE_13.md) gave the 32K test five times the prompts
+(150 per task) under the same pre-committed rule.
+At 6.25% the shortfall is now **established**: variable tracking
+41.5% against the single needle's
+61.3%, with disjoint intervals. At 12.5% it is **not established**
+(69.4% against 81.3%,
+intervals overlapping). Both gaps are smaller than Phase 12's 30-prompt estimates, which is what
+small samples do to effects that clear a bar. RULER's aggregation task (common words) was
 beyond this model at every context, so evidence spread across the whole context is not measured.
 
 ## 6. Why these phases can be put on one frontier
