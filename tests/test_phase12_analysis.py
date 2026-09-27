@@ -52,3 +52,13 @@ def test_mixed_commits_are_refused(tmp_path: Path) -> None:
         (d / "metrics.json").write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(SystemExit, match="disagree"):
         _analysis().load_runs(tmp_path, "ruler_ctx*")
+
+
+def test_pilot_reproduction_requires_identical_text_and_score() -> None:
+    a = _analysis()
+    pilot = {8192: [dict(_row("vt", 0.0, 0, "full", 1.0, 1.0), answer="VAR A, VAR B")]}
+    same = {8192: [dict(_row("vt", 0.0, 0, "full", 1.0, 1.0), answer="VAR A, VAR B")]}
+    moved = {8192: [dict(_row("vt", 0.0, 0, "full", 1.0, 1.0), answer="VAR A,  VAR B")]}
+    assert a.pilot_reproduction(pilot, same)["reproduces"]
+    r = a.pilot_reproduction(pilot, moved)
+    assert r["compared"] == 1 and r["identical"] == 0 and not r["reproduces"]

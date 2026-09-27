@@ -96,6 +96,24 @@ def retention(rows: list[dict[str, Any]], kind: str, policy: str, budget: float,
     }
 
 
+def pilot_reproduction(pilot_rows: dict[int, list[dict[str, Any]]], runs: dict[int, list[dict[str, Any]]]) -> dict[str, Any]:
+    """Whether the main run's full cache answered the pilot's prompts identically, text and score.
+
+    Prompts are keyed by (kind, depth, sample) and the quality kernel is deterministic, so a shared
+    prompt must reproduce exactly; anything less would mean the pilot and the run measure different
+    things, and the viability decision would not carry over.
+    """
+    key = lambda r: (r["kind"], r["depth"], r["sample"])  # noqa: E731
+    compared = identical = 0
+    for ctx, rows in runs.items():
+        before = {key(r): (r["score"], r["answer"]) for r in pilot_rows.get(ctx, []) if r["policy"] == FULL}
+        for r in rows:
+            if r["policy"] == FULL and key(r) in before:
+                compared += 1
+                identical += before[key(r)] == (r["score"], r["answer"])
+    return {"compared": compared, "identical": identical, "reproduces": compared > 0 and compared == identical}
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--base", default=str(RESULTS_DIR / "phase12"))
@@ -138,7 +156,11 @@ def main() -> None:
     for g in gaps:
         by_policy[g["policy"]].append(g)
 
+    repro = pilot_reproduction(pilot_rows, runs)
     summary = {
+        "pilot_rows_compared": repro["compared"],
+        "pilot_rows_identical": repro["identical"],
+        "pilot_reproduces": repro["reproduces"],
         "viability_floor": floor,
         "pilot_full_accuracy": pilot,
         "viable_kinds_by_context": viable,
