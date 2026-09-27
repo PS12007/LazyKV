@@ -41,6 +41,7 @@ OUTPUTS = {
     "PHASE_9.md.tmpl": "docs/phases/PHASE_9.md",
     "PHASE_10.md.tmpl": "docs/phases/PHASE_10.md",
     "PHASE_11.md.tmpl": "docs/phases/PHASE_11.md",
+    "PHASE_12.md.tmpl": "docs/phases/PHASE_12.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1952,6 +1953,83 @@ def block_p11_provenance(ctx: Mapping[str, Any]) -> str:
     if not isinstance(src, list) or not src:
         return f"_{NOT_MEASURED}_"
     rows = [_provenance_row(f"Run {i + 1}", s) for i, s in enumerate(src)]
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+def block_p12_pilot(ctx: Mapping[str, Any]) -> str:
+    """The full cache's own score per kind and context, and which cleared the viability floor."""
+    sm = lookup(ctx, "phase12.analysis.summary")
+    if not isinstance(sm, Mapping):
+        return f"_{NOT_MEASURED}_"
+    pilot, floor = sm["pilot_full_accuracy"], sm["viability_floor"]
+    kinds = sorted({k for v in pilot.values() for k in v})
+    rows = []
+    for c in sorted(pilot, key=int):
+        cells = []
+        for k in kinds:
+            a = pilot[c].get(k)
+            cells.append(NOT_MEASURED if a is None else f"{100 * a:.0f}%" + (" ✓" if a >= floor else ""))
+        rows.append([f"{int(c):,}", *cells])
+    return table(["Context", *[f"{k}, full cache" for k in kinds]], rows, ["---:", *["---:"] * len(kinds)])
+
+
+def block_p12_table(ctx: Mapping[str, Any]) -> str:
+    """Retention on the hard kind beside the in-run single-needle control, at the longest context."""
+    sm = lookup(ctx, "phase12.analysis.summary")
+    if not isinstance(sm, Mapping) or not sm.get("contexts"):
+        return f"_{NOT_MEASURED}_"
+    c = str(max(sm["contexts"]))
+    kinds = lookup(ctx, f"phase12.analysis.contexts.{c}.kinds")
+    hard, easy = sm["hard_kind"], sm["control_kind"]
+    rows = []
+    for key, h in kinds[hard].items():
+        e = kinds[easy][key]
+        rows.append([
+            POLICY_NAMES.get(h["policy"], h["policy"]),
+            _pct_budget(h["budget"]),
+            f"{100 * e['retention']:.1f}%" if e["retention"] is not None else NOT_MEASURED,
+            _ci(e["retention_ci95"]),
+            f"{100 * h['retention']:.1f}%" if h["retention"] is not None else NOT_MEASURED,
+            _ci(h["retention_ci95"]),
+            f"{h['worse']} / {h['better']}",
+        ])
+    header = ["Policy", "Budget", f"{easy} retention", "95% CI", f"{hard} retention", "95% CI", f"{hard} worse / better than full"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:"])
+
+
+def block_p12_grid(ctx: Mapping[str, Any]) -> str:
+    """Hard-kind retention by context, beside the control's, for every rung and budget."""
+    sm = lookup(ctx, "phase12.analysis.summary")
+    per = lookup(ctx, "phase12.analysis.contexts")
+    if not isinstance(sm, Mapping) or not isinstance(per, Mapping) or not per:
+        return f"_{NOT_MEASURED}_"
+    hard, easy = sm["hard_kind"], sm["control_kind"]
+    cols = sorted(per, key=int)
+    keys = [k for k, v in per[cols[-1]]["kinds"][hard].items() if v["policy"] != "block_full"]
+    rows = []
+    for k in keys:
+        v0 = per[cols[-1]]["kinds"][hard][k]
+        cells = []
+        for c in cols:
+            h = per[c]["kinds"].get(hard, {}).get(k)
+            e = per[c]["kinds"].get(easy, {}).get(k)
+            if h is None or e is None or h["retention"] is None or e["retention"] is None:
+                cells.append(NOT_MEASURED)
+            else:
+                cells.append(f"{100 * h['retention']:.0f}% ({100 * e['retention']:.0f}%)")
+        rows.append([POLICY_NAMES.get(v0["policy"], v0["policy"]), _pct_budget(v0["budget"]), *cells])
+    return table(["Policy", "Budget", *[f"{int(c):,}: {hard} ({easy})" for c in cols]], rows, ["---", "---:", *["---:"] * len(cols)])
+
+
+def block_p12_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase12.analysis.sources")
+    pilot = lookup(ctx, "phase12.analysis.pilot_sources")
+    rows = []
+    for label_, group in (("Pilot", pilot), ("Run", src)):
+        if isinstance(group, list):
+            rows += [_provenance_row(f"{label_}, {s['context']:,} tokens", s) for s in sorted(group, key=lambda s: s["context"])]
+    if not rows:
+        return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
