@@ -1,8 +1,8 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-27T07:34:41+00:00",
-    "git_commit": "23faafc388216fd6e8aca86da2a93e6f0e808944",
+    "generated_at_utc": "2026-09-27T07:36:17+00:00",
+    "git_commit": "bda5cc19c698738a9e96f831c2132c2c8dc03af6",
     "git_dirty": false,
     "git_dirty_files": [],
     "argv": [
@@ -4295,6 +4295,61 @@
     "separated_below_count": 2,
     "separated_above_count": 11,
     "tightest_budget": 0.0625,
+    "tightest_by_policy": {
+      "window_sink": {
+        "contexts": 4,
+        "below_precommitted": 0,
+        "below_post_hoc": 0,
+        "hard": {
+          "min": 0.18181818181818185,
+          "max": 0.3181818181818182
+        },
+        "easy": {
+          "min": 0.2,
+          "max": 0.2
+        },
+        "hard_all_or_nothing": {
+          "min": 0.1,
+          "max": 0.2857142857142857
+        }
+      },
+      "h2o": {
+        "contexts": 4,
+        "below_precommitted": 0,
+        "below_post_hoc": 1,
+        "hard": {
+          "min": 0.1900826446280992,
+          "max": 0.2727272727272727
+        },
+        "easy": {
+          "min": 0.2,
+          "max": 0.4
+        },
+        "hard_all_or_nothing": {
+          "min": 0.1,
+          "max": 0.2857142857142857
+        }
+      },
+      "quest": {
+        "contexts": 4,
+        "below_precommitted": 2,
+        "below_post_hoc": 4,
+        "hard": {
+          "min": 0.14503816793893132,
+          "max": 0.3727272727272727
+        },
+        "easy": {
+          "min": 0.5,
+          "max": 0.6333333333333333
+        },
+        "hard_all_or_nothing": {
+          "min": 0.0,
+          "max": 0.07142857142857142
+        }
+      }
+    },
+    "gaps_below_post_hoc_count": 7,
+    "gaps_above_post_hoc_count": 14,
     "gaps_separated_post_hoc": 21,
     "gaps_below_post_hoc": [
       "h2o_6_25@8192",
