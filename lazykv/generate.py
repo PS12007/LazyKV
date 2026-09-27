@@ -42,15 +42,41 @@ class LoadedModel:
         return 2 * c.num_hidden_layers * c.num_key_value_heads * head_dim * torch.finfo(self.model.dtype).bits // 8
 
 
-def load(repo: str, revision: str | None = None, strategy: str | None = None, dtype: torch.dtype = torch.bfloat16) -> LoadedModel:
-    tokenizer = AutoTokenizer.from_pretrained(repo, revision=revision)
-    model = AutoModelForCausalLM.from_pretrained(repo, revision=revision, dtype=dtype, attn_implementation="sdpa")
+def load(
+    repo: str,
+    revision: str | None = None,
+    strategy: str | None = None,
+    dtype: torch.dtype = torch.bfloat16,
+    cache_dir: str | None = None,
+    quant: str | None = None,
+) -> LoadedModel:
+    """The model and tokenizer, with LazyKV's attention installed.
+
+    `quant="nf4"` loads 4-bit weights through bitsandbytes (the optional `quant` extra). It exists
+    for one reason: a 3B model's bf16 weights and a 32K KV cache do not both fit in 8 GB, and the
+    stress case the brief asks for is exactly the one where KV, not weights, dominates VRAM. Only
+    the weights are quantized; KV stays bf16, so every residency policy sees the same cache format
+    as on the 1B model. A 4-bit model is placed on the GPU at load time (bitsandbytes cannot move
+    quantized weights afterwards), which is why the two paths differ below.
+    """
+    tokenizer = AutoTokenizer.from_pretrained(repo, revision=revision, cache_dir=cache_dir)
+    kwargs: dict[str, object] = {"revision": revision, "dtype": dtype, "attn_implementation": "sdpa", "cache_dir": cache_dir}
+    if quant == "nf4":
+        from transformers import BitsAndBytesConfig
+
+        kwargs["quantization_config"] = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4", bnb_4bit_compute_dtype=dtype)
+        kwargs["device_map"] = "cuda"
+    elif quant is not None:
+        raise ValueError(f"unknown quant {quant!r}")
+    model = AutoModelForCausalLM.from_pretrained(repo, **kwargs)
     c = model.config
     head_dim = getattr(c, "head_dim", None) or c.hidden_size // c.num_attention_heads
     chosen, checks = install(strategy, c.num_attention_heads, c.num_key_value_heads, head_dim)
     # Switch only after install() registered the implementation name.
     model.set_attn_implementation(IMPLEMENTATION_NAME)
-    model.to("cuda").eval()
+    if quant is None:
+        model.to("cuda")
+    model.eval()
     return LoadedModel(model, tokenizer, repo, revision, chosen, checks)
 
 
