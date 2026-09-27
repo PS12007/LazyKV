@@ -1,0 +1,65 @@
+# Phase 13 gate report: powering Phase 12's multi-hop test
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+[Phase 12](PHASE_12.md) found Quest-style selection losing much more on RULER variable tracking than
+on the single needle at its two tightest budgets, but at 30 prompts per task its pre-committed test
+(disjoint paired 95% CIs) could not separate the gap at 32K at either budget. This phase is Phase
+9's remedy applied to Phase 12: more paired prompts, the rule unchanged and fixed before the run.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing. New: the pooling guard (`analyze_phase13.py` refuses to
+  pool two runs that answered any shared prompt differently).
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase13.yaml
+  --sample-start 5`, detached from a worktree pinned at the commit under test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## Design
+
+At {{ phase13.analysis.summary.context | int }} tokens, Quest-style selection at 12.5% and 6.25%, on
+variable tracking and the single needle: Phase 12's samples 0-4 pooled with this run's 5-29, which
+is {{ phase13.analysis.summary.prompts_per_kind.vt | int }} prompts per task. Sample 5 ran in both
+phases as a reproducibility check, and all
+{{ phase13.analysis.summary.overlap_compared | int }} overlapping answers came back identical
+({{ phase13.analysis.summary.overlap_identical | int }} of
+{{ phase13.analysis.summary.overlap_compared | int }}), so the pooled set is one measurement. The
+analysis imports Phase 12's functions rather than re-implementing them, so the rule applied is
+literally the one Phase 12 committed.
+
+## 1. The answer
+
+| Budget | Single needle retention [95% CI] | Variable tracking retention [95% CI] | Pre-committed test | Difference CI (Phase 12's post-hoc test) |
+|---:|---:|---:|---|---:|
+| 12.5% | {{ phase13.analysis.conditions.quest_12_5.easy.retention | pct }} [{{ phase13.analysis.conditions.quest_12_5.easy.retention_ci95.0 | pct }}–{{ phase13.analysis.conditions.quest_12_5.easy.retention_ci95.1 | pct }}] | {{ phase13.analysis.conditions.quest_12_5.hard.retention | pct }} [{{ phase13.analysis.conditions.quest_12_5.hard.retention_ci95.0 | pct }}–{{ phase13.analysis.conditions.quest_12_5.hard.retention_ci95.1 | pct }}] | **{{ phase13.analysis.conditions.quest_12_5.verdict | str }}** | {{ phase13.analysis.conditions.quest_12_5.gap_ci95.0 | pp }} to {{ phase13.analysis.conditions.quest_12_5.gap_ci95.1 | pp }} |
+| 6.25% | {{ phase13.analysis.conditions.quest_6_25.easy.retention | pct }} [{{ phase13.analysis.conditions.quest_6_25.easy.retention_ci95.0 | pct }}–{{ phase13.analysis.conditions.quest_6_25.easy.retention_ci95.1 | pct }}] | {{ phase13.analysis.conditions.quest_6_25.hard.retention | pct }} [{{ phase13.analysis.conditions.quest_6_25.hard.retention_ci95.0 | pct }}–{{ phase13.analysis.conditions.quest_6_25.hard.retention_ci95.1 | pct }}] | **{{ phase13.analysis.conditions.quest_6_25.verdict | str }}** | {{ phase13.analysis.conditions.quest_6_25.gap_ci95.0 | pp }} to {{ phase13.analysis.conditions.quest_6_25.gap_ci95.1 | pp }} |
+
+**At 6.25% the shortfall is established.** With five times the prompts, the two intervals no longer
+overlap, which Phase 12's 30 prompts at this context could not show.
+
+**At 12.5% it is not, by the pre-committed rule.** The two intervals still overlap. The difference CI
+excludes zero, but that test was introduced after Phase 12's data was read, and this phase does not
+promote it to the rule after the fact. The honest statement is that a shortfall at 12.5% is likely
+and not established.
+
+**The effect is smaller than Phase 12 estimated.** At 30 prompts, Phase 12 put the 32K gap at
+{{ phase13.analysis.conditions.quest_12_5.phase12_gap_at_30 | pp }} (12.5%) and
+{{ phase13.analysis.conditions.quest_6_25.phase12_gap_at_30 | pp }} (6.25%); at
+{{ phase13.analysis.summary.prompts_per_kind.vt | int }} prompts it is
+{{ phase13.analysis.conditions.quest_12_5.gap | pp }} and
+{{ phase13.analysis.conditions.quest_6_25.gap | pp }}. Small samples overstate effects that clear a
+bar, and this is that shrinkage. [Phase 12](PHASE_12.md)'s 32K numbers should be read through this
+table.
+
+Scored all-or-nothing (Phase 12's post-hoc view), Quest-style selection completes the whole chain on
+{{ phase13.analysis.conditions.quest_12_5.hard.retention_all_or_nothing_post_hoc | pct }} (12.5%) and
+{{ phase13.analysis.conditions.quest_6_25.hard.retention_all_or_nothing_post_hoc | pct }} (6.25%) of
+the prompts the full cache solves.
+
+## Provenance
+
+Pooled from Phase 12's 32K run (`{{ phase13.analysis.sources.0.git_commit | str }}`) and this run
+(`{{ phase13.analysis.sources.1.git_commit | str }}`, uncommitted tracked changes:
+{{ phase13.analysis.sources.1.git_dirty | str }}). Machine time for this run:
+{{ phase13.analysis.summary.wall_s | .0f }} s.
