@@ -210,6 +210,15 @@ def main() -> None:
         "hard_above_easy": sum(1 for g in gaps if g["gap"] > 0),
         "gaps_compared": len(gaps),
         "gaps_separated": sum(1 for g in gaps if g["separated"]),
+        # The pre-committed test by direction: a rung losing more on the hard kind than on the
+        # control is the finding the phase looks for; one losing less is the partial-credit asymmetry.
+        "separated_below": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["separated"] and g["gap"] < 0),
+        "separated_above": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["separated"] and g["gap"] > 0),
+        "separated_below_count": sum(1 for g in gaps if g["separated"] and g["gap"] < 0),
+        "separated_above_count": sum(1 for g in gaps if g["separated"] and g["gap"] > 0),
+        # The tightest budget, per rung, at every context: the cell where the query-aware rung's
+        # shortfall is largest. Keyed by rung for dotted template lookups.
+        "tightest_budget": min(cfg["budgets"]),
         "gaps_separated_post_hoc": sum(1 for g in gaps if g["gap_ci95_post_hoc"][1] < 0 or g["gap_ci95_post_hoc"][0] > 0),
         "gaps_below_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][1] < 0),
         "gaps_above_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][0] > 0),
