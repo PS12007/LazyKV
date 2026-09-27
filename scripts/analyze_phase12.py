@@ -200,6 +200,7 @@ def main() -> None:
         "pilot_full_accuracy": pilot,
         "viable_kinds_by_context": viable,
         "contexts": sorted(int(c) for c in per_ctx),
+        "longest_context": max(int(c) for c in per_ctx),
         "hard_kind": hard,
         "control_kind": easy,
         "prompts_per_kind": {c: {k: next(iter(v.values()))["prompts"] for k, v in d["kinds"].items()} for c, d in per_ctx.items()},
