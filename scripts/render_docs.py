@@ -40,6 +40,7 @@ OUTPUTS = {
     "PHASE_8.md.tmpl": "docs/phases/PHASE_8.md",
     "PHASE_9.md.tmpl": "docs/phases/PHASE_9.md",
     "PHASE_10.md.tmpl": "docs/phases/PHASE_10.md",
+    "PHASE_11.md.tmpl": "docs/phases/PHASE_11.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
 }
 
@@ -1915,6 +1916,42 @@ def block_p10_provenance(ctx: Mapping[str, Any]) -> str:
     if not isinstance(src, list) or not src:
         return f"_{NOT_MEASURED}_"
     rows = [_provenance_row(f"{s['context']:,} tokens", s) for s in sorted(src, key=lambda s: s["context"])]
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+def block_p11_ceiling(ctx: Mapping[str, Any]) -> str:
+    """The race-fixed ceiling beside the Phase 6 one, condition by condition."""
+    now = lookup(ctx, "phase11.ceiling.conditions")
+    before = lookup(ctx, "phase5.ceiling.conditions")
+    if not isinstance(now, list) or not now:
+        return f"_{NOT_MEASURED}_"
+    old = {(c["policy"], c["budget"]): c for c in before} if isinstance(before, list) else {}
+    rows = []
+    for c in now:
+        if c["ceiling_speedup"] is None:
+            continue
+        o = old.get((c["policy"], c["budget"]), {})
+        rows.append([
+            POLICY_NAMES.get(c["policy"], c["policy"]),
+            _pct_budget(c["budget"]),
+            f"{c['decode_ms']:.1f}",
+            f"{c['replay_ms']:.1f}",
+            f"{o['ceiling_speedup']:.3f}×" if o.get("ceiling_speedup") else NOT_MEASURED,
+            f"**{c['ceiling_speedup']:.3f}×**",
+            f"{100 * o['token_agreement']:.1f}%" if o.get("token_agreement") is not None else NOT_MEASURED,
+            f"{100 * c['token_agreement']:.1f}%" if c["token_agreement"] is not None else NOT_MEASURED,
+            "yes" if c["fetched_pairs_match"] else "**no**",
+        ])
+    header = ["Policy", "Budget", "Decode, ms/token", "Replay, ms/token", "Ceiling, Phase 6 (racy)", "Ceiling, re-measured",
+              "Replay token agreement, Phase 6", "Replay token agreement, now", "Same pairs fetched"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---:", "---"])
+
+
+def block_p11_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase11.ceiling.sources")
+    if not isinstance(src, list) or not src:
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row(f"Run {i + 1}", s) for i, s in enumerate(src)]
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
