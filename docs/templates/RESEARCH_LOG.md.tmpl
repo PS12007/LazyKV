@@ -5,6 +5,33 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-27: Phase 14, LongBench, and the 3B model that did not fit in RAM
+
+### LongBench
+
+The brief's fourth quality measure, run on four QA subsets with prompts, truncation and F1 taken
+from the reference code and checked against its files byte for byte. No multi-hop shortfall was
+detected for Quest-style selection (at {{ phase14.analysis.summary.tightest_budget | budget }},
+{{ phase14.analysis.comparison.quest_6_25.hard.retention | pct }} against
+{{ phase14.analysis.comparison.quest_6_25.easy.retention | pct }}), but the interval is wide enough to
+contain Phase 13's gap, so it is reported as not detected rather than absent.
+
+### Incidents
+
+- A two-prompt smoke test found that natural-length prompts can be too short for a 6.25% window;
+  a minimum length was declared in the config before the real run, and the driver records what it
+  skipped.
+- Loading the 3B model's 4-bit weights needed `accelerate` as well as `bitsandbytes`; it was
+  dry-run, found to add only itself and `psutil`, and added to the same optional extra.
+- A 3B feasibility check showed 32K does not fit (prefill spilled into shared memory), so Phase 15
+  was designed at 16K. Its smoke test was then stopped by the host running critically low on RAM:
+  loading the 3B model stages its full-precision weights in host memory before quantizing them.
+  Phase 15 is paused pending the owner's call rather than retried.
+- The Phase 14 report's first draft compared the window's LongBench retention at 25% with its NIAH
+  retention at its best budget; it now compares the same budget.
+
+---
+
 ## 2026-09-27: Phase 13, powering Phase 12's multi-hop test
 
 Phase 12's pre-committed test could not separate Quest-style selection's variable-tracking shortfall
