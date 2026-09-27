@@ -191,6 +191,19 @@ def main() -> None:
     for g in gaps:
         by_policy[g["policy"]].append(g)
 
+    tight = min(cfg["budgets"])
+    rng = lambda xs: {"min": min(xs), "max": max(xs)} if xs else None  # noqa: E731
+    tightest_by_policy = {}
+    for pol in cfg["policies"]:
+        gs = [g for g in gaps if g["policy"] == pol and g["budget"] == tight]
+        tightest_by_policy[pol] = {
+            "contexts": len(gs),
+            "below_precommitted": sum(1 for g in gs if g["separated"] and g["gap"] < 0),
+            "below_post_hoc": sum(1 for g in gs if g["gap_ci95_post_hoc"][1] < 0),
+            "hard": rng([g["hard"] for g in gs]),
+            "easy": rng([g["easy"] for g in gs]),
+            "hard_all_or_nothing": rng([g["hard_all_or_nothing_post_hoc"] for g in gs if g["hard_all_or_nothing_post_hoc"] is not None]),
+        }
     repro = pilot_reproduction(pilot_rows, runs)
     summary = {
         "pilot_rows_compared": repro["compared"],
@@ -219,6 +232,9 @@ def main() -> None:
         # The tightest budget, per rung, at every context: the cell where the query-aware rung's
         # shortfall is largest. Keyed by rung for dotted template lookups.
         "tightest_budget": min(cfg["budgets"]),
+        "tightest_by_policy": tightest_by_policy,
+        "gaps_below_post_hoc_count": sum(1 for g in gaps if g["gap_ci95_post_hoc"][1] < 0),
+        "gaps_above_post_hoc_count": sum(1 for g in gaps if g["gap_ci95_post_hoc"][0] > 0),
         "gaps_separated_post_hoc": sum(1 for g in gaps if g["gap_ci95_post_hoc"][1] < 0 or g["gap_ci95_post_hoc"][0] > 0),
         "gaps_below_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][1] < 0),
         "gaps_above_post_hoc": sorted(f"{g['label']}@{g['context']}" for g in gaps if g["gap_ci95_post_hoc"][0] > 0),
