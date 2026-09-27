@@ -7,6 +7,41 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-24: Phase 9, resolving the 99% bar, and a race the suite caught
+
+Phase 8 left the headline as "within one prompt of the bar, on either side". This phase bought the
+prompts to settle it: rung 5 at 50% and 75% on 300 paired
+prompts at 32,768 tokens, with the decision rule (meets, fails
+or unresolved, from a paired bootstrap CI) committed to `configs/phase9.yaml` before the run.
+
+### The answer
+
+**50% fails.** Retention 96.9%, CI
+94.7%–98.9%,
+entirely below the bar. At 45 prompts the same rule called it unresolved.
+
+**75% is on the bar.** Retention 99.0%, CI
+97.6%–100.2%.
+The interval narrowed as the prompts grew and the point estimate never left it. The honest reading
+is that the 99% bar is finer than NIAH can resolve here for a policy that lands near it; a pass/fail
+headline would need a non-inferiority margin fixed in advance, or a continuous metric.
+
+The first chunk repeated Phase 8's prompts, and
+180 of
+180 shared rows came back identical in score and
+in generated text.
+
+### The incident
+
+A replay test began failing while the run shared the GPU. It was not kernel nondeterminism: the
+tier's pinned staging buffers are shared across layers and were only safe because each layer's
+index sync happened to drain the previous copy. The replay ablation removes that sync, so the host
+could refill a buffer before the GPU had read it. Fixed with a CUDA event per copy and a test that
+stalls the device to make the race deterministic. No quality result is affected; the Phase 6 replay
+ceiling is, and is probably optimistic until it is re-measured on an idle machine.
+
+---
+
 ## 2026-09-22: Phase 8, the ladder across context length
 
 Every result through Phase 7 was measured at one context. Phase 8 swept
