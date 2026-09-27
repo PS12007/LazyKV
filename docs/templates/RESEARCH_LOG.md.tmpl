@@ -5,6 +5,50 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-22: Phase 8, the ladder across context length
+
+Every result through Phase 7 was measured at one context. Phase 8 swept
+{{ phase8.analysis.summary.contexts_measured | int }} of them (4K to 32K, plus a 64K addendum) for
+rungs 2, 5, 6 and 9, to find out which of the single-context claims were claims about 32K and which
+were claims about the policies.
+
+### What travels is the fraction
+
+Grouping retention by budget *fraction* leaves
+{{ phase8.analysis.summary.collapse_mean_spread_by_budget_pp | .1f }} pp of spread across contexts;
+grouping it by a constant number of attended blocks leaves
+{{ phase8.analysis.summary.collapse_mean_spread_by_k_pp | .1f }} pp. Quest parameterizes by a constant
+K (arXiv 2406.10774), and that is the parameterization that does not transfer here. The brief's
+fraction-shaped headline was the right shape.
+
+### The bar was inside the noise
+
+The query-aware rungs landed within
+{{ phase8.analysis.summary.headline_smallest_abs_margin_prompts | .2f }} prompts of the 99% bar at
+their closest, and on alternating sides of it from one context to the next. That is not a context
+dependence; it is {{ phase8.analysis.summary.niah_prompts_per_condition | int }} prompts being too few
+to place them. A test now guards against reading it the other way, and the next phase existed to fix
+the prompt count.
+
+### "Host-bound" means a per-layer constant
+
+At least {{ phase8.analysis.summary.manager_intercept_share.min | pct0 }} of the selecting rungs'
+manager cost sits at zero blocks ranked. The full cache's decode is flat across context (a ratio of
+{{ phase8.analysis.summary.full_decode_first_to_last | .2f }} from 4K to 32K), and the tier's penalty
+against it is flat too ({{ phase8.analysis.summary.over_full_first_to_last_at_smallest_budget.tiered_sync | .2f }}×
+across the range), so there is no short context where tiering is free and no crossover. Rung 9 is the
+exception: its CPU pass is the only cost proportional to context
+({{ phase8.analysis.summary.manager_us_per_block_exact.min | .0f }}–{{ phase8.analysis.summary.manager_us_per_block_exact.max | .0f }} µs
+per block).
+
+### 64K fits, the control does not
+
+At 64K the 100% block-pool control is a second full-size KV copy and runs out of memory, so the
+sweep gained `--skip-block-full`. The tier itself fits, at
+{{ phase8.analysis.summary.tier_vram_saving_at_64k | .1f }}× less resident KV than the reference.
+
+---
+
 ## 2026-09-21: Phase 7, rung 9 — the last rung, and the only one that clears the bar
 
 Phases 2-6 measured seven approximating rungs and answered the brief's headline question with

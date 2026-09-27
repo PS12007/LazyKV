@@ -7,6 +7,50 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-22: Phase 8, the ladder across context length
+
+Every result through Phase 7 was measured at one context. Phase 8 swept
+4 of them (4K to 32K, plus a 64K addendum) for
+rungs 2, 5, 6 and 9, to find out which of the single-context claims were claims about 32K and which
+were claims about the policies.
+
+### What travels is the fraction
+
+Grouping retention by budget *fraction* leaves
+8.7 pp of spread across contexts;
+grouping it by a constant number of attended blocks leaves
+23.6 pp. Quest parameterizes by a constant
+K (arXiv 2406.10774), and that is the parameterization that does not transfer here. The brief's
+fraction-shaped headline was the right shape.
+
+### The bar was inside the noise
+
+The query-aware rungs landed within
+0.07 prompts of the 99% bar at
+their closest, and on alternating sides of it from one context to the next. That is not a context
+dependence; it is 45 prompts being too few
+to place them. A test now guards against reading it the other way, and the next phase existed to fix
+the prompt count.
+
+### "Host-bound" means a per-layer constant
+
+At least 76% of the selecting rungs'
+manager cost sits at zero blocks ranked. The full cache's decode is flat across context (a ratio of
+0.95 from 4K to 32K), and the tier's penalty
+against it is flat too (1.22×
+across the range), so there is no short context where tiering is free and no crossover. Rung 9 is the
+exception: its CPU pass is the only cost proportional to context
+(145–160 µs
+per block).
+
+### 64K fits, the control does not
+
+At 64K the 100% block-pool control is a second full-size KV copy and runs out of memory, so the
+sweep gained `--skip-block-full`. The tier itself fits, at
+3.6× less resident KV than the reference.
+
+---
+
 ## 2026-09-21: Phase 7, rung 9 — the last rung, and the only one that clears the bar
 
 Phases 2-6 measured seven approximating rungs and answered the brief's headline question with
