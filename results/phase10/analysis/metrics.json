@@ -1,12 +1,10 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-09-27T05:56:02+00:00",
-    "git_commit": "20d808f896baa67afda2ea0d1484779d5ffa2288",
-    "git_dirty": true,
-    "git_dirty_files": [
-      "scripts/analyze_phase10.py"
-    ],
+    "generated_at_utc": "2026-09-27T05:56:30+00:00",
+    "git_commit": "97a986578e0df5071e917fbe08ad2aa04d3680c8",
+    "git_dirty": false,
+    "git_dirty_files": [],
     "argv": [
       "scripts/analyze_phase10.py"
     ],
