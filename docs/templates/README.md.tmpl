@@ -29,7 +29,7 @@ negative results included.
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
 > [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md) ·
-> [Phase 8](docs/phases/PHASE_8.md).
+> [Phase 8](docs/phases/PHASE_8.md) · [Phase 9](docs/phases/PHASE_9.md).
 
 ## Where the ladder stands
 
@@ -49,7 +49,12 @@ cache answers ({{ phase3.analysis.full_niah_accuracy | pct }} over
 | 9 | + exact partial attention on the CPU | **{{ phase7.analysis.summary.retention.tiered_exact.min | pct }}–{{ phase7.analysis.summary.retention.tiered_exact.max | pct }}: the full cache's answers, at every budget** | same as rung 6, and {{ phase7.analysis.summary.mirror_mib.max | int }} MiB of extra host RAM, at {{ phase7.analysis.summary.over_full.min | .1f }}–{{ phase7.analysis.summary.over_full.max | .1f }}× the full cache's decode time |
 
 **No rung that skips KV meets the brief's headline target** of ≥ 99% retention below a 100% budget;
-query-aware selection comes closest and misses it. Rung 9 meets it by not skipping: it computes the
+query-aware selection comes closest. On {{ phase9.analysis.summary.prompts | int }} paired prompts
+([Phase 9](docs/phases/PHASE_9.md)) it **fails** the bar at a 50% budget (paired 95% CI
+{{ phase9.analysis.conditions.quest_50.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_50.retention_ci95.1 | pct }})
+and sits exactly on it at 75% (CI
+{{ phase9.analysis.conditions.quest_75.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_75.retention_ci95.1 | pct }}),
+which is as far as NIAH can place it. Rung 9 meets it by not skipping: it computes the
 missing attention on the CPU and merges it back exactly, which is the study's answer that the last
 percent of accuracy is available and the currency for it is compute rather than memory.
 
@@ -95,7 +100,7 @@ Other measured facts from these two phases:
 | Selection churn with VRAM holding exactly the attended set (Phase 4) | up to {{ phase4.analysis.summary.spare0.fetched_pairs_per_token.tiered_sync.max | int }} (head, block) pairs re-fetched per token, {{ phase4.analysis.summary.spare0.thrash_share.tiered_sync.max | pct0 }} of them evicted within the previous 16 steps; doubling the slots cuts that to {{ phase4.analysis.summary.thrash_share.tiered_sync.max | pct0 }} |
 | Five attacks on bytes moved, none of them faster (Phases 4-5, 7) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× its time at a 25% budget |
 | int8 warm/cold tier against the exact tier (Phase 5) | {{ phase5.analysis.summary.answers_differing_total }} NIAH answers changed across all budgets, {{ phase5.analysis.summary.answers_broken_total }} worse against {{ phase5.analysis.summary.answers_fixed_total }} better (exact sign test, p = {{ phase5.analysis.summary.sign_test_p_pooled | .2f }}): quality-neutral, and the apparent gain at the tightest budget is noise |
-| Ceiling on taking the residency decision off the host (Phase 6) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}× faster — still slower than the full cache's {{ phase5.ceiling.summary.full_decode_ms | .1f }} ms/token |
+| Ceiling on taking the residency decision off the host (Phase 6) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes {{ phase5.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase5.ceiling.summary.ceiling_speedup.max | .2f }}× faster — still slower than the full cache's {{ phase5.ceiling.summary.full_decode_ms | .1f }} ms/token. Probably optimistic: Phase 9 found the replay raced, and it is not yet re-measured |
 | What travels across context (Phase 8) | over {{ phase8.analysis.summary.contexts_measured | int }} contexts, grouping retention by budget fraction leaves {{ phase8.analysis.summary.collapse_mean_spread_by_budget_pp | .1f }} pp of spread against {{ phase8.analysis.summary.collapse_mean_spread_by_k_pp | .1f }} pp by blocks attended; the reference's decode is flat over a {{ phase8.analysis.summary.context_span_measured | .0f }}× span of context, and rung 9's cost is the only one proportional to it ({{ phase8.analysis.summary.manager_us_per_block_exact.min | .0f }}–{{ phase8.analysis.summary.manager_us_per_block_exact.max | .0f }} µs per block) |
 | The price of exactness (Phase 7) | rung 9 holds the full cache's retrieval accuracy at every budget, for {{ phase7.analysis.summary.over_approx.min | .2f }}–{{ phase7.analysis.summary.over_approx.max | .2f }}× rung 6's decode time; the CPU pass costs {{ phase7.analysis.summary.cpu_attention_ms_per_token.min | .0f }}–{{ phase7.analysis.summary.cpu_attention_ms_per_token.max | .0f }} ms per token and only {{ phase7.analysis.summary.returned_kib_per_token.max | .1f }} KiB per token comes back |
 
