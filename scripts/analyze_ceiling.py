@@ -1,7 +1,13 @@
 """What removing the per-layer host round trip would buy, from the replay ablation.
 
-Reads   results/phase5/host_ceiling/run_*/metrics.json
-Writes  results/phase5/ceiling/metrics.json
+Reads   results/<phase>/host_ceiling/run_*/metrics.json   (phase5 by default)
+Writes  results/<phase>/ceiling/metrics.json
+
+`--phase phase11` analyzes the re-measure on the race-fixed replay (Phase 9 §5 found the Phase 6
+replay reused its staging buffers without waiting for the copy that read them). The re-measure keeps
+the original's per-token host counters from Phase 5's analysis for the arithmetic bound, since those
+were measured on normal decode, which the race never touched, and it reports the Phase 6 ceiling
+beside its own, so the correction is visible rather than silently replacing the number.
 
 Pass one decodes normally and records each layer's selection; pass two replays it, so the bound and
 the host sync never run while the blocks chosen, the pairs fetched and the gathers stay identical.
@@ -21,6 +27,7 @@ the ablation held everything else fixed:
 
 from __future__ import annotations
 
+import argparse
 import json
 import statistics
 import sys
@@ -45,7 +52,13 @@ def med(rows: list[dict[str, Any]], path: tuple[str, ...]) -> float | None:
 
 
 def main() -> None:
-    base = RESULTS_DIR / "phase5"
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--phase", default="phase5", help="results/<phase>/host_ceiling to analyze")
+    ap.add_argument("--compare-to", help="another phase whose ceiling to report beside this one")
+    args = ap.parse_args()
+    base = RESULTS_DIR / args.phase
+    # The per-token host counters behind the arithmetic bound come from Phase 5's normal decode.
+    counters = RESULTS_DIR / "phase5" / "analysis" / "metrics.json"
     runs = [json.loads(f.read_text(encoding="utf-8")) for f in sorted((base / "host_ceiling").glob("run_*/metrics.json"))]
     if not runs:
         raise SystemExit("no host_ceiling runs found")
@@ -86,7 +99,7 @@ def main() -> None:
     # arithmetic limit is what decode would cost if *all* of the tier's host select time vanished.
     # It is arithmetic, not a measurement, and is labelled as such wherever it is quoted -- Phases 4
     # and 5 both found arithmetic predictions about this system to be wrong.
-    p5 = json.loads((base / "analysis" / "metrics.json").read_text(encoding="utf-8")) if (base / "analysis" / "metrics.json").exists() else None
+    p5 = json.loads(counters.read_text(encoding="utf-8")) if counters.exists() else None
     for r in out:
         r["host_select_ms"] = r["all_host_ms"] = r["arithmetic_ceiling_speedup"] = None
         if p5 is None or r["policy"] not in p5["tier"]:
@@ -121,10 +134,27 @@ def main() -> None:
         "saved_vs_counted_rank_ms": span([r["saved_vs_counted_rank_ms"] for r in tiered if r.get("saved_vs_counted_rank_ms") is not None]),
         "full_decode_ms": next((r["decode_ms"] for r in out if r["policy"] == "full"), None),
     }
+    previous = None
+    if args.compare_to:
+        prev = json.loads((RESULTS_DIR / args.compare_to / "ceiling" / "metrics.json").read_text(encoding="utf-8"))["summary"]
+        now = summary["ceiling_speedup_at"]
+        before = prev["ceiling_speedup_at"]
+        shared = sorted(k for k in now if k in before and now[k] and before[k])
+        previous = {
+            "phase": args.compare_to,
+            "runs": prev["runs"],
+            "ceiling_speedup": prev["ceiling_speedup"],
+            "token_agreement": prev["token_agreement"],
+            "ceiling_speedup_at": before,
+            # How much of the old ceiling survives the fix, per condition: <1 means it shrank.
+            "gain_ratio_at": {k: (now[k] - 1) / (before[k] - 1) if before[k] != 1 else None for k in shared},
+            "gain_ratio": span([(now[k] - 1) / (before[k] - 1) for k in shared if before[k] != 1]),
+        }
     write_metrics(base / "ceiling", {
         "sources": [r["provenance"] for r in runs],
         "conditions": out,
         "summary": summary,
+        "previous": previous,
     })
     print("wrote", base / "ceiling" / "metrics.json")
 
