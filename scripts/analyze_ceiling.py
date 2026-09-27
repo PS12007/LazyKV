@@ -149,6 +149,11 @@ def main() -> None:
             # How much of the old ceiling survives the fix, per condition: <1 means it shrank.
             "gain_ratio_at": {k: (now[k] - 1) / (before[k] - 1) if before[k] != 1 else None for k in shared},
             "gain_ratio": span([(now[k] - 1) / (before[k] - 1) for k in shared if before[k] != 1]),
+            # The like-for-like comparison: only the conditions both phases measured. A re-measure
+            # that also covers new budgets must not quote its wider range against the old one.
+            "shared_conditions": len(shared),
+            "ceiling_speedup_now_shared": span([now[k] for k in shared]),
+            "shrank": sum(1 for k in shared if now[k] < before[k]),
         }
     write_metrics(base / "ceiling", {
         "sources": [r["provenance"] for r in runs],
