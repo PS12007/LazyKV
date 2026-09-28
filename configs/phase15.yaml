@@ -35,7 +35,13 @@ block_size: 64
 prefill_chunk: 2048
 context: 16384
 
-budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+# No 75%, and the run passes --skip-block-full. Both were found by smoke tests, before any 3B
+# answer was read: at 16K the full reference peaks at 4.25 GiB, and every rung that copies KV
+# (window, H2O, tier) adds 0.75 of that cache again, which left under 1 GiB of the 6.6 GiB cap and
+# OOMed in decode on allocator fragmentation. The block-pool control is a whole second copy, as at
+# 64K on the 1B model (Phase 8). 75% is the budget where every rung sat nearest the full cache on
+# the 1B, so it is the least informative one to lose.
+budgets: [0.5, 0.25, 0.125, 0.0625]
 policies: [window_sink, h2o, quest, tiered_sync]
 
 # spare: 0, not the ladder's 1.0. With 1x spare, slots are capped at every candidate block, so at
