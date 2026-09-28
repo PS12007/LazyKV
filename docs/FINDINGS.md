@@ -35,7 +35,7 @@ Individual gate reports carry the detail and the provenance:
 [Phase 6](phases/PHASE_6.md) · [Phase 7](phases/PHASE_7.md) · [Phase 8](phases/PHASE_8.md) ·
 [Phase 9](phases/PHASE_9.md) · [Phase 10](phases/PHASE_10.md) · [Phase 11](phases/PHASE_11.md) ·
 [Phase 12](phases/PHASE_12.md) · [Phase 13](phases/PHASE_13.md) ·
-[Phase 14](phases/PHASE_14.md).
+[Phase 14](phases/PHASE_14.md) · [Phase 15](phases/PHASE_15.md).
 
 ## 1. The headline number (brief §B8)
 
@@ -377,6 +377,23 @@ of F1, against 24.4% of
 NIAH retrieval), on shorter contexts and with F1's partial credit, which is one more reason the
 headline stays on needle retrieval: it is the test that discriminates.
 
+## 5d. A larger model: Llama-3.2-3B
+
+[Phase 15](phases/PHASE_15.md) ran rungs 2, 4, 5 and 6 on the brief's 3B stress model (nf4
+weights, bf16 KV) at 16,384 tokens, on the same
+45 NIAH prompts Phase 8 gave the 1B model.
+**Query-aware selection keeps much more of the larger model's accuracy at tight budgets**: at
+6.25%, Quest-style selection retains
+76.7% of the 3B model's full-cache accuracy
+against 42.9% of the 1B's (difference
++19.8 pp to
++48.2 pp). The gap is resolved at 12.5% as
+well, and also on the prompts both full caches answer (a post hoc check). **No model difference is
+detected for the window** on that common set. Rung 6 answered exactly as rung 5 did on every
+prompt. So the 1B's tight-budget losses under query-aware selection look like a conservative
+estimate rather than a floor. That is one additional model, not a trend, and the two models differ in more than
+size.
+
 ## 6. Why these phases can be put on one frontier
 
 The rungs were measured weeks apart in four separate gates, so combining them is a claim that needs
@@ -416,12 +433,14 @@ claim in this study is quoted with a range over independent runs.
 
 ## 7. Limitations
 
-- **One model, and retrieval that the query can mostly see.** Llama-3.2-1B, scored on
+- **Mostly one model, and retrieval that the query can mostly see.** Llama-3.2-1B, scored on
   needle-in-a-haystack with 45 prompts per condition, plus long-document
   perplexity (§5), which turned out to be a poor proxy for retrieval, RULER variable tracking
   for rungs 2, 4 and 5 only (§5b), and four LongBench QA subsets at 50 prompts each (§5c).
-  Aggregation tasks were beyond the model. The 3B stress model in the brief was never
-  run, so nothing here speaks to a regime where KV dominates VRAM more aggressively.
+  Aggregation tasks were beyond the model. The 3B stress model (§5d) was run only at
+  16,384 tokens, on NIAH, with 4-bit weights, and without the
+  75% budget. Its full-size reference cache is what did not fit at 32K, so the evaluation, not the
+  tier, set that limit.
 - **One context, for everything except [Phase 8](phases/PHASE_8.md).** The frontier above is at
   32,768 tokens. Phase 8 swept
   4 contexts for four of the nine rungs and
