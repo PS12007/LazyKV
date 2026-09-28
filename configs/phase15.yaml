@@ -38,9 +38,14 @@ context: 16384
 budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
 policies: [window_sink, h2o, quest, tiered_sync]
 
+# spare: 0, not the ladder's 1.0. With 1x spare, slots are capped at every candidate block, so at
+# 75% and 50% the tier holds a second full-size KV copy in VRAM beside the reference; on the 3B
+# model that does not fit (the smoke test OOMed building rung 6 at 5.9 GiB against a 6.6 GiB cap).
+# Spare slots only cut fetch counts (Phase 4's probe); which blocks are attended is the selection's,
+# so rung 6's answers do not depend on it, and question 3 checks exactly that.
 tier:
   fetch: gather
-  spare: 1.0
+  spare: 0.0
 
 h2o:
   stride: 32
