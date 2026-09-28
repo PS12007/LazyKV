@@ -5,6 +5,35 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-28: Phase 15, the 3B stress model
+
+### Result
+
+Rungs 2, 4, 5 and 6 on Llama-3.2-3B (nf4 weights, bf16 KV) at
+{{ phase15.analysis.summary.context | int }} tokens, on Phase 8's 1B prompts, all
+{{ phase15.analysis.summary.prompts_identical | int }} verified identical. Query-aware selection
+keeps far more of the larger model's accuracy at tight budgets
+({{ phase15.analysis.conditions.quest_6_25.retention_3b | pct }} against
+{{ phase15.analysis.conditions.quest_6_25.retention_1b | pct }} at 6.25%). The window shows no model
+difference on the common prompt set, and rung 6 matched rung 5 on every answer.
+
+### Incidents
+
+- The host-RAM pause was resolved by launching the run outside the Claude Code session (WMI), so
+  the session's low-memory reaper could not stop it. The model load drove free RAM near zero for
+  about a minute and then recovered.
+- Four VRAM failures on the way to a run, each before any 3B answer was read, each committed as its
+  own fix: allocator fragmentation between conditions (cached memory is now released before each
+  build), rung 6's spare slots (none for this phase), the 75% budget and the block-pool control
+  (dropped), and the teacher-forced pass (skipped). The last one cost a finished NIAH pass, because
+  the driver writes results only at the end. Writing NIAH results before the teacher-forced pass
+  would have saved it, and that is the obvious fix if the driver is touched again.
+- The first reading showed the 3B window slightly worse than the 1B's at three budgets. A post hoc
+  check on the prompts both full caches answer removed that: the difference came from the 1B's
+  smaller denominators. The check is reported as post hoc, beside the pre-committed comparison.
+
+---
+
 ## 2026-09-27: Phase 14, LongBench, and the 3B model that did not fit in RAM
 
 ### LongBench
