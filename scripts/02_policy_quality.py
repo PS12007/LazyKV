@@ -151,7 +151,7 @@ def main() -> None:
                 for cond in order:
                     release_cached()
                     built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
-                    dec =greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
+                    dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
                     built.close()
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
                     text = lm.tokenizer.decode(toks)
@@ -168,6 +168,31 @@ def main() -> None:
                     del built
                 this = {f"{r['policy']}@{r['budget']:g}": r["score"] for r in niah_rows[-len(conds):]}
                 log.info("niah %s depth %.2f sample %d (%.0fs): %s", kind, depth, sample, time.perf_counter() - t_start, this)
+
+    def save(tf_rows: list[dict[str, Any]], teacher_forced_pending: bool) -> None:
+        write_metrics(
+            RESULTS_DIR / results_subdir(cfg) / args.out,
+            {
+                "config": {**cfg, "context": ctx, "niah": {**cfg["niah"], "samples": samples, "sample_start": args.sample_start}},
+                "attention_strategy": QUALITY_STRATEGY,
+                "conditions": [c.label for c in conds],
+                "kv_bytes_per_token": lm.kv_bytes_per_token,
+                "niah": niah_rows,
+                "teacher_forced": tf_rows,
+                "teacher_forced_pending": teacher_forced_pending,
+                "wall_s": time.perf_counter() - t_start,
+                # Per prompt, including the h2o scorer when one runs. Quality kernel: not a speed result.
+                "prefill_wall_s": prefill_wall_s,
+                "prefill_scorer": None if scorer is None else {"stride": scorer.stride, "query_batch": scorer.query_batch},
+                "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": process_gpu_memory().shared_bytes},
+            },
+        )
+
+    # NIAH is saved before the teacher-forced pass, which needs the longest sequence of the run and
+    # so is the likeliest to run out of VRAM: Phase 15's first run lost a finished NIAH pass that way.
+    # The flag marks the file as incomplete until the final write replaces it.
+    if not args.skip_teacher_forced:
+        save([], teacher_forced_pending=True)
 
     # ---- teacher-forced divergence --------------------------------------------------------
     tf = cfg["teacher_forced"]
@@ -189,7 +214,7 @@ def main() -> None:
         for cond in order:
             release_cached()
             built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
-            div =compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont), targets=cont)
+            div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont), targets=cont)
             built.close()
             tf_rows.append({"book": book_name, "offset": offset, "target": target, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
             if built.shares_full:
@@ -199,22 +224,7 @@ def main() -> None:
             log.info("teacher-forced %s @%d %s: top1 %.3f, KL %.2e, NLL %.4f (ref %.4f)", book_name, target, cond.label, r["top1_agreement"], r["mean_kl"], r["mean_nll"], r["ref_mean_nll"])
         del reference
 
-    write_metrics(
-        RESULTS_DIR / results_subdir(cfg) / args.out,
-        {
-            "config": {**cfg, "context": ctx, "niah": {**cfg["niah"], "samples": samples, "sample_start": args.sample_start}},
-            "attention_strategy": QUALITY_STRATEGY,
-            "conditions": [c.label for c in conds],
-            "kv_bytes_per_token": lm.kv_bytes_per_token,
-            "niah": niah_rows,
-            "teacher_forced": tf_rows,
-            "wall_s": time.perf_counter() - t_start,
-            # Per prompt, including the h2o scorer when one runs. Quality kernel: not a speed result.
-            "prefill_wall_s": prefill_wall_s,
-            "prefill_scorer": None if scorer is None else {"stride": scorer.stride, "query_batch": scorer.query_batch},
-            "memory_guard": {"allocator_cap": memory_cap, "shared_baseline_bytes": shared_baseline, "shared_after_bytes": process_gpu_memory().shared_bytes},
-        },
-    )
+    save(tf_rows, teacher_forced_pending=False)
     log.info("done in %.0fs", time.perf_counter() - t_start)
 
 
