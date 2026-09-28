@@ -2074,33 +2074,44 @@ def block_p15_table(ctx: Mapping[str, Any]) -> str:
     per = lookup(ctx, "phase15.analysis.conditions")
     if not isinstance(per, Mapping) or not per:
         return f"_{NOT_MEASURED}_"
+    verdict = lambda ci: NOT_MEASURED if not ci else ("**3B higher**" if ci[0] > 0 else "**3B lower**" if ci[1] < 0 else "not resolved")  # noqa: E731
+    gap = lambda ci: f"{100 * ci[0]:+.1f} to {100 * ci[1]:+.1f} pp" if ci else NOT_MEASURED  # noqa: E731
     rows = []
     for e in sorted(per.values(), key=lambda e: (e["policy"], -e["budget"])):
         has_1b = e.get("retention_1b") is not None
-        ci = e.get("gap_ci95")
-        verdict = NOT_MEASURED if not ci else ("**3B higher**" if ci[0] > 0 else "**3B lower**" if ci[1] < 0 else "not resolved")
+        ci, cb = e.get("gap_ci95"), e.get("both_full_gap_ci95")
         rows.append([
             POLICY_NAMES.get(e["policy"], e["policy"]),
             _pct_budget(e["budget"]),
-            f"{100 * e['retention_3b']:.1f}%" if e["retention_3b"] is not None else NOT_MEASURED,
-            _ci(e["retention_3b_ci95"]),
-            f"{100 * e['retention_1b']:.1f}%" if has_1b else NOT_MEASURED,
-            _ci(e.get("retention_1b_ci95")) if has_1b else NOT_MEASURED,
-            f"{100 * ci[0]:+.1f} to {100 * ci[1]:+.1f} pp" if ci else NOT_MEASURED,
-            verdict,
+            f"{100 * e['retention_3b']:.1f}% ({_ci(e['retention_3b_ci95'])})" if e["retention_3b"] is not None else NOT_MEASURED,
+            f"{100 * e['retention_1b']:.1f}% ({_ci(e.get('retention_1b_ci95'))})" if has_1b else NOT_MEASURED,
+            gap(ci),
+            verdict(ci),
+            gap(cb),
+            verdict(cb),
         ])
-    header = ["Policy", "Budget", "3B retention", "95% CI", "1B retention", "95% CI", "3B − 1B CI", "Verdict"]
-    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---"])
+    header = ["Policy", "Budget", "3B retention (95% CI)", "1B retention (95% CI)", "3B − 1B, all prompts", "Verdict",
+              "3B − 1B, both full caches right", "Verdict"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---", "---:", "---"])
 
 
 def block_p15_order(ctx: Mapping[str, Any]) -> str:
     """The rungs ordered by point estimate at each budget, per model."""
     order = lookup(ctx, "phase15.analysis.summary.order_by_budget")
-    if not isinstance(order, Mapping) or not order:
+    per = lookup(ctx, "phase15.analysis.conditions")
+    if not isinstance(order, Mapping) or not order or not isinstance(per, Mapping):
         return f"_{NOT_MEASURED}_"
     name = lambda p: POLICY_NAMES.get(p, p).split(" (")[-1].rstrip(")") if "(" in POLICY_NAMES.get(p, p) else p  # noqa: E731
-    rows = [[f"{b}%", " > ".join(name(p) for p in o["3b"]) or NOT_MEASURED, " > ".join(name(p) for p in o["1b"]) or NOT_MEASURED]
-            for b, o in sorted(order.items(), key=lambda kv: -float(kv[0]))]
+
+    def chain(pols: list[str], budget: str, model: str) -> str:
+        # Equal retentions print "=", so rung 6 (identical answers to rung 5) is not shown as ranked below it.
+        ret = lambda p: next(e[f"retention_{model}"] for e in per.values() if e["policy"] == p and f"{100 * e['budget']:g}" == budget)  # noqa: E731
+        out = name(pols[0]) if pols else NOT_MEASURED
+        for a, b in zip(pols, pols[1:]):
+            out += (" = " if ret(a) == ret(b) else " > ") + name(b)
+        return out
+
+    rows = [[f"{b}%", chain(o["3b"], b, "3b"), chain(o["1b"], b, "1b")] for b, o in sorted(order.items(), key=lambda kv: -float(kv[0]))]
     return table(["Budget", "3B, by point estimate", "1B, by point estimate"], rows, ["---:", "---", "---"])
 
 

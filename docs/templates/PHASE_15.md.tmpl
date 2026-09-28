@@ -1,0 +1,128 @@
+# Phase 15 gate report: the 3B stress model
+
+**Status: complete. The gate deliverables are done (tests, experiment, this report, commit).**
+
+Every result through Phase 14 is Llama-3.2-1B. The brief (§B8) named a 3B model as the stress case,
+where KV is a larger share of VRAM: Llama-3.2-3B stores
+{{ phase15.analysis.summary.kv_bytes_per_token_3b | int }} bytes of KV per token against the 1B's
+{{ phase15.analysis.summary.kv_bytes_per_token_1b | int }}. Its weights only fit as 4-bit nf4
+(bitsandbytes); the KV stays bf16, so every rung sees the same cache format as on the 1B. The
+reference is the 3B model's own full cache under the same 4-bit weights, so a retention measures a
+policy's effect on this model, not quantization's.
+
+## Gate checklist (CLAUDE.md rule 3)
+
+- [x] **Tests run.** `pytest`, all passing, including `tests/test_phase15_analysis.py` (a prompt is
+  paired across models only if both runs recorded the same needle values at the same position; the
+  joint bootstrap sees a real model gap and does not invent one).
+- [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase15.yaml
+  --skip-block-full --skip-teacher-forced`, detached from a worktree pinned at the commit under
+  test.
+- [x] **Phase doc written.** This file.
+- [x] **Committed and pushed.**
+
+## Design, and what did not fit
+
+{{ phase15.analysis.summary.context | int }} tokens, NIAH (single, multi-key, multi-value needles
+at five depths, samples 0-2): exactly the prompts Phase 8 ran on the 1B model at this context. The
+analysis checks the pairing rather than assuming it, and all
+{{ phase15.analysis.summary.prompts_identical | int }} of
+{{ phase15.analysis.summary.prompts_shared | int }} prompts carry the same needles at the same
+token positions in both runs. Rungs 2, 4, 5 and 6. The 1B run did not include rung 4, so H2O-style
+eviction has 3B numbers only.
+
+32K was ruled out before this phase by a feasibility check (the full reference spilled into shared
+memory). The design then lost three more things to VRAM, each found by a smoke test or a failed run
+before any 3B answer was read, and each recorded in `configs/phase15.yaml`:
+
+- **Spare tier slots.** Rung 6 normally keeps VRAM slots for twice its selection. At the loose
+  budgets that is every block, a second full-size cache beside the reference, and building it ran
+  out of memory. The run uses no spare slots. Spare slots change how often blocks are fetched
+  (Phase 4), not which blocks are attended, and the check below confirms rung 6 still answers as
+  rung 5 does.
+- **The 75% budget and the 100% block-pool control.** Every rung that copies KV adds that fraction
+  of the cache again beside the reference, and at 75% decode ran out of memory on allocator
+  fragmentation. The block-pool control is a whole second copy, dropped as at 64K on the 1B
+  (Phase 8). 75% is where every rung sat nearest the full cache on the 1B, so it is the least
+  informative budget to lose.
+- **Teacher-forced divergence.** The first full run finished all of NIAH and then ran out of memory
+  in the teacher-forced pass, whose longer sequence (context plus a scored continuation) no longer
+  fit. The driver writes results only at the end, so that pass's NIAH answers were lost too, and
+  NIAH was rerun on its own. No 3B perplexity or KL is reported.
+
+The run itself stayed in dedicated VRAM. Its shared-memory growth matches the tier's pinned host
+pools scaled by the model's KV size, as in Phase 8.
+
+## 1. Query-aware selection keeps much more of the 3B model's accuracy at tight budgets
+
+Each model's retention is against its own full cache. The 3B model's full cache answers
+{{ phase15.analysis.summary.full_accuracy_3b | pct }} of these prompts and the 1B's
+{{ phase15.analysis.summary.full_accuracy_1b | pct }}. The model difference gets a bootstrap CI that
+resamples prompts jointly for both models. The last two columns repeat it on only the
+{{ phase15.analysis.conditions.quest_50.both_full_prompts | int }} prompts both full caches answer
+completely. That check was added after the results were read (see below).
+
+{{> p15_table }}
+
+**Rungs 5 and 6 retain more on the 3B model at the two tightest budgets, and the gap widens as the
+budget tightens.** At 12.5%, Quest-style selection keeps
+{{ phase15.analysis.conditions.quest_12_5.retention_3b | pct }} of the 3B model's accuracy against
+{{ phase15.analysis.conditions.quest_12_5.retention_1b | pct }} of the 1B's. At 6.25% it keeps
+{{ phase15.analysis.conditions.quest_6_25.retention_3b | pct }} against
+{{ phase15.analysis.conditions.quest_6_25.retention_1b | pct }}. Both differences are resolved on
+all prompts and on the common set. At 25% the all-prompts interval straddles zero, but the
+common-set interval
+({{ phase15.analysis.conditions.quest_25.both_full_gap_ci95.0 | pp }} to
+{{ phase15.analysis.conditions.quest_25.both_full_gap_ci95.1 | pp }}) does not.
+
+**No model difference is detected for the window.** On all prompts the 3B window looks slightly worse
+at three budgets, but the common-set check removes that: every window interval there touches zero
+(at 50%, {{ phase15.analysis.conditions.window_sink_50.both_full_gap_ci95.0 | pp }} to
+{{ phase15.analysis.conditions.window_sink_50.both_full_gap_ci95.1 | pp }}). The all-prompts deficit
+came from the denominators. On the multi-key and multi-value prompts outside the common set, the
+1B's full cache earns only partial credit, so the 1B's retention there is a window score divided by
+a small number, while the 3B's full cache earns full credit on the same prompts. In absolute terms
+the 3B window scores slightly more than the 1B window on those prompts. This is why the common-set
+check was added. It is post hoc, so it qualifies the all-prompts column
+rather than replacing it.
+
+**Why is not tested here.** The two models differ in more than size: the 3B has more layers, a
+different query-to-KV head ratio and quantized weights. One reading consistent with the table: a
+selector that ranks blocks by the current query does better when the model's own attention is more
+concentrated on the evidence, while a window's loss is set by where the needle sits, not by the
+model. Neither premise is measured here.
+
+## 2. The ladder's order holds on the 3B model
+
+The config fixed the expected order before the run: Quest-style selection ≥ H2O-style eviction ≥
+window with sink, as on the 1B ladder. By point estimate it holds at every budget run:
+
+{{> p15_order }}
+
+Rungs 5 and 6 tie because they answer identically (below). The rung-to-rung differences on the 3B
+model were not tested.
+
+## 3. The tier behaves the same under a quantized model
+
+Rung 6 answered differently from rung 5 on
+{{ phase15.analysis.summary.rung6_answers_differing_from_rung5 | int }} prompt-budget pairs,
+matching the identity Phase 4 established on the 1B. Moving non-selected KV to pinned host memory
+and fetching it on demand changes nothing the 3B model attends to. That holds here with no spare
+slots, as it held on the 1B with them.
+
+## What this changes
+
+- **§B8's stress model is measured, at 16K and on NIAH only.** The headline's 32K and the
+  teacher-forced measures did not fit on this card beside a full-size reference, a limit of the
+  evaluation (it needs the reference resident), not of the tier.
+- **Query-aware selection's tight-budget losses on the 1B are not a floor.** On the larger model,
+  the same selection at the same fraction keeps much more. The 1B remains the harsher test, so the
+  ladder's 1B numbers are conservative for this family, but one other model is not a trend.
+- **The window's losses carry over.** No model difference is detected for position-based
+  residency, so the case against it does not weaken on the larger model.
+
+## Provenance
+
+{{> p15_provenance }}
+
+{{ phase15.analysis.summary.wall_s | .0f }} s of machine time for the 3B run.
