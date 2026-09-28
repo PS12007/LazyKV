@@ -58,6 +58,18 @@ def tf_windows(tf: dict[str, Any], ctx: int) -> list[tuple[str, int, int]]:
     return out
 
 
+def release_cached() -> None:
+    """Return the previous condition's freed segments to the driver before building the next cache.
+
+    The allocator is capped at dedicated VRAM, and the cap counts reserved memory. On the 3B model
+    (Phase 15) weights, the full 16K reference and a 75% tier left 0.9 GiB reserved-but-free in
+    segments too fragmented for one 64 MiB layer copy, so the tier's build hit the cap while the
+    memory it needed existed. Freeing cached segments between conditions costs milliseconds against
+    seconds of decode per condition and does not touch any tensor a result is computed from.
+    """
+    torch.cuda.empty_cache()
+
+
 def main() -> None:
     p = argparse.ArgumentParser()
     p.add_argument("--config", default=str(REPO_ROOT / "configs" / "phase2.yaml"))
@@ -137,8 +149,9 @@ def main() -> None:
                 order = conds[:]
                 rng.shuffle(order)
                 for cond in order:
+                    release_cached()
                     built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
-                    dec = greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
+                    dec =greedy_decode(lm.model, built.cache, pre.last_logits, n_new - 1)
                     built.close()
                     toks = dec.tokens[: dec.tokens.index(eot)] if eot in dec.tokens else dec.tokens
                     text = lm.tokenizer.decode(toks)
@@ -174,8 +187,9 @@ def main() -> None:
         order = conds[:]
         rng.shuffle(order)
         for cond in order:
+            release_cached()
             built = build_cache(full, cond, total, bs, scorer, lm.model, host, tier=tier_opts)
-            div = compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont), targets=cont)
+            div =compare_stream(reference, teacher_forced_decode(lm.model, built.cache, pre.last_logits, cont), targets=cont)
             built.close()
             tf_rows.append({"book": book_name, "offset": offset, "target": target, "policy": cond.policy, "budget": cond.budget, **div.to_dict(), **cache_facts(built)})
             if built.shares_full:
