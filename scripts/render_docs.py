@@ -2068,6 +2068,49 @@ def block_p14_table(ctx: Mapping[str, Any]) -> str:
     header = ["Policy", "Budget", "Single-doc retention", "95% CI", "Multi-hop retention", "95% CI", "Disjoint-CI test", "Difference CI"]
     return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---", "---:"])
 
+
+def block_p15_table(ctx: Mapping[str, Any]) -> str:
+    """3B retention per rung and budget, beside the 1B's on the same prompts where the 1B ran it."""
+    per = lookup(ctx, "phase15.analysis.conditions")
+    if not isinstance(per, Mapping) or not per:
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for e in sorted(per.values(), key=lambda e: (e["policy"], -e["budget"])):
+        has_1b = e.get("retention_1b") is not None
+        ci = e.get("gap_ci95")
+        verdict = NOT_MEASURED if not ci else ("**3B higher**" if ci[0] > 0 else "**3B lower**" if ci[1] < 0 else "not resolved")
+        rows.append([
+            POLICY_NAMES.get(e["policy"], e["policy"]),
+            _pct_budget(e["budget"]),
+            f"{100 * e['retention_3b']:.1f}%" if e["retention_3b"] is not None else NOT_MEASURED,
+            _ci(e["retention_3b_ci95"]),
+            f"{100 * e['retention_1b']:.1f}%" if has_1b else NOT_MEASURED,
+            _ci(e.get("retention_1b_ci95")) if has_1b else NOT_MEASURED,
+            f"{100 * ci[0]:+.1f} to {100 * ci[1]:+.1f} pp" if ci else NOT_MEASURED,
+            verdict,
+        ])
+    header = ["Policy", "Budget", "3B retention", "95% CI", "1B retention", "95% CI", "3B − 1B CI", "Verdict"]
+    return table(header, rows, ["---", "---:", "---:", "---:", "---:", "---:", "---:", "---"])
+
+
+def block_p15_order(ctx: Mapping[str, Any]) -> str:
+    """The rungs ordered by point estimate at each budget, per model."""
+    order = lookup(ctx, "phase15.analysis.summary.order_by_budget")
+    if not isinstance(order, Mapping) or not order:
+        return f"_{NOT_MEASURED}_"
+    name = lambda p: POLICY_NAMES.get(p, p).split(" (")[-1].rstrip(")") if "(" in POLICY_NAMES.get(p, p) else p  # noqa: E731
+    rows = [[f"{b}%", " > ".join(name(p) for p in o["3b"]) or NOT_MEASURED, " > ".join(name(p) for p in o["1b"]) or NOT_MEASURED]
+            for b, o in sorted(order.items(), key=lambda kv: -float(kv[0]))]
+    return table(["Budget", "3B, by point estimate", "1B, by point estimate"], rows, ["---:", "---", "---"])
+
+
+def block_p15_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase15.analysis.sources")
+    if not isinstance(src, list):
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"],
+                 [_provenance_row(lbl, s) for lbl, s in zip(("3B, nf4 weights (Phase 15)", "1B (Phase 8, 16K)"), src)])
+
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
 }
