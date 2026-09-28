@@ -1,0 +1,490 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-09-28T16:36:15+00:00",
+    "git_commit": "246b6993daf52f7d794041f43522215cad9f9a9c",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "scripts/analyze_phase15.py"
+    ],
+    "argv": [
+      "scripts\\analyze_phase15.py"
+    ],
+    "python": "3.12.10"
+  },
+  "sources": [
+    {
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-28T16:35:28+00:00",
+      "git_commit": "246b6993daf52f7d794041f43522215cad9f9a9c",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase15.yaml",
+        "--skip-block-full",
+        "--skip-teacher-forced"
+      ],
+      "python": "3.12.10"
+    },
+    {
+      "schema_version": 1,
+      "generated_at_utc": "2026-09-22T13:52:49+00:00",
+      "git_commit": "799111143654fba9a1a42d480d3027a213ba3eec",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\02_policy_quality.py",
+        "--config",
+        "configs\\phase8.yaml",
+        "--context",
+        "16384",
+        "--out",
+        "policy_quality_ctx16384"
+      ],
+      "python": "3.12.10"
+    }
+  ],
+  "conditions": {
+    "h2o_50": {
+      "policy": "h2o",
+      "budget": 0.5,
+      "prompts": 45,
+      "retention_3b": 0.7555555555555555,
+      "retention_3b_ci95": [
+        0.65,
+        0.8555555555555555
+      ]
+    },
+    "h2o_25": {
+      "policy": "h2o",
+      "budget": 0.25,
+      "prompts": 45,
+      "retention_3b": 0.5055555555555555,
+      "retention_3b_ci95": [
+        0.37777777777777777,
+        0.6333333333333333
+      ]
+    },
+    "h2o_12_5": {
+      "policy": "h2o",
+      "budget": 0.125,
+      "prompts": 45,
+      "retention_3b": 0.37777777777777777,
+      "retention_3b_ci95": [
+        0.25,
+        0.5055555555555555
+      ]
+    },
+    "h2o_6_25": {
+      "policy": "h2o",
+      "budget": 0.0625,
+      "prompts": 45,
+      "retention_3b": 0.3333333333333333,
+      "retention_3b_ci95": [
+        0.21666666666666667,
+        0.46111111111111114
+      ]
+    },
+    "quest_50": {
+      "policy": "quest",
+      "budget": 0.5,
+      "prompts": 45,
+      "retention_3b": 0.9944444444444445,
+      "retention_3b_ci95": [
+        0.9833333333333333,
+        1.0
+      ],
+      "retention_1b": 0.987012987012987,
+      "retention_1b_ci95": [
+        0.9308176100628931,
+        1.033112582781457
+      ],
+      "gap_3b_minus_1b": 0.0074314574314574555,
+      "gap_ci95": [
+        -0.03378378378378377,
+        0.05867579908675791
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0,
+        0.0703125
+      ],
+      "both_full_gap": 0.0234375
+    },
+    "quest_25": {
+      "policy": "quest",
+      "budget": 0.25,
+      "prompts": 45,
+      "retention_3b": 0.9888888888888889,
+      "retention_3b_ci95": [
+        0.9722222222222222,
+        1.0
+      ],
+      "retention_1b": 0.974025974025974,
+      "retention_1b_ci95": [
+        0.8666666666666667,
+        1.0816326530612246
+      ],
+      "gap_3b_minus_1b": 0.014862914862914911,
+      "gap_ci95": [
+        -0.09339339339339348,
+        0.12352941176470589
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0234375,
+        0.21875
+      ],
+      "both_full_gap": 0.109375
+    },
+    "quest_12_5": {
+      "policy": "quest",
+      "budget": 0.125,
+      "prompts": 45,
+      "retention_3b": 0.9277777777777778,
+      "retention_3b_ci95": [
+        0.8611111111111112,
+        0.9833333333333333
+      ],
+      "retention_1b": 0.6623376623376623,
+      "retention_1b_ci95": [
+        0.5266666666666666,
+        0.7960526315789473
+      ],
+      "gap_3b_minus_1b": 0.2654401154401155,
+      "gap_ci95": [
+        0.12725577926920206,
+        0.40874026893135174
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.1796875,
+        0.484375
+      ],
+      "both_full_gap": 0.328125
+    },
+    "quest_6_25": {
+      "policy": "quest",
+      "budget": 0.0625,
+      "prompts": 45,
+      "retention_3b": 0.7666666666666667,
+      "retention_3b_ci95": [
+        0.6555555555555556,
+        0.8666666666666667
+      ],
+      "retention_1b": 0.42857142857142855,
+      "retention_1b_ci95": [
+        0.28289473684210525,
+        0.5732484076433121
+      ],
+      "gap_3b_minus_1b": 0.33809523809523817,
+      "gap_ci95": [
+        0.1978978978978979,
+        0.48162393162393163
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.203125,
+        0.515625
+      ],
+      "both_full_gap": 0.359375
+    },
+    "tiered_sync_50": {
+      "policy": "tiered_sync",
+      "budget": 0.5,
+      "prompts": 45,
+      "retention_3b": 0.9944444444444445,
+      "retention_3b_ci95": [
+        0.9833333333333333,
+        1.0
+      ],
+      "retention_1b": 0.987012987012987,
+      "retention_1b_ci95": [
+        0.9308176100628931,
+        1.033112582781457
+      ],
+      "gap_3b_minus_1b": 0.0074314574314574555,
+      "gap_ci95": [
+        -0.03378378378378377,
+        0.05867579908675791
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0,
+        0.0703125
+      ],
+      "both_full_gap": 0.0234375
+    },
+    "tiered_sync_25": {
+      "policy": "tiered_sync",
+      "budget": 0.25,
+      "prompts": 45,
+      "retention_3b": 0.9888888888888889,
+      "retention_3b_ci95": [
+        0.9722222222222222,
+        1.0
+      ],
+      "retention_1b": 0.974025974025974,
+      "retention_1b_ci95": [
+        0.8666666666666667,
+        1.0816326530612246
+      ],
+      "gap_3b_minus_1b": 0.014862914862914911,
+      "gap_ci95": [
+        -0.09339339339339348,
+        0.12352941176470589
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0234375,
+        0.21875
+      ],
+      "both_full_gap": 0.109375
+    },
+    "tiered_sync_12_5": {
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "prompts": 45,
+      "retention_3b": 0.9277777777777778,
+      "retention_3b_ci95": [
+        0.8611111111111112,
+        0.9833333333333333
+      ],
+      "retention_1b": 0.6623376623376623,
+      "retention_1b_ci95": [
+        0.5266666666666666,
+        0.7960526315789473
+      ],
+      "gap_3b_minus_1b": 0.2654401154401155,
+      "gap_ci95": [
+        0.12725577926920206,
+        0.40874026893135174
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.1796875,
+        0.484375
+      ],
+      "both_full_gap": 0.328125
+    },
+    "tiered_sync_6_25": {
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "prompts": 45,
+      "retention_3b": 0.7666666666666667,
+      "retention_3b_ci95": [
+        0.6555555555555556,
+        0.8666666666666667
+      ],
+      "retention_1b": 0.42857142857142855,
+      "retention_1b_ci95": [
+        0.28289473684210525,
+        0.5732484076433121
+      ],
+      "gap_3b_minus_1b": 0.33809523809523817,
+      "gap_ci95": [
+        0.1978978978978979,
+        0.48162393162393163
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.203125,
+        0.515625
+      ],
+      "both_full_gap": 0.359375
+    },
+    "window_sink_50": {
+      "policy": "window_sink",
+      "budget": 0.5,
+      "prompts": 45,
+      "retention_3b": 0.4,
+      "retention_3b_ci95": [
+        0.2777777777777778,
+        0.5277777777777778
+      ],
+      "retention_1b": 0.4675324675324675,
+      "retention_1b_ci95": [
+        0.3273809523809524,
+        0.6133333333333333
+      ],
+      "gap_3b_minus_1b": -0.0675324675324675,
+      "gap_ci95": [
+        -0.12222222222222223,
+        -0.02617212588310852
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        -0.046875,
+        0.0
+      ],
+      "both_full_gap": -0.015625
+    },
+    "window_sink_25": {
+      "policy": "window_sink",
+      "budget": 0.25,
+      "prompts": 45,
+      "retention_3b": 0.21666666666666667,
+      "retention_3b_ci95": [
+        0.12222222222222222,
+        0.32222222222222224
+      ],
+      "retention_1b": 0.24675324675324675,
+      "retention_1b_ci95": [
+        0.1366906474820144,
+        0.37142857142857144
+      ],
+      "gap_3b_minus_1b": -0.030086580086580078,
+      "gap_ci95": [
+        -0.06487956487956487,
+        -0.004040404040404039
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        -0.0234375,
+        0.0
+      ],
+      "both_full_gap": -0.0078125
+    },
+    "window_sink_12_5": {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "prompts": 45,
+      "retention_3b": 0.18888888888888888,
+      "retention_3b_ci95": [
+        0.09444444444444444,
+        0.29444444444444445
+      ],
+      "retention_1b": 0.2077922077922078,
+      "retention_1b_ci95": [
+        0.1032258064516129,
+        0.3287671232876712
+      ],
+      "gap_3b_minus_1b": -0.018903318903318922,
+      "gap_ci95": [
+        -0.04999999999999999,
+        0.005284552845528451
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0,
+        0.0
+      ],
+      "both_full_gap": 0.0
+    },
+    "window_sink_6_25": {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "prompts": 45,
+      "retention_3b": 0.16666666666666666,
+      "retention_3b_ci95": [
+        0.07777777777777778,
+        0.2722222222222222
+      ],
+      "retention_1b": 0.19480519480519481,
+      "retention_1b_ci95": [
+        0.08917197452229299,
+        0.3151515151515151
+      ],
+      "gap_3b_minus_1b": -0.028138528138528157,
+      "gap_ci95": [
+        -0.055882352941176494,
+        -0.009803921568627472
+      ],
+      "both_full_prompts": 32,
+      "both_full_gap_ci95": [
+        0.0,
+        0.0
+      ],
+      "both_full_gap": 0.0
+    }
+  },
+  "summary": {
+    "context": 16384,
+    "prompts_shared": 45,
+    "prompts_identical": 45,
+    "full_accuracy_3b": 1.0,
+    "full_accuracy_1b": 0.8555555555555555,
+    "kv_bytes_per_token_3b": 114688,
+    "kv_bytes_per_token_1b": 32768,
+    "model_gaps_compared": 12,
+    "model_gaps_resolved": 7,
+    "model_gaps_3b_better": [
+      "quest_12_5",
+      "quest_6_25",
+      "tiered_sync_12_5",
+      "tiered_sync_6_25"
+    ],
+    "model_gaps_3b_worse": [
+      "window_sink_25",
+      "window_sink_50",
+      "window_sink_6_25"
+    ],
+    "both_full_gaps_3b_better": [
+      "quest_12_5",
+      "quest_25",
+      "quest_6_25",
+      "tiered_sync_12_5",
+      "tiered_sync_25",
+      "tiered_sync_6_25"
+    ],
+    "both_full_gaps_3b_worse": [],
+    "rung6_answers_differing_from_rung5": 0,
+    "order_by_budget": {
+      "50": {
+        "3b": [
+          "quest",
+          "tiered_sync",
+          "h2o",
+          "window_sink"
+        ],
+        "1b": [
+          "quest",
+          "tiered_sync",
+          "window_sink"
+        ]
+      },
+      "25": {
+        "3b": [
+          "quest",
+          "tiered_sync",
+          "h2o",
+          "window_sink"
+        ],
+        "1b": [
+          "quest",
+          "tiered_sync",
+          "window_sink"
+        ]
+      },
+      "12.5": {
+        "3b": [
+          "quest",
+          "tiered_sync",
+          "h2o",
+          "window_sink"
+        ],
+        "1b": [
+          "quest",
+          "tiered_sync",
+          "window_sink"
+        ]
+      },
+      "6.25": {
+        "3b": [
+          "quest",
+          "tiered_sync",
+          "h2o",
+          "window_sink"
+        ],
+        "1b": [
+          "quest",
+          "tiered_sync",
+          "window_sink"
+        ]
+      }
+    },
+    "wall_s": 1772.0038519000004
+  }
+}

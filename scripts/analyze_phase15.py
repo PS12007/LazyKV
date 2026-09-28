@@ -89,6 +89,16 @@ def main() -> None:
             entry["retention_1b_ci95"] = list(paired_ratio_ci(a1, d1, iters=iters, seed=seed)) if sum(d1) else None
             entry["gap_3b_minus_1b"] = entry["retention_3b"] - entry["retention_1b"] if entry["retention_1b"] is not None else None
             entry["gap_ci95"] = model_gap_ci(a3, d3, a1, d1, iters, seed)
+            # Post hoc, added after the results were read: each retention is against its own model's
+            # full cache, and the 1B's misses some prompts the 3B answers, so the two denominators
+            # weight different prompts. Restricting to prompts both full caches answer completely
+            # asks whether the gap survives on a common set.
+            kb = [k for k in k1 if full3[k] == 1.0 and full1[k] == 1.0]
+            if kb:
+                b3, b1 = [s3[k] for k in kb], [s1[k] for k in kb]
+                entry["both_full_prompts"] = len(kb)
+                entry["both_full_gap_ci95"] = model_gap_ci(b3, [1.0] * len(kb), b1, [1.0] * len(kb), iters, seed)
+                entry["both_full_gap"] = (sum(b3) - sum(b1)) / len(kb)
         per[label(pol, b)] = entry
 
     # Question 2: the order at each budget, by point estimate, for each model.
@@ -116,6 +126,8 @@ def main() -> None:
         "model_gaps_resolved": sum(1 for e in compared if e["gap_ci95"][0] > 0 or e["gap_ci95"][1] < 0),
         "model_gaps_3b_better": sorted(k for k, e in per.items() if e.get("gap_ci95") and e["gap_ci95"][0] > 0),
         "model_gaps_3b_worse": sorted(k for k, e in per.items() if e.get("gap_ci95") and e["gap_ci95"][1] < 0),
+        "both_full_gaps_3b_better": sorted(k for k, e in per.items() if e.get("both_full_gap_ci95") and e["both_full_gap_ci95"][0] > 0),
+        "both_full_gaps_3b_worse": sorted(k for k, e in per.items() if e.get("both_full_gap_ci95") and e["both_full_gap_ci95"][1] < 0),
         "rung6_answers_differing_from_rung5": sum(identity.values()),
         "order_by_budget": order,
         "wall_s": m3["wall_s"],
