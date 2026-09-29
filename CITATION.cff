@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use LazyKV's code or findings, please cite it as below."
+title: "LazyKV: a tiered KV-cache runtime and residency-policy study for long-context inference on one 8 GB consumer GPU"
+type: software
+authors:
+  - alias: PS12007
+repository-code: "https://github.com/PS12007/LazyKV"
+license: MIT
+version: 0.0.1
+date-released: 2026-09-29
+keywords:
+  - kv-cache
+  - long-context
+  - llm-inference
+  - offloading
+  - sparse-attention
