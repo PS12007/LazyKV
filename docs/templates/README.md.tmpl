@@ -209,6 +209,34 @@ Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and 
 quality metrics: teacher-forced KL, top-1 agreement, and depth-swept needle-in-a-haystack,
 all with confidence intervals.
 
+## Install and use
+
+LazyKV installs as a package, `lazykv`, containing the runtime only: the caches, the residency
+policies, the CPU tier and the quality metrics. The benchmark tooling (`harness/`, `scripts/`,
+`configs/`) runs from a clone.
+
+```powershell
+git clone https://github.com/PS12007/LazyKV; cd LazyKV
+uv venv --python 3.12 .venv
+uv pip install --python .venv\Scripts\python.exe -r requirements.lock `
+  --index-url https://download.pytorch.org/whl/cu130 `
+  --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
+uv pip install --python .venv\Scripts\python.exe --no-deps -e .
+.venv\Scripts\python.exe examples\tiered_decode.py --context 16384 --budget 0.25
+```
+
+[`examples/tiered_decode.py`](examples/tiered_decode.py) prefills one long prompt, then decodes
+it from the full GPU cache and from the CPU tier (rung 6), and prints the KV each holds in VRAM,
+the decode speed and the answer. Every cache is a `transformers.Cache`, so the same objects work
+with a model's own forward pass.
+
+**What installing it gets you, honestly:** a research runtime for comparing KV residency policies
+on equal terms, not a faster or longer-context inference engine. The tier frees VRAM during
+decode only (prefill still holds the full KV), it decodes slower than the full cache, and it has
+only been run on Llama-3.2 models, on one pinned Transformers version, because it plugs into
+Transformers' attention and cache internals. Use it to reproduce these results, to measure a new policy against
+the ladder, or to read a working implementation of Quest-style selection over a CPU tier.
+
 ## Repository map
 
 | Path | What |
@@ -222,6 +250,7 @@ all with confidence intervals.
 | [`docs/RELATED_WORK.md`](docs/RELATED_WORK.md) | Verified survey of 36 systems and papers, and LazyKV's honest delta |
 | [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | Dated findings, including measurement mistakes caught |
 | `scripts/` | Benchmarks, analysis, figures, doc rendering |
+| `examples/` | A runnable example of the installed package |
 | `lazykv/` | Runtime: preallocated full-GPU cache, block pool and residency policies, verified attention kernels, chunked prefill, profiling, quality metrics |
 | `configs/` | One YAML per phase: model revision, block size, context, budget sweep, prompts |
 | `harness/` | Stats, telemetry, GPU memory guard, host scheduling, metrics I/O, template renderer |

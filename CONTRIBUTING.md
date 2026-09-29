@@ -31,6 +31,7 @@ uv venv --python 3.12 .venv
 uv pip install --python .venv\Scripts\python.exe -r requirements.lock `
   --index-url https://download.pytorch.org/whl/cu130 `
   --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
+uv pip install --python .venv\Scripts\python.exe --no-deps -e .
 .venv\Scripts\python.exe -m pytest
 ```
 
