@@ -46,6 +46,7 @@ OUTPUTS = {
     "PHASE_14.md.tmpl": "docs/phases/PHASE_14.md",
     "PHASE_15.md.tmpl": "docs/phases/PHASE_15.md",
     "FINDINGS.md.tmpl": "docs/FINDINGS.md",
+    "PAPER.md.tmpl": "docs/PAPER.md",
 }
 
 GENERATED_BANNER = (

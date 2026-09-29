@@ -1,0 +1,261 @@
+# What a GPU KV budget buys: an apples-to-apples study of KV-cache residency policies on one 8 GB consumer GPU
+
+*Draft. Every number in this document is generated from `results/**/metrics.json` by
+`scripts/render_docs.py`; the detailed evidence for each claim is in [Findings](FINDINGS.md) and the
+per-phase gate reports it links.*
+
+## Abstract
+
+Long-context decoding on a consumer GPU is limited by the KV cache, not the weights. Several
+systems keep only part of the cache in VRAM, by eviction, by query-aware selection, or by
+offloading to host memory, but they are rarely compared on equal terms, and almost never on the
+hardware where the budget actually binds. We build LazyKV, a tiered KV-cache runtime for Hugging
+Face Transformers, and use it to measure nine residency policies, from a sliding window with an
+attention sink to query-aware block selection over a pinned CPU tier with exact CPU-side attention,
+under one budget sweep, one prompt set and one set of quality metrics, on an RTX 5060 Laptop GPU.
+At {{ ladder.summary.context | int }} tokens with Llama-3.2-1B, no policy that skips KV retains 99%
+of the full cache's needle-in-a-haystack accuracy below a full budget: on
+{{ phase9.analysis.summary.prompts | int }} paired prompts, Quest-style selection fails that bar at a
+50% budget (paired 95% CI {{ phase9.analysis.conditions.quest_50.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_50.retention_ci95.1 | pct }})
+and sits on it at 75%. Computing the non-resident attention on the CPU and merging it exactly
+recovers the full cache's answers at a {{ ladder.summary.exact_rung_min_budget_meeting_target | budget }}
+budget, at {{ ladder.summary.exact_rung_over_full_tokens_per_s | .1f }}× the decode time. The result
+the design did not predict is that, once selection makes transfers small, decode is bound by the
+per-layer host round trip that decides what to move, not by moving it: halving the bytes on the
+wire made decode slower, a prefetch that hid every copy made it slower, and moving no KV at all was
+the slowest rung. We also find that perplexity can show no change where retrieval loses a tenth or
+more, that the budget *fraction*, not a constant token budget, is what transfers across context
+length, and that at tight budgets query-aware selection loses its lead on multi-hop retrieval. All code,
+raw metrics and negative results are public.
+
+## 1. Introduction
+
+A decoding transformer reads every key and value it has cached, for every layer, at every step. At
+long context that cache, not the model, is what exhausts an 8 GB GPU. The literature offers three
+kinds of answer. *Eviction* drops tokens judged unimportant, by recency with an attention sink
+(StreamingLLM) or by accumulated attention (H2O). *Query-aware selection* keeps the cache but attends
+only to the blocks that can matter for the current query (Quest). *Offloading* keeps the cache in
+host memory and moves what is needed to the GPU, sometimes ahead of time (InfiniGen, ArkVale,
+ShadowKV). These systems overlap heavily, are usually evaluated on datacenter GPUs with their own
+baselines, and are rarely placed on one frontier.
+
+This paper does not propose a new mechanism. It asks a narrower question, on the hardware where it
+matters: *under a fixed GPU KV budget on one consumer GPU, how much retrieval quality does each
+residency policy retain, and at what cost?* Our contributions:
+
+1. **An apples-to-apples ladder.** Nine policies, each adding one mechanism to the last, measured
+   with the same budget sweep, prompts, kernels and metrics, and shown to be combinable: across the
+   phases that measured the same condition, accuracy agrees to within
+   {{ ladder.summary.repeatability_accuracy_max_gap_pp | .2f }} pp (§5.1).
+2. **A headline number that cannot be gamed**, resolved as far as the benchmark allows: the smallest
+   budget at which a policy keeps 99% of full-cache NIAH accuracy, with paired confidence intervals
+   on {{ phase9.analysis.summary.prompts | int }} prompts (§5.1).
+3. **A negative systems result.** On this machine, reducing bytes moved over PCIe does not reduce
+   decode latency; the cost is a per-layer constant on the host, measured by an ablation that removes
+   it while fetching identical blocks (§5.2).
+4. **Evidence about the metrics themselves**: perplexity is a poor proxy for retrieval under a
+   budget, the budget fraction is the parameterization that transfers across context, and
+   needle retrieval overstates query-aware selection relative to multi-hop retrieval (§5.3–5.5).
+
+## 2. Why dense offload is not an option
+
+Decode attention is memory-bandwidth bound. If a block lives in host memory, it must be fetched,
+skipped, or attended to where it is. We measured the first option before building anything. On this
+laptop, pinned host-to-device copies reach
+{{ phase0.analysis.pcie.pinned_h2d.asymptote_bps.median | gbps }} GB/s and device-to-device copies
+{{ phase0.analysis.vram.d2d_copy_bps.median | gbps }} GB/s, a ratio of
+{{ phase0.analysis.vram.ratio_d2d_over_pinned_h2d.median | x }}. At 65,536 tokens, fetching one
+layer's KV costs {{ phase0.analysis.design.rows.4.fetch_over_gpu_attention | x }} the GPU attention
+it feeds, so prefetching cannot hide it. The viable designs therefore combine *selection* — attend
+to a small, query-chosen set of blocks, and move only those — with, optionally, *exact CPU-side
+attention* over the rest, merged with the GPU result through the log-sum-exp rescaling that makes
+softmax attention associative (FlashAttention, Ring Attention).
+
+## 3. System
+
+LazyKV integrates with Transformers through `Cache` subclasses and one registered attention
+function; nothing else is patched.
+
+- **Blocks.** The KV is managed in 64-token blocks. A sweep from 16 to 256 tokens (Phase 4) is a
+  trade curve rather than a search for a better default: smaller blocks select more precisely,
+  larger ones cut the tier's per-block host work, and no size clears the 99% bar. The first layers
+  stay dense; the rest select.
+- **Selection (rung 5).** Each block stores the elementwise minimum and maximum of its keys; an
+  upper bound on q·k for the block costs O(head dim), and the top-K blocks by bound, plus the sink
+  and the newest block, are attended (Quest's criterion).
+- **CPU tier (rungs 6–8).** Sealed blocks are written once to pinned host pools. VRAM holds a fixed
+  number of slots per KV head; blocks a step selects that are not resident are fetched on demand
+  (rung 6), speculatively one layer ahead (rung 7, InfiniGen's insight), or from an int8 warm/cold
+  tier (rung 8).
+- **Exact merge (rung 9).** Attention over the blocks VRAM does not hold is computed on the CPU from
+  a float32 mirror and merged exactly with the GPU's partial result.
+
+The cheaper rungs are GPU-only: a sliding window with an attention sink (rung 2), block LRU (rung 3)
+and H2O-style attention-score eviction (rung 4). Rung 1 is the full cache.
+
+## 4. Methodology
+
+**Hardware and software.** One RTX 5060 Laptop GPU (Blackwell, 8 GB), Windows 11, PyTorch with a
+CUDA 13 build, a pinned Transformers version. The attention kernel is chosen explicitly and verified
+against a float32 reference at startup, because default dispatch on this platform fell to a kernel
+{{ phase0.analysis.vram.decode_attention.2.default_over_best | x }} slower than cuDNN at 65,536
+tokens, which would have inflated every offloading policy's apparent benefit.
+
+**Model and prompts.** Llama-3.2-1B-Instruct at a pinned revision; Llama-3.2-3B-Instruct with 4-bit
+weights and bf16 KV as a stress model. Needle-in-a-haystack prompts (single, multi-key and
+multi-value needles, five depths) are built from a public-domain novel with a fixed seed, so every
+phase sees the same prompts at a given context.
+
+**Budgets.** Every policy gets the same sweep of budget fractions of the full KV (75%, 50%, 25%,
+12.5%, 6.25%), at {{ ladder.summary.context | int }} tokens for the frontier and at
+{{ phase8.analysis.summary.contexts_measured | int }} contexts for the context sweep.
+
+**Quality.** The headline is NIAH accuracy as a share of the full cache's (*retention*). Beside it:
+teacher-forced KL divergence and top-1 agreement against the full cache, long-document perplexity,
+RULER variable tracking, and four LongBench QA subsets. Every quality number carries a bootstrap or
+paired confidence interval; paired comparisons use exact sign tests. Because the fast cuDNN decode
+kernel is not bit-repeatable for single-query decode, quality is scored on a deterministic kernel.
+
+**Timing.** Conditions are interleaved in random order, repeated over independent runs and reported
+as medians with ranges; the process opts out of Windows power throttling after Phase 1 found it
+moving the benchmark to efficiency cores at
+{{ phase1.analysis.latency_regimes.throttling_median_ratio | .2f }}× the latency.
+
+## 5. Results
+
+### 5.1 The headline, and the frontier
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/ladder_pareto-dark.png">
+  <img alt="NIAH accuracy and decode tokens per second against GPU-resident KV, one curve per policy ladder rung" src="figures/ladder_pareto-light.png">
+</picture>
+
+{{> ladder_headline }}
+
+No approximating rung clears the 99% bar below a full budget; rungs 5–8 come closest, at
+{{ ladder.summary.best_retention_approximate.max | pct }} retention at a
+{{ ladder.summary.best_retention_budget_approximate | budget }} budget on
+{{ ladder.summary.prompts }} prompts. Rerun on {{ phase9.analysis.summary.prompts | int }} paired
+prompts under a rule fixed before the run, rung 5 retains
+{{ phase9.analysis.conditions.quest_50.retention | pct }} at 50% (CI entirely below the bar) and
+{{ phase9.analysis.conditions.quest_75.retention | pct }} at 75%
+(CI {{ phase9.analysis.conditions.quest_75.retention_ci95.0 | pct }}–{{ phase9.analysis.conditions.quest_75.retention_ci95.1 | pct }}),
+which is as far as NIAH can place it. Teacher-forced KL on
+{{ kl.summary.windows | int }} paired windows does resolve the ordering NIAH cannot: 50% moves the
+distribution further from the full cache than 75% in
+{{ kl.summary.quest_50_over_75_windows_above | int }} of {{ kl.summary.windows | int }} windows
+(sign test p = {{ kl.summary.quest_50_over_75_sign_test_p | .1g }}).
+
+The cheap baselines are not close: the window with a sink tops out at
+{{ ladder.best.2.best_retention | pct }}, LRU at {{ ladder.best.3.best_retention | pct }} and
+H2O-style eviction at {{ ladder.best.4.best_retention | pct }}. Rung 5 alone frees no memory — it
+attends to less but keeps every block — which is why the CPU tier exists: rung 6 reproduces rung 5's
+answers exactly while holding only the budget in VRAM. Rung 9 is flat at the full cache's accuracy
+across the whole memory axis, and pays for it in latency and in a
+{{ phase7.analysis.summary.mirror_mib.max | int }} MiB host mirror the memory axis does not show.
+
+### 5.2 Bytes moved are not the cost
+
+No attempt to make the tier faster by moving fewer bytes closed its gap to the full cache:
+
+| Change | Result |
+|---|---|
+| Twice the VRAM slots, far fewer on-demand fetches | slightly faster |
+| Layer-ahead prefetch hiding the copies inside compute | slower than synchronous fetch |
+| int8 warm/cold tier, half the bytes on the wire | {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× slower |
+| Remove the per-layer host sync (replay ablation) | {{ phase11.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.summary.ceiling_speedup.max | .2f }}× faster: the ceiling |
+| Move no KV at all: attend to cold blocks on the CPU | {{ phase7.analysis.summary.over_approx.min | .2f }}–{{ phase7.analysis.summary.over_approx.max | .2f }}× slower than the tier it extends, and exact |
+
+At a 25% budget the tier moves {{ phase5.analysis.summary.fetch_mib_at.b25.exact | .1f }} MiB per
+token, under a millisecond of link time, while choosing what to move costs
+{{ phase5.ceiling.summary.host_select_ms.min | .0f }}–{{ phase5.ceiling.summary.host_select_ms.max | .0f }} ms.
+Each selecting layer must bring its top-K indices to the host before it can issue the fetch, and
+the context sweep shows that round trip is a per-layer constant: at least
+{{ phase8.analysis.summary.manager_intercept_share.min | pct0 }} of the selecting rungs' manager cost
+sits at zero blocks ranked. The replay ablation, which removes the decision while fetching identical
+blocks, bounds what a device-side decision could recover: its fastest decode,
+{{ phase11.ceiling.summary.replay_ms.min | .1f }} ms per token, is still slower than the full cache's
+{{ phase11.ceiling.summary.full_decode_ms | .1f }} ms. On this machine, a tier narrows the gap to
+keeping KV in VRAM and never closes it, at any context measured.
+
+### 5.3 Context length: the fraction is what transfers
+
+Sweeping {{ phase8.analysis.summary.contexts_measured | int }} contexts for rungs 2, 5, 6 and 9 shows
+accuracy is set by the budget *fraction*: matched at a fraction, retention spreads
+{{ phase8.analysis.summary.collapse_k_over_fraction | .1f }}× less across contexts than matched at a
+constant number of selected blocks, the parameterization Quest uses. A constant token budget
+therefore does not carry from one context to another.
+
+### 5.4 Perplexity misses the loss
+
+At {{ phase10.analysis.summary.longest_context | int }} tokens,
+{{ phase10.analysis.summary.ppl_blind_count | int }} of
+{{ phase10.analysis.summary.niah_joined_conditions | int }} conditions lose at least a tenth of NIAH
+retrieval while their perplexity interval includes no change; the window with a sink at a
+{{ phase10.analysis.summary.ppl_blind_worst.budget | budget }} budget keeps
+{{ phase10.analysis.summary.ppl_blind_worst.niah_retention | pct }} of retrieval at a perplexity ratio
+of {{ phase10.analysis.summary.ppl_blind_worst.ppl_ratio | .3f }}. Perplexity ranks conditions roughly
+correctly (Spearman {{ phase10.analysis.summary.spearman_nll_vs_niah_loss | .2f }}) but averages the
+few tokens that need distant context in with the many that do not, the failure LongPPL describes.
+
+### 5.5 Beyond single needles, and a larger model
+
+On RULER variable tracking, where the question names only the first link of a chain, Quest-style
+selection at {{ phase12.analysis.summary.tightest_budget | budget }} retains
+{{ phase13.analysis.conditions.quest_6_25.hard.retention | pct }} against the single needle's
+{{ phase13.analysis.conditions.quest_6_25.easy.retention | pct }} with disjoint intervals
+({{ phase13.analysis.summary.prompts_per_kind.vt | int }} prompts per task), and its lead over the
+cheap baselines disappears: it is the best approximating family *for retrieval the query can see*.
+On four LongBench subsets no multi-hop shortfall was detected (multi-hop F1 retention
+{{ phase14.analysis.comparison.quest_6_25.hard.retention | pct }} against
+{{ phase14.analysis.comparison.quest_6_25.easy.retention | pct }}), but the difference interval
+({{ phase14.analysis.comparison.quest_6_25.gap_ci95.0 | pp }} to {{ phase14.analysis.comparison.quest_6_25.gap_ci95.1 | pp }})
+is too wide to exclude the RULER gap. On Llama-3.2-3B at
+{{ phase15.analysis.summary.context | int }} tokens, Quest-style selection at 6.25% retains
+{{ phase15.analysis.conditions.quest_6_25.retention_3b | pct }} of full-cache accuracy against the
+1B's {{ phase15.analysis.conditions.quest_6_25.retention_1b | pct }} on the same prompts, while the
+window shows no detected model difference; the 1B's tight-budget losses look conservative rather
+than a floor. That is one additional model, not a trend.
+
+## 6. Related work
+
+Query-aware block selection with per-block key bounds is Quest (arXiv 2406.10774). Layer-ahead
+speculative prefetch from the previous layer's hidden state is InfiniGen (arXiv 2406.19707).
+Recallable eviction to host memory is ArkVale (NeurIPS 2024); ShadowKV (arXiv 2410.21465) keeps a
+low-rank key cache on the GPU and values on the host. Eviction baselines are StreamingLLM's attention
+sink (arXiv 2309.17453), H2O (arXiv 2306.14048) and SnapKV (arXiv 2404.14469). FlexGen
+(arXiv 2303.06865) offloads for throughput on one GPU; PagedAttention (arXiv 2309.06180) and LMCache
+(arXiv 2510.09665) manage KV for serving. The exact merge relies on the rescaling used by
+FlashAttention (arXiv 2205.14135) and Ring Attention (arXiv 2310.01889). Quantized KV caches include
+KIVI (arXiv 2402.02750) and KVQuant (arXiv 2401.18079). Benchmarks are RULER (arXiv 2404.06654) and
+LongBench (arXiv 2308.14508); LongPPL (arXiv 2410.23771) documents perplexity's blindness to
+long-range tokens. The survey behind this section, with what LazyKV does differently from each, is
+[Related work](RELATED_WORK.md).
+
+## 7. Limitations
+
+Most results are for one 1B model, on needle retrieval, at one context, with
+{{ ladder.summary.prompts }} prompts per condition; only rung 5 at 50% and 75% was rerun on
+{{ phase9.analysis.summary.prompts | int }}. The 3B model ran at one context, with 4-bit weights,
+because its full reference cache is what did not fit. Prefill is not tiered, so peak VRAM during
+prefill is the full KV. Rung 9 is exact in the algebra, not in the bits (bf16 on the GPU, float32
+on the CPU). All latency is from one laptop, controlled for by interleaving and repetition rather
+than eliminated. The latency conclusion is specific to a platform where the host round trip is
+expensive and PCIe is comparatively fast; it should be retested on others before it is generalized.
+The full list is [Findings §7](FINDINGS.md#7-limitations).
+
+## 8. Conclusion
+
+On one 8 GB consumer GPU, the last percent of retrieval accuracy cannot be bought by *skipping* KV at
+any budget this study measured, and can be bought by *computing* it elsewhere, at a price in latency
+and host RAM. Among the approximate policies, query-aware selection is the clear best for retrieval
+the query can see, and the CPU tier turns its attention budget into a memory budget without changing
+a single answer. What the tier cannot do on this machine is be fast: once selection makes transfers
+small, the decision about what to transfer is the cost. We release the runtime, every raw metric and
+the negative results, so that the same ladder can be run on other hardware.
+
+## Reproducibility
+
+Code, configs, raw `metrics.json` for every reported run, and the renderer that generates this
+document are at <https://github.com/PS12007/LazyKV>. Each phase's gate report lists the commit and
+command that produced its numbers.
