@@ -6,7 +6,7 @@ authors:
   - alias: PS12007
 repository-code: "https://github.com/PS12007/LazyKV"
 license: MIT
-version: 0.0.1
+version: 0.1.0
 date-released: 2026-09-29
 keywords:
   - kv-cache

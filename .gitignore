@@ -28,3 +28,8 @@ results/**/*_quick/
 
 # Corpus texts are fetched by scripts/fetch_corpus.py; only the manifest is committed
 data/corpus/*.txt
+
+# Packaging outputs
+build/
+dist/
+*.egg-info/

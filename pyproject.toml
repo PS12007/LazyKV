@@ -1,8 +1,15 @@
+[build-system]
+# setuptools is only needed to build the wheel; it is not a runtime dependency.
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "lazykv"
-version = "0.0.1"
+version = "0.1.0"
 description = "Tiered KV-cache runtime and residency-policy study for long-context inference on one 8 GB consumer GPU"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     # Blackwell (sm_120) needs a cu128+ build; the exact pinned wheel is in requirements.lock.
@@ -25,6 +32,11 @@ dev = ["pytest==9.1.1"]
 # Verified on this machine's Blackwell GPU (sm_120) with torch 2.12.0+cu130 before it was adopted.
 # transformers loads any bitsandbytes 4-bit model through accelerate, so it comes with it.
 quant = ["bitsandbytes==0.50.2", "accelerate==1.15.0"]
+
+[tool.setuptools]
+# Only the runtime ships. harness/, scripts/ and configs/ are this repo's benchmark tooling:
+# they assume the repo layout and results/, and are used from a clone, not an install.
+packages = ["lazykv"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
