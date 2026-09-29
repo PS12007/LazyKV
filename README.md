@@ -12,6 +12,7 @@
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
 ![numbers](https://img.shields.io/badge/numbers-generated%20from%20metrics.json-555)
+[![tests](https://github.com/PS12007/LazyKV/actions/workflows/tests.yml/badge.svg)](https://github.com/PS12007/LazyKV/actions/workflows/tests.yml)
 
 </div>
 
@@ -215,6 +216,7 @@ all with confidence intervals.
 | Path | What |
 |---|---|
 | [`CLAUDE.md`](CLAUDE.md) | Project rules: no fabricated numbers or citations, phase gates, dependency policy |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute: reproductions on other GPUs, new policies, measurement bugs |
 | [`docs/BRIEF.md`](docs/BRIEF.md) | Full research brief |
 | [`SYSTEM_INFO.md`](SYSTEM_INFO.md) | Machine inventory and all Phase 0 microbenchmarks |
 | [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Design decision, architecture, phases, risks |
