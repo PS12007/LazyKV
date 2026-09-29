@@ -174,7 +174,7 @@ layer runs. Phase 0 settled which ones hold up ([arithmetic](docs/IMPLEMENTATION
 | (b) | Skip blocks; select the ones that matter with a cheap query-aware bound; prefetch only those | ✅ **Primary design.** The fetch cost scales with the selected set |
 | (c) | Attend to non-resident blocks on the CPU and merge exactly | ⚠️ Exactness fallback for small sets only. It is layout-dependent: slower than a contiguous fetch, faster than gather-then-fetch |
 
-## Planned architecture
+## Architecture
 
 ```mermaid
 flowchart LR
