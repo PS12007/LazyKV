@@ -160,7 +160,7 @@ No attempt to make the tier faster by moving fewer bytes closed its gap to the f
 
 | Change | Result |
 |---|---|
-| Twice the VRAM slots, far fewer on-demand fetches | slightly faster |
+| Twice the VRAM slots at a 25% budget: on-demand fetches from {{ phase4.analysis.summary.spare0.fetched_pairs_at.tiered_sync.b25 | int }} to {{ phase4.analysis.summary.fetched_pairs_at.tiered_sync.b25 | int }} pairs per token | {{ phase4.analysis.summary.spare0.tokens_per_s_at.tiered_sync.b25 | .1f }} → {{ phase4.analysis.summary.tokens_per_s_at.tiered_sync.b25 | .1f }} tokens/s |
 | Layer-ahead prefetch hiding the copies inside compute | slower than synchronous fetch |
 | int8 warm/cold tier, half the bytes on the wire | {{ phase5.analysis.summary.latency_ratio_at.b25 | .2f }}× slower |
 | Remove the per-layer host sync (replay ablation) | {{ phase11.ceiling.summary.ceiling_speedup.min | .2f }}–{{ phase11.ceiling.summary.ceiling_speedup.max | .2f }}× faster: the ceiling |

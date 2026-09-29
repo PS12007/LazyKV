@@ -172,7 +172,7 @@ No attempt to make the tier faster by moving fewer bytes closed its gap to the f
 
 | Change | Result |
 |---|---|
-| Twice the VRAM slots, far fewer on-demand fetches | slightly faster |
+| Twice the VRAM slots at a 25% budget: on-demand fetches from 2,828 to 295 pairs per token | 17.7 → 18.6 tokens/s |
 | Layer-ahead prefetch hiding the copies inside compute | slower than synchronous fetch |
 | int8 warm/cold tier, half the bytes on the wire | 1.14× slower |
 | Remove the per-layer host sync (replay ablation) | 1.10–1.25× faster: the ceiling |

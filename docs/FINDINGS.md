@@ -243,7 +243,7 @@ Five independent attacks on bytes moved, none of which made decode faster:
 
 | Attack | Phase | Result |
 |---|---|---|
-| Double the VRAM slots, cutting on-demand fetches roughly tenfold | 4 | ~5% faster |
+| Double the VRAM slots at a 25% budget, cutting on-demand fetches from 2,828 to 295 pairs per token | 4 | 17.7 → 18.6 tokens/s |
 | Layer-ahead prefetch, hiding 100% of copies inside the compute window | 4 | **slower** than synchronous fetch |
 | int8 warm/cold tier, halving the bytes on the wire | 5 | **1.14× slower** |
 | Removing the per-layer host sync entirely (replay ablation) | 6, 11 | 1.10–1.25× faster, and that is the ceiling |
