@@ -203,8 +203,8 @@ override for one model class. Nothing else in Transformers is patched.
 
 1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
 4. H2O-style attention-score eviction ✅ → 5. Quest-style query-aware selection ✅ → 6. + CPU tier,
-synchronous fetch ✅ → 7. + layer-ahead async prefetch ✅ → 8. + int8 warm/cold tiers →
-9. + exact CPU merge. Measured rungs are ticked.
+synchronous fetch ✅ → 7. + layer-ahead async prefetch ✅ → 8. + int8 warm/cold tiers ✅ →
+9. + exact CPU merge ✅. All nine rungs are measured.
 
 Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and the same
 quality metrics: teacher-forced KL, top-1 agreement, and depth-swept needle-in-a-haystack,
