@@ -1,0 +1,37 @@
+name: Reproduction on other hardware
+description: Results from running LazyKV's benchmarks on a GPU or platform other than the one in the study
+labels: [reproduction]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Every result in this repo comes from one RTX 5060 Laptop GPU, so a run anywhere else is the most useful contribution there is. Negative or contradicting results are just as welcome.
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Hardware and software
+      description: GPU and VRAM, CPU, host RAM, PCIe generation and width if known, OS, driver, and the torch and transformers versions.
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: LazyKV commit
+      description: The output of `git rev-parse HEAD` for the tree you ran.
+    validations:
+      required: true
+  - type: textarea
+    id: commands
+    attributes:
+      label: Commands run
+      description: The exact commands, including configs and flags (see the README's reproduce sections).
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: What you found
+      description: Which numbers agree with the study and which do not. Attach or link the `metrics.json` files the run wrote.
+    validations:
+      required: true
