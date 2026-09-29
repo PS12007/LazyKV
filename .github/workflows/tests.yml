@@ -19,6 +19,9 @@ jobs:
       - name: Install CPU torch and the project
         run: |
           uv pip install --python .venv\Scripts\python.exe torch==2.12.0 --index-url https://download.pytorch.org/whl/cpu
-          uv pip install --python .venv\Scripts\python.exe -r pyproject.toml --extra dev
+          uv pip install --python .venv\Scripts\python.exe ".[dev]"
       - name: Test
         run: .venv\Scripts\python.exe -m pytest
+      - name: Installed package imports without the repo on the path
+        working-directory: ${{ runner.temp }}
+        run: ${{ github.workspace }}\.venv\Scripts\python.exe -c "import importlib, pkgutil, lazykv; [importlib.import_module('lazykv.' + m.name) for m in pkgutil.iter_modules(lazykv.__path__)]; assert 'site-packages' in lazykv.__file__, lazykv.__file__"
