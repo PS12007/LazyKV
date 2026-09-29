@@ -352,6 +352,27 @@ tier in one process):
 .venv\Scripts\python.exe scripts\render_docs.py
 ```
 
+## Reproduce Phases 6–15
+
+Each gate report records the exact command, commit and flags behind its numbers; this table is the
+short version. Every driver is long, so launch it detached with output to `logs/`, and run it from a
+git worktree pinned at the commit under test if you want to keep editing the main tree.
+
+| Phase | Drivers | Then analyze | Notes |
+|---|---|---|---|
+| [6](docs/phases/PHASE_6.md) | `03_host_ceiling.py` | `analyze_ceiling.py`, `analyze_ladder.py` | Superseded by Phase 11's re-measurement |
+| [7](docs/phases/PHASE_7.md) | `02_policy_quality.py` and `02_budget_speed.py`, `--config configs\phase7.yaml` | `analyze_phase7.py`, `analyze_ladder.py` | |
+| [8](docs/phases/PHASE_8.md) | same two drivers, `--config configs\phase8.yaml --context <c>` per context | `analyze_phase8.py` | 64K needs `--skip-block-full` |
+| [9](docs/phases/PHASE_9.md) | `02_policy_quality.py --config configs\phase9.yaml`, in chunks via `--sample-start` | `analyze_phase9.py` | |
+| [10](docs/phases/PHASE_10.md) | `02_policy_quality.py --config configs\phase10.yaml`, per context | `analyze_phase10.py`, `analyze_kl.py` | Corpus from `fetch_corpus.py` |
+| [11](docs/phases/PHASE_11.md) | `03_host_ceiling.py --config configs\phase11.yaml --run-id 1..3` | `analyze_ceiling.py --phase phase11 --compare-to phase5` | Idle machine |
+| [12](docs/phases/PHASE_12.md) | `02_policy_quality.py`, `configs\phase12_pilot.yaml` then `configs\phase12.yaml` | `analyze_phase12.py` | |
+| [13](docs/phases/PHASE_13.md) | `02_policy_quality.py --config configs\phase13.yaml --sample-start 5` | `analyze_phase13.py` | |
+| [14](docs/phases/PHASE_14.md) | `05_longbench.py --config configs\phase14.yaml` | `analyze_phase14.py` | Needs the LongBench data |
+| [15](docs/phases/PHASE_15.md) | `02_policy_quality.py --config configs\phase15.yaml --skip-block-full --skip-teacher-forced` | `analyze_phase15.py` | Needs the `quant` extra |
+
+Finish every phase with `make_figures.py`, `render_docs.py` and `pytest`.
+
 ## Measurement discipline
 
 This is a laptop: it throttles, downclocks within seconds of idling, and retrains its PCIe
