@@ -7,7 +7,7 @@ from dataclasses import asdict, dataclass
 
 import torch
 
-from harness.stats import bootstrap_mean_ci
+from lazykv.stats import bootstrap_mean_ci
 
 # Quality is scored on the memory-efficient SDPA kernel, not the fastest one.
 # Phase 1 measured cuDNN's single-query decode returning one of two bit patterns for
