@@ -33,10 +33,10 @@ raw metrics and negative results are public.
 A decoding transformer reads every key and value it has cached, for every layer, at every step. At
 long context that cache, not the model, is what exhausts an 8 GB GPU. The literature offers three
 kinds of answer. *Eviction* drops tokens judged unimportant, by recency with an attention sink
-(StreamingLLM) or by accumulated attention (H2O). *Query-aware selection* keeps the cache but attends
-only to the blocks that can matter for the current query (Quest). *Offloading* keeps the cache in
-host memory and moves what is needed to the GPU, sometimes ahead of time (InfiniGen, ArkVale,
-ShadowKV). These systems overlap heavily, are usually evaluated on datacenter GPUs with their own
+(StreamingLLM [1]) or by accumulated attention (H2O [2]). *Query-aware selection* keeps the cache
+but attends only to the blocks that can matter for the current query (Quest [3]). *Offloading*
+keeps the cache in host memory and moves what is needed to the GPU, sometimes ahead of time
+(InfiniGen [4], ArkVale [5], ShadowKV [6]). These systems overlap heavily, are usually evaluated on datacenter GPUs with their own
 baselines, and are rarely placed on one frontier.
 
 This paper does not propose a new mechanism. It asks a narrower question, on the hardware where it
@@ -69,7 +69,14 @@ layer's KV costs {{ phase0.analysis.design.rows.4.fetch_over_gpu_attention | x }
 it feeds, so prefetching cannot hide it. The viable designs therefore combine *selection* — attend
 to a small, query-chosen set of blocks, and move only those — with, optionally, *exact CPU-side
 attention* over the rest, merged with the GPU result through the log-sum-exp rescaling that makes
-softmax attention associative (FlashAttention, Ring Attention).
+softmax attention associative (FlashAttention [7], Ring Attention [8]).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/design_costs-dark.png">
+  <img alt="Per-layer cost of fetching non-resident KV over PCIe against attending to it on the GPU or the CPU" src="figures/design_costs-light.png">
+</picture>
+
+*Figure 1. Per-layer cost, composed from Phase 0 measurements, of fetching non-resident KV over PCIe against attending to it on the GPU or on the CPU. Fetching a layer's offloaded KV costs about an order of magnitude more than the GPU attention it feeds.*
 
 ## 3. System
 
@@ -82,10 +89,10 @@ function; nothing else is patched.
   stay dense; the rest select.
 - **Selection (rung 5).** Each block stores the elementwise minimum and maximum of its keys; an
   upper bound on q·k for the block costs O(head dim), and the top-K blocks by bound, plus the sink
-  and the newest block, are attended (Quest's criterion).
+  and the newest block, are attended (Quest's criterion [3]).
 - **CPU tier (rungs 6–8).** Sealed blocks are written once to pinned host pools. VRAM holds a fixed
   number of slots per KV head; blocks a step selects that are not resident are fetched on demand
-  (rung 6), speculatively one layer ahead (rung 7, InfiniGen's insight), or from an int8 warm/cold
+  (rung 6), speculatively one layer ahead (rung 7, InfiniGen's insight [4]), or from an int8 warm/cold
   tier (rung 8).
 - **Exact merge (rung 9).** Attention over the blocks VRAM does not hold is computed on the CPU from
   a float32 mirror and merged exactly with the GPU's partial result.
@@ -112,7 +119,7 @@ phase sees the same prompts at a given context.
 
 **Quality.** The headline is NIAH accuracy as a share of the full cache's (*retention*). Beside it:
 teacher-forced KL divergence and top-1 agreement against the full cache, long-document perplexity,
-RULER variable tracking, and four LongBench QA subsets. Every quality number carries a bootstrap or
+RULER variable tracking [15], and four LongBench QA subsets [16]. Every quality number carries a bootstrap or
 paired confidence interval; paired comparisons use exact sign tests. Because the fast cuDNN decode
 kernel is not bit-repeatable for single-query decode, quality is scored on a deterministic kernel.
 
@@ -129,6 +136,11 @@ moving the benchmark to efficiency cores at
   <source media="(prefers-color-scheme: dark)" srcset="figures/ladder_pareto-dark.png">
   <img alt="NIAH accuracy and decode tokens per second against GPU-resident KV, one curve per policy ladder rung" src="figures/ladder_pareto-light.png">
 </picture>
+
+*Figure 2. The ladder at {{ ladder.summary.context | int }} tokens. Left: NIAH accuracy against
+GPU-resident KV (up and to the left is better). Right: decode throughput against the same axis.
+Rung 5 is vertical because it attends to less without freeing memory; rung 9 is flat at the full
+cache's accuracy and at the bottom of the throughput panel.*
 
 {{> ladder_headline }}
 
@@ -183,8 +195,15 @@ keeping KV in VRAM and never closes it, at any context measured.
 Sweeping {{ phase8.analysis.summary.contexts_measured | int }} contexts for rungs 2, 5, 6 and 9 shows
 accuracy is set by the budget *fraction*: matched at a fraction, retention spreads
 {{ phase8.analysis.summary.collapse_k_over_fraction | .1f }}× less across contexts than matched at a
-constant number of selected blocks, the parameterization Quest uses. A constant token budget
+constant number of selected blocks, the parameterization Quest uses [3]. A constant token budget
 therefore does not carry from one context to another.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/p8_context-dark.png">
+  <img alt="NIAH retention against budget fraction and against blocks attended, one curve per context, and decode latency against context" src="figures/p8_context-light.png">
+</picture>
+
+*Figure 3. Retention against the budget fraction and against the number of blocks attended, one curve per context, and decode latency against context. The retention curves collapse on the fraction, not on the block count.*
 
 ### 5.4 Perplexity misses the loss
 
@@ -196,7 +215,14 @@ retrieval while their perplexity interval includes no change; the window with a 
 {{ phase10.analysis.summary.ppl_blind_worst.niah_retention | pct }} of retrieval at a perplexity ratio
 of {{ phase10.analysis.summary.ppl_blind_worst.ppl_ratio | .3f }}. Perplexity ranks conditions roughly
 correctly (Spearman {{ phase10.analysis.summary.spearman_nll_vs_niah_loss | .2f }}) but averages the
-few tokens that need distant context in with the many that do not, the failure LongPPL describes.
+few tokens that need distant context in with the many that do not, the failure LongPPL describes [17].
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/p10_perplexity-dark.png">
+  <img alt="NIAH retention against perplexity ratio for each policy and budget at 32K, and the perplexity ratio at the tightest budget across context lengths" src="figures/p10_perplexity-light.png">
+</picture>
+
+*Figure 4. NIAH retention against the perplexity ratio for every policy and budget, and the perplexity cost of the tightest budget across context. Many conditions lose much of their retrieval at a perplexity ratio near one.*
 
 ### 5.5 Beyond single needles, and a larger model
 
@@ -217,20 +243,28 @@ is too wide to exclude the RULER gap. On Llama-3.2-3B at
 window shows no detected model difference; the 1B's tight-budget losses look conservative rather
 than a floor. That is one additional model, not a trend.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/p12_ruler-dark.png">
+  <img alt="Retention against budget for window, H2O-style and Quest-style selection at 32K, on the single needle and on RULER variable tracking" src="figures/p12_ruler-light.png">
+</picture>
+
+*Figure 5. Retention against budget for the window, H2O-style and Quest-style selection, on the single needle and on RULER variable tracking. Quest-style selection's lead over the cheap baselines disappears on the multi-hop task at tight budgets.*
+
 ## 6. Related work
 
-Query-aware block selection with per-block key bounds is Quest (arXiv 2406.10774). Layer-ahead
-speculative prefetch from the previous layer's hidden state is InfiniGen (arXiv 2406.19707).
-Recallable eviction to host memory is ArkVale (NeurIPS 2024); ShadowKV (arXiv 2410.21465) keeps a
-low-rank key cache on the GPU and values on the host. Eviction baselines are StreamingLLM's attention
-sink (arXiv 2309.17453), H2O (arXiv 2306.14048) and SnapKV (arXiv 2404.14469). FlexGen
-(arXiv 2303.06865) offloads for throughput on one GPU; PagedAttention (arXiv 2309.06180) and LMCache
-(arXiv 2510.09665) manage KV for serving. The exact merge relies on the rescaling used by
-FlashAttention (arXiv 2205.14135) and Ring Attention (arXiv 2310.01889). Quantized KV caches include
-KIVI (arXiv 2402.02750) and KVQuant (arXiv 2401.18079). Benchmarks are RULER (arXiv 2404.06654) and
-LongBench (arXiv 2308.14508); LongPPL (arXiv 2410.23771) documents perplexity's blindness to
-long-range tokens. The survey behind this section, with what LazyKV does differently from each, is
-[Related work](RELATED_WORK.md).
+Query-aware block selection with per-block key bounds is Quest [3]; LazyKV's rung 5 is its
+criterion. Layer-ahead speculative prefetch from the previous layer's hidden state is InfiniGen [4].
+ArkVale [5] is the closest existing mechanism to rungs 5–6: bounding-box page digests, backup to host
+memory, and recall. ShadowKV [6] keeps a low-rank key cache on the GPU and offloads values. The
+eviction baselines are StreamingLLM's attention sink [1], H2O [2] and SnapKV [9]. FlexGen [10]
+offloads for throughput on a single GPU; PagedAttention [11] and LMCache [12] manage KV for serving.
+The exact merge uses the online-softmax rescaling of FlashAttention [7] and Ring Attention [8].
+Rung 8's int8 tier follows the quantized-KV literature, KIVI [13] and KVQuant [14], at a far less
+aggressive bit width. The benchmarks are RULER [15] and LongBench [16]; LongPPL [17] documents why
+perplexity misses long-range dependence. What LazyKV does differently from each, and the survey
+behind this section, is in [Related work](RELATED_WORK.md). None of these systems was run here as
+released; the ladder reimplements their selection and eviction criteria inside one runtime so they
+can be compared on the same budget, prompts and kernels.
 
 ## 7. Limitations
 
@@ -259,3 +293,26 @@ the negative results, so that the same ladder can be run on other hardware.
 Code, configs, raw `metrics.json` for every reported run, and the renderer that generates this
 document are at <https://github.com/PS12007/LazyKV>. Each phase's gate report lists the commit and
 command that produced its numbers.
+
+## References
+
+Every entry was verified and is recorded, with what LazyKV takes from it, in
+[Related work](RELATED_WORK.md).
+
+1. StreamingLLM. *Efficient Streaming Language Models with Attention Sinks.* arXiv [2309.17453](https://arxiv.org/abs/2309.17453).
+2. H2O. *Heavy-Hitter Oracle.* arXiv [2306.14048](https://arxiv.org/abs/2306.14048).
+3. Quest. *Query-Aware Sparsity for Efficient Long-Context LLM Inference.* arXiv [2406.10774](https://arxiv.org/abs/2406.10774).
+4. InfiniGen. *Efficient Generative Inference of Large Language Models with Dynamic KV Cache Management.* arXiv [2406.19707](https://arxiv.org/abs/2406.19707).
+5. ArkVale. *Efficient Generative LLM Inference with Recallable Key-Value Eviction.* NeurIPS 2024 ([proceedings](https://proceedings.neurips.cc/paper_files/paper/2024/hash/cd4b49379efac6e84186a3ffce108c37-Abstract-Conference.html)).
+6. ShadowKV. *KV Cache in Shadows for High-Throughput Long-Context LLM Inference.* arXiv [2410.21465](https://arxiv.org/abs/2410.21465).
+7. FlashAttention. *Fast and Memory-Efficient Exact Attention with IO-Awareness.* arXiv [2205.14135](https://arxiv.org/abs/2205.14135).
+8. Ring Attention. *Ring Attention with Blockwise Transformers for Near-Infinite Context.* arXiv [2310.01889](https://arxiv.org/abs/2310.01889).
+9. SnapKV. *LLM Knows What You are Looking for Before Generation.* arXiv [2404.14469](https://arxiv.org/abs/2404.14469).
+10. FlexGen. *High-Throughput Generative Inference of Large Language Models with a Single GPU.* arXiv [2303.06865](https://arxiv.org/abs/2303.06865).
+11. PagedAttention (vLLM). *Efficient Memory Management for Large Language Model Serving with PagedAttention.* arXiv [2309.06180](https://arxiv.org/abs/2309.06180).
+12. LMCache. *An Efficient KV Cache Layer for Enterprise-Scale LLM Inference.* arXiv [2510.09665](https://arxiv.org/abs/2510.09665).
+13. KIVI. arXiv [2402.02750](https://arxiv.org/abs/2402.02750).
+14. KVQuant. arXiv [2401.18079](https://arxiv.org/abs/2401.18079).
+15. RULER. arXiv [2404.06654](https://arxiv.org/abs/2404.06654).
+16. LongBench. arXiv [2308.14508](https://arxiv.org/abs/2308.14508).
+17. LongPPL. *What is Wrong with Perplexity for Long-context Language Modeling?* ICLR 2025, arXiv [2410.23771](https://arxiv.org/abs/2410.23771).
