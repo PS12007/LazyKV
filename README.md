@@ -27,7 +27,7 @@ is a careful, reproducible study of those ideas on constrained consumer hardware
 negative results included.
 
 > **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
-> number, the negative results and the limitations.
+> number, the negative results and the limitations. The same study as a paper draft: [Paper](docs/PAPER.md).
 > Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
 > [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
