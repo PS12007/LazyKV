@@ -57,6 +57,7 @@ from transformers.cache_utils import Cache
 from transformers.models.llama.modeling_llama import rotate_half
 
 from lazykv.cache import CacheStats, FullGPUCache
+from lazykv.pinned import pinned_empty
 from lazykv.quant import pack, packed_pair_bytes, unpack
 from lazykv.selection import QUEST_DENSE_LAYERS, current_block_mask, top_blocks
 
@@ -161,7 +162,7 @@ class TieredLayer:
         shape = (self.cap_blocks, h, 2, bs, d) if quant is None else (self.cap_blocks, h, packed_pair_bytes(bs, d))
         want_dtype = dt if quant is None else torch.uint8
         if host is None:
-            host = torch.empty(shape, dtype=want_dtype, pin_memory=True)
+            host = pinned_empty(shape, want_dtype)
         elif host.shape != shape or host.dtype != want_dtype or not host.is_pinned():
             raise ValueError(f"host pool must be pinned {want_dtype} with shape {shape}, got {want_dtype if host.dtype == want_dtype else host.dtype} {tuple(host.shape)}")
         self.host = host
@@ -729,4 +730,4 @@ def allocate_host_pools(n_layers: int, heads: int, head_dim: int, block_size: in
     """
     blocks = -(-capacity_tokens // block_size)
     shape, dt = ((blocks, heads, 2, block_size, head_dim), dtype) if quant is None else ((blocks, heads, packed_pair_bytes(block_size, head_dim)), torch.uint8)
-    return [torch.empty(shape, dtype=dt, pin_memory=True) for _ in range(n_layers)]
+    return [pinned_empty(shape, dt) for _ in range(n_layers)]
