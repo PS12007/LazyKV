@@ -49,6 +49,7 @@ OUTPUTS = {
     "PAPER.md.tmpl": "docs/PAPER.md",
     "STATUS.md.tmpl": "docs/STATUS.md",
     "GAP_TABLE.md.tmpl": "docs/GAP_TABLE.md",
+    "PHASE_16.md.tmpl": "docs/phases/PHASE_16.md",
 }
 
 GENERATED_BANNER = (
@@ -2124,6 +2125,66 @@ def block_p15_provenance(ctx: Mapping[str, Any]) -> str:
         return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"],
                  [_provenance_row(lbl, s) for lbl, s in zip(("3B, nf4 weights (Phase 15)", "1B (Phase 8, 16K)"), src)])
+
+
+_P16_SELECTORS = (("oracle", "Oracle (true top-K)"), ("quest", "Quest-style bound"), ("stale_oracle", "Previous step's true top-K"), ("window", "Most recent K"))
+
+
+def block_p16_selection(ctx: Mapping[str, Any]) -> str:
+    sel = lookup(ctx, "phase16.analysis.selection")
+    if not isinstance(sel, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for b, s in sel.items():
+        for name, label in _P16_SELECTORS:
+            x = s[name]
+            step0 = "same as Quest (falls back to it)" if name == "stale_oracle" else f"{100 * x['niah_step0']:.2f}% ({100 * x['niah_step0_ci95'][0]:.2f}–{100 * x['niah_step0_ci95'][1]:.2f})"
+            rows.append([_pct_budget(float(b)) if name == "oracle" else "", f"{s['k']:,}" if name == "oracle" else "", label, step0,
+                         f"{100 * x['niah_later']:.2f}%", f"{100 * x['niah_p05']:.1f}%", f"{100 * x['tf_mean']:.2f}%"])
+    return table(["Budget", "K", "Selector", "NIAH, first answer token", "NIAH, later tokens", "NIAH, 5th percentile cell", "Teacher-forced"],
+                 rows, ["---", "--:", "---", "--:", "--:", "--:", "--:"])
+
+
+def block_p16_quality(ctx: Mapping[str, Any]) -> str:
+    q = lookup(ctx, "phase16.analysis.quality_join")
+    if not isinstance(q, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for b in lookup(ctx, "phase16.analysis.budgets") or []:
+        c = q.get(f"{b:g}")
+        if not c:
+            continue
+        f = lambda v: NOT_MEASURED if v is None else f"{100 * v:.2f}%"  # noqa: E731
+        rows.append([_pct_budget(b), str(c["kept"]), str(c["lost"]), f(c["quest_step0_kept_mean"]), f(c["quest_step0_lost_mean"]),
+                     f(c["oracle_step0_lost_mean"]), NOT_MEASURED if c["auc_step0"] is None else f"{c['auc_step0']:.2f}"])
+    return table(["Budget", "Prompts kept", "Prompts lost", "Quest mass, kept", "Quest mass, lost", "Oracle mass, lost", "AUC"],
+                 rows, ["---", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p16_replacement(ctx: Mapping[str, Any]) -> str:
+    rep = lookup(ctx, "phase16.analysis.replacement")
+    if not isinstance(rep, list):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in rep:
+        if r.get("pool_holds_every_candidate"):
+            lru = belady = ratio = "pool holds every candidate"
+        else:
+            lru, belady = f"{r['lru']['steady_per_token']:,.1f}", f"{r['belady']['steady_per_token']:,.1f}"
+            ratio = f"{r['belady_over_lru_steady']:.2f}" if r["belady_over_lru_steady"] is not None else NOT_MEASURED
+        rows.append([f"{r['book']} @{r['offset']:,}", _pct_budget(r["budget"]), f"{r['k']:,}", f"{r['spare']:g}", f"{r['n_slots']:,}", lru, belady, ratio])
+    return table(["Window", "Budget", "K", "Spare", "Slots", "LRU fetches/token", "Belady fetches/token", "Belady ÷ LRU"],
+                 rows, ["---", "---", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p16_provenance(ctx: Mapping[str, Any]) -> str:
+    rows = []
+    for label, key in (("Trace recording", "phase16.traces.provenance"), ("Offline analysis", "phase16.analysis.provenance")):
+        p = lookup(ctx, key)
+        if isinstance(p, Mapping):
+            rows.append(_provenance_row(label, p))
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows) if rows else f"_{NOT_MEASURED}_"
+
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
