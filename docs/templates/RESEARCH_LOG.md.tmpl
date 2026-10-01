@@ -5,6 +5,40 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-30: Upgrade plan Step 0, and Phase 16 (attention traces, offline oracles)
+
+### Step 0
+
+The owner's upgrade plan ([UPGRADE_PLAN.md](UPGRADE_PLAN.md)) was audited against the repository
+([STATUS.md](STATUS.md), [GAP_TABLE.md](GAP_TABLE.md)). The plan assumes a llama.cpp fork; LazyKV
+is PyTorch + Transformers. Its A4 (mid-generation async prefetch) is already rung 7 and was measured
+no faster, and every "max context" claim needs chunked prefill into the tier, which the plan does not
+list. TierKV, KVMem and llama.cpp discussions #28216 and #28894 were verified and added to
+RELATED_WORK §8. The plan asks for `docs/LOG.md`; this log is used instead.
+
+### Phase 16 result
+
+Quest-style selection captures
+{{ phase16.analysis.summary.quest_share_of_oracle_step0.min | pct }}–{{ phase16.analysis.summary.quest_share_of_oracle_step0.max | pct }}
+of the oracle's attention mass at the first answer token. The previous step's exact top-K would
+capture more ({{ phase16.analysis.summary.stale_minus_quest_later.min | pp }} to
+{{ phase16.analysis.summary.stale_minus_quest_later.max | pp }} on later NIAH tokens), but only as an
+upper bound. **Captured mass does not predict which NIAH answers are lost** (AUC
+{{ phase16.analysis.summary.auc_step0.min | .2f }}–{{ phase16.analysis.summary.auc_step0.max | .2f }}),
+so the plan's idea of tuning a selector on mass captured is not supported. With spare slots, Belady
+fetches {{ phase16.analysis.summary.belady_over_lru_with_spare.min | .2f }}–{{ phase16.analysis.summary.belady_over_lru_with_spare.max | .2f }}×
+what the tier's LRU does, a ceiling on bytes and not on speed.
+
+### Incidents
+
+- The runtime ranks a bf16 bound, and the K-th and (K+1)-th bounds tie in most cells. The first
+  version of the selection-equality test compared block ids and failed on ties; it now compares the
+  chosen bound values.
+- The first analysis output used budgets as JSON keys, which the template path syntax cannot
+  address (a dot in "0.75"). A dot-free `summary` was added and the analysis rerun on a clean tree.
+
+---
+
 ## 2026-09-28: Phase 15, the 3B stress model
 
 ### Result

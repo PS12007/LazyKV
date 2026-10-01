@@ -7,6 +7,40 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-09-30: Upgrade plan Step 0, and Phase 16 (attention traces, offline oracles)
+
+### Step 0
+
+The owner's upgrade plan ([UPGRADE_PLAN.md](UPGRADE_PLAN.md)) was audited against the repository
+([STATUS.md](STATUS.md), [GAP_TABLE.md](GAP_TABLE.md)). The plan assumes a llama.cpp fork; LazyKV
+is PyTorch + Transformers. Its A4 (mid-generation async prefetch) is already rung 7 and was measured
+no faster, and every "max context" claim needs chunked prefill into the tier, which the plan does not
+list. TierKV, KVMem and llama.cpp discussions #28216 and #28894 were verified and added to
+RELATED_WORK §8. The plan asks for `docs/LOG.md`; this log is used instead.
+
+### Phase 16 result
+
+Quest-style selection captures
+95.6%–99.4%
+of the oracle's attention mass at the first answer token. The previous step's exact top-K would
+capture more (+0.3 pp to
++2.1 pp on later NIAH tokens), but only as an
+upper bound. **Captured mass does not predict which NIAH answers are lost** (AUC
+0.36–0.69),
+so the plan's idea of tuning a selector on mass captured is not supported. With spare slots, Belady
+fetches 0.45–0.64×
+what the tier's LRU does, a ceiling on bytes and not on speed.
+
+### Incidents
+
+- The runtime ranks a bf16 bound, and the K-th and (K+1)-th bounds tie in most cells. The first
+  version of the selection-equality test compared block ids and failed on ties; it now compares the
+  chosen bound values.
+- The first analysis output used budgets as JSON keys, which the template path syntax cannot
+  address (a dot in "0.75"). A dot-free `summary` was added and the analysis rerun on a clean tree.
+
+---
+
 ## 2026-09-28: Phase 15, the 3B stress model
 
 ### Result
