@@ -22,6 +22,7 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
+from lazykv.selection import QUEST_DENSE_LAYERS  # noqa: E402
 from lazykv.stats import bootstrap_mean_ci  # noqa: E402
 
 SPILL_SLACK = 64 * 2**20
@@ -106,11 +107,31 @@ def validity(q16: dict[str, Any], p15: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def host_store_bytes(run: dict[str, Any]) -> int:
+    """Bytes the quality driver pinned for its host store, from the model's own config.
+
+    The quality driver did not record them, and WDDM counts them as shared GPU memory, so the spill
+    check has to subtract them. Same formula as `allocate_host_pools`: every selecting layer, every
+    block of the capacity, keys and values in the model's dtype (2 bytes).
+    """
+    if "tiered" not in run["methods"]:
+        return 0
+    cfg = run["config"]
+    model = json.loads((Path(cfg["models"][cfg["quality"]["model"]]["repo"]) / "config.json").read_text(encoding="utf-8"))
+    head_dim = model.get("head_dim") or model["hidden_size"] // model["num_attention_heads"]
+    bs = cfg["block_size"]
+    blocks = -(-run["capacity_tokens"] // bs)
+    return (model["num_hidden_layers"] - QUEST_DENSE_LAYERS) * blocks * model["num_key_value_heads"] * 2 * bs * head_dim * 2
+
+
 def quality(runs: dict[int, dict[str, Any]]) -> dict[str, Any]:
     """Question 4: absolute NIAH accuracy per context, method and budget, with a bootstrap CI over prompts."""
     out: dict[str, Any] = {"rows": []}
     for ctx in sorted(runs):
         rows = runs[ctx]["niah"]
+        guard = runs[ctx]["memory_guard"]
+        pinned = host_store_bytes(runs[ctx])
+        growth = guard["shared_bytes_after"] - guard["shared_bytes_baseline"]
         for method, budget in sorted({(r["method"], r["budget"]) for r in rows}, key=lambda x: (x[0] != "full", -x[1])):
             s = [r["score"] for r in rows if r["method"] == method and r["budget"] == budget]
             lo, hi = bootstrap_mean_ci(s, iters=10000, seed=0)
@@ -118,7 +139,10 @@ def quality(runs: dict[int, dict[str, Any]]) -> dict[str, Any]:
             pf = sorted(r["prefill_wall_s"] for r in rows if r["method"] == method and r["budget"] == budget)
             out["rows"].append({"context": ctx, "method": method, "budget": budget, "prompts": len(s), "mean": sum(s) / len(s), "ci95": [lo, hi],
                                 "peak_gib": max(peaks) / GIB, "prefill_s_median": pf[len(pf) // 2],
-                                "spill_bytes": runs[ctx]["memory_guard"]["shared_bytes_after"] - runs[ctx]["memory_guard"]["shared_bytes_baseline"]})
+                                "host_store_bytes": pinned, "shared_growth_bytes": growth,
+                                # What remains is small pinned staging through the rounding allocator, or a spill.
+                                "shared_beyond_host_store_mib": (growth - pinned) / 2**20,
+                                "inside_dedicated": growth - pinned <= SPILL_SLACK})
     return out
 
 
