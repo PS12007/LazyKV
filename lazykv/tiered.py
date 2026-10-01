@@ -39,8 +39,9 @@ Layout decisions, each forced by a Phase 0 measurement (docs/IMPLEMENTATION_PLAN
 - Slot 0 holds the sink (block 0), the last slot holds the block being filled, and neither is ever
   evicted. Victims are the least recently selected slots outside the current selection.
 
-Not yet here: prefill still runs on a full GPU cache, so peak VRAM during prefill is the full KV.
-The tier governs decode-time residency, and experiments report the two separately.
+Prefill: by default the tier is built from an exact prefill into a full GPU cache, so peak VRAM
+during prefill is the full KV. lazykv/tiered_prefill.py builds the same tiers layer by layer
+instead (`tiers=`), so the selecting layers' full prompt KV is never in VRAM at once.
 """
 
 from __future__ import annotations
@@ -436,6 +437,7 @@ class TieredCache(Cache):
         quant: str | None = None,
         record_selection: bool = False,
         replay_selection: dict[tuple[int, int], np.ndarray] | None = None,
+        tiers: dict[int, TieredLayer] | None = None,
     ) -> None:
         super().__init__(layers=full.layers)
         if prefetch and model is None:
@@ -453,15 +455,21 @@ class TieredCache(Cache):
         self.policy_name = "tiered_int8" if quant else ("tiered_prefetch" if prefetch else "tiered_sync")
         self.fetch = fetch
         self.counters = TierCounters()
-        self.tiers: dict[int, TieredLayer] = {}
-        for i in range(dense_layers, len(full.layers)):
-            src = full.layers[i]
-            n = src.get_seq_length()
-            host = None if host_pools is None else host_pools[i - dense_layers]
-            layer = TieredLayer(src.keys[:, :, :n], src.values[:, :, :n], k_blocks, block_size, capacity_tokens, host, n_slots, quant=quant)
+        if tiers is None:
+            tiers = {}
+            for i in range(dense_layers, len(full.layers)):
+                src = full.layers[i]
+                n = src.get_seq_length()
+                host = None if host_pools is None else host_pools[i - dense_layers]
+                tiers[i] = TieredLayer(src.keys[:, :, :n], src.values[:, :, :n], k_blocks, block_size, capacity_tokens, host, n_slots, quant=quant)
+        elif sorted(tiers) != list(range(dense_layers, len(full.layers))):
+            # Built by lazykv/tiered_prefill.py, one layer at a time, so the full prompt KV of the
+            # selecting layers never existed in VRAM at once.
+            raise ValueError(f"prebuilt tiers must cover layers {dense_layers}..{len(full.layers) - 1}, got {sorted(tiers)}")
+        self.tiers: dict[int, TieredLayer] = tiers
+        for layer in tiers.values():
             self.counters.boundary_d2h_s += layer.boundary_d2h_s
             self.counters.boundary_d2h_bytes += layer.boundary_d2h_bytes
-            self.tiers[i] = layer
         self.n_slots = next(iter(self.tiers.values())).n_slots
         self._stages: list[_Stage] = []
         self._stage_compute: _Stage | None = None
