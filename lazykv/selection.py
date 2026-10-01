@@ -35,20 +35,27 @@ from lazykv.cache import CacheStats, FullGPUCache
 QUEST_DENSE_LAYERS = 2  # Quest: "we only apply Quest and all baselines on later layers"
 
 
-def top_blocks(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, k: int) -> torch.Tensor:
-    """Indices [1, kv, k] of the k candidate blocks with the highest Quest bound, per KV head.
+def quest_bound(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor) -> torch.Tensor:
+    """Quest's upper bound [1, kv, n] on each candidate block's score, per KV head.
 
     `query` is [1, n_q, 1, d]; `kmin`/`kmax` are [1, kv, n, d] over the candidate blocks. Each
-    block is scored by the maximum bound over the head's query group, and `topk` returns the
-    blocks in descending bound order: callers gather in that order, so two runtimes that share
-    this function attend to identical key sequences.
+    block is scored by the maximum bound over the head's query group.
     """
     n_q, n_kv, d = query.shape[1], kmin.shape[1], query.shape[-1]
     q = query.view(1, n_kv, n_q // n_kv, d)
     qp = q.clamp_min(0)
     # sum_i max(q_i m_i, q_i M_i) = q+ . M + q- . m, per query head and block.
     bound = (qp @ kmax.transpose(-1, -2)) + ((q - qp) @ kmin.transpose(-1, -2))  # [1, kv, g, n]
-    return bound.amax(dim=2).topk(k, dim=-1).indices
+    return bound.amax(dim=2)
+
+
+def top_blocks(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, k: int) -> torch.Tensor:
+    """Indices [1, kv, k] of the k candidate blocks with the highest Quest bound, per KV head.
+
+    `topk` returns the blocks in descending bound order: callers gather in that order, so two
+    runtimes that share this function attend to identical key sequences.
+    """
+    return quest_bound(query, kmin, kmax).topk(k, dim=-1).indices
 
 
 def current_block_mask(total: int, block_size: int, fill: int, dtype: torch.dtype, device: torch.device, reuse: torch.Tensor | None = None) -> torch.Tensor:
