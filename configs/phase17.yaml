@@ -1,0 +1,64 @@
+# Phase 17: chunked prefill into the tier (gap table, recommended item 2; validity note 3).
+#
+# Until now the tier was built from an exact prefill into a full GPU cache, so the longest context
+# LazyKV could serve was the full cache's. lazykv/tiered_prefill.py prefills layer by layer and hands
+# each selecting layer's KV to the tier as soon as that layer finishes, so only the dense layers' KV,
+# one selecting layer's KV and the hidden states are ever in VRAM at once. Unit tests show it is bit-
+# identical to the old path on a tiny model.
+#
+# Questions, fixed before any run:
+#   1. Capacity. For each model, the largest context on the ladder that prefills and decodes inside
+#      dedicated VRAM (allocator capped at free VRAM, so an over-budget run OOMs instead of spilling),
+#      full-cache prefill vs layer-major tiered prefill. Peak allocated VRAM per cell. Each cell runs
+#      in a fresh process, so an OOM cannot fragment the next cell's allocator.
+#   2. Cost. Prefill wall time, tiered vs full, at every context both reach; and decode ms/token
+#      over the tier at the contexts only the tier reaches. Expected: prefill about the same (same
+#      kernels, plus one D2H per byte), decode as slow as rung 6 always was (Phase 11).
+#   3. Validity at scale. At 16K on the 3B model, rung 6 built by tiered prefill must answer every
+#      Phase 15 NIAH prompt exactly as Phase 15's rung 6 did (same prompts, budget, kernel, slots).
+#   4. Quality beyond the limit. NIAH accuracy of rung 6 at the largest context only the tier
+#      reaches. There is no full-cache reference there by construction, so the result is absolute
+#      accuracy, reported beside the same model's full-cache accuracy at the longest context it can
+#      run, and never as a retention.
+#
+# Host RAM bounds the tier: pinned pools are preallocated for the capacity, about 28 KiB per token
+# for the 1B model's selecting layers and 104 KiB for the 3B's, on a 16 GB machine. A cell that cannot
+# pin its pool is recorded as a host-memory failure, not dropped.
+phase: phase17
+
+block_size: 64
+prefill_chunk: 2048
+decode_tokens: 32
+budget: 0.125  # rung 6's budget in the capacity cells; quality cells use the budgets below
+tier:
+  fetch: gather
+  spare: 0.0
+
+models:
+  1b:
+    repo: unsloth/Llama-3.2-1B-Instruct
+    revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+    # 131072 is the model's limit; the last rung leaves room for the decoded tokens.
+    contexts: [32768, 65536, 98304, 130048]
+  3b:
+    repo: D:\CompSci\lazykv-data\models\Llama-3.2-3B-Instruct
+    revision: null
+    source_repo: unsloth/Llama-3.2-3B-Instruct
+    source_revision: 006f5dcd1393c3add266de40994ba96225e9689d
+    quant: nf4
+    contexts: [16384, 24576, 32768, 49152, 65536]
+
+# The capacity cells decode one NIAH prompt each, so every cell also yields an answer to sanity-check.
+capacity_prompt: {book: moby_dick, kind: single, depth: 0.5, sample: 0, seed: 0}
+
+# Questions 3 and 4 (scripts/07_tiered_prefill_quality.py). Same NIAH design as Phase 15.
+quality:
+  model: 3b
+  budgets: [0.125, 0.0625]
+  niah:
+    book: moby_dick
+    kinds: [single, multikey, multivalue]
+    depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+    samples: 3
+    max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+    seed: 0
