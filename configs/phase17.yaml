@@ -52,6 +52,14 @@ models:
 capacity_prompt: {book: moby_dick, kind: single, depth: 0.5, sample: 0, seed: 0}
 
 # Questions 3 and 4 (scripts/07_tiered_prefill_quality.py). Same NIAH design as Phase 15.
+#
+# Amended 2026-10-01, after the capacity run and before any quality result beyond 16K was read: the
+# paired full-vs-tier comparison was first launched at 32K, the full cache's longest context in the
+# capacity run. Under the quality kernel ("efficient", which materializes the GQA-expanded K and V
+# on every prefill chunk) the full cache OOMed in its first 32K prefill, so its longest context
+# under that kernel is shorter than under cuDNN. Per question 4's rule the comparison moves to the
+# next rung of the 3B ladder, 24K. The quality driver also now frees the full cache before the
+# tier runs, so the two never share VRAM.
 quality:
   model: 3b
   budgets: [0.125, 0.0625]

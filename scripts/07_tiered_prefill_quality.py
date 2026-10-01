@@ -74,7 +74,6 @@ def main() -> None:
     pools = allocate_host_pools(lm.num_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, bs, cap, lm.model.dtype) if "tiered" in args.methods else None
     k_max = max(blocks_for_budget(b, cap, bs) for b in q["budgets"])
     stages = allocate_stages(k_max * c.num_key_value_heads, c.num_key_value_heads, head_dim, bs, lm.model.dtype) if pools is not None else None
-    full = FullGPUCache(lm.num_layers, cap) if "full" in args.methods else None
     eot = lm.tokenizer.convert_tokens_to_ids("<|eot_id|>")
     book = load_tokens(niah["book"], lm.tokenizer)
     rows: list[dict[str, Any]] = []
@@ -92,11 +91,15 @@ def main() -> None:
                 prompt = build_prompt(lm.tokenizer, book, ctx, kind, depth, sample, seed=niah["seed"])
                 base = {"kind": kind, "depth": depth, "sample": sample, "prompt_len": prompt.length, "values": list(prompt.values)}
                 total = prompt.length + n_new
-                if full is not None:
+                if "full" in args.methods:
+                    # Allocated per prompt and freed before the tier runs: a full cache kept across
+                    # prompts would sit in VRAM beside every tiered decode and set that decode's peak.
+                    torch.cuda.empty_cache()
                     torch.cuda.reset_peak_memory_stats()
-                    full.truncate(0)
+                    full = FullGPUCache(lm.num_layers, cap)
                     pre = prefill(lm.model, full, prompt.input_ids, chunk)
                     dec = greedy_decode(lm.model, full, pre.last_logits, n_new - 1)
+                    del full, pre
                     text = answer(dec.tokens)
                     peaks.append(torch.cuda.max_memory_allocated())
                     rows.append({**base, "method": "full", "policy": "full", "budget": 1.0, "score": score(prompt, text), "answer": text.strip()[:120],
