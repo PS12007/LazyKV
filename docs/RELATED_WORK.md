@@ -465,6 +465,18 @@ here rather than cited from code with no provenance. **Both verified by a live l
 | **InfiniteBench (∞Bench)** | arXiv [2402.13718](https://arxiv.org/abs/2402.13718) | 100K+ tasks. Likely beyond this 8 GB GPU's reach at bf16; used only where the context fits |
 | **LongPPL** ("What is Wrong with Perplexity for Long-context Language Modeling?", ICLR 2025) | arXiv [2410.23771](https://arxiv.org/abs/2410.23771) | Not run. It is the prior result Phase 10 lands on: perplexity averages over all tokens, and the few tokens that need distant context are too rare to move it, so it barely tracks long-context ability. LongPPL scores only key tokens found by contrasting long and short context. Phase 10 uses plain perplexity (the brief's §B7.3 metric) and reports how little it resolves, rather than switching metrics after the fact. (Verified 2026-09-26 by web search: arXiv abstract and ICLR 2025 proceedings.) |
 
+## 8. Consumer-GPU tiered-KV forks of llama.cpp
+
+Added 2026-09-30 for the [upgrade plan](UPGRADE_PLAN.md). None of these is a paper; each was verified
+by fetching its own repository or discussion page on that date. Their performance claims are on
+different hardware (a 16 GB desktop RTX 5060 Ti, 27B GGUF models) and are not reproduced here.
+
+| System | Source (verified) | What it is | Relation to LazyKV |
+|---|---|---|---|
+| **TierKV** | [github.com/arczhi/llama-tierkv](https://github.com/arczhi/llama-tierkv) | A llama.cpp fork for long-context coding agents on Linux. Three tiers: a bounded VRAM window of recent context, the full KV in host RAM (Q4_0 by default), SSD snapshots for session resume. 64-token pages staged at turn boundaries, rate-limited; recall by IDF-weighted word overlap and by a Quest-style per-channel key min/max bound; a protected head of the context. States as limitations: windows smaller than the working set lose the thread, sparse attention is a gather rather than a paged kernel, MTP speculative decoding does not combine with its longest contexts, and benchmarks are single-run | Same page size and the same Quest-style bound as rungs 5 to 8. TierKV is a usable agent backend; LazyKV is a measured policy study with an exact CPU fallback (rung 9) and no SSD tier |
+| **KVMem** | [github.com/kvmem/kvmem-llama.cpp](https://github.com/kvmem/kvmem-llama.cpp); llama.cpp [discussion #28894](https://github.com/ggml-org/llama.cpp/discussions/28894) (2026-09-14) | Tiered KV memory for llama.cpp: completed history in host RAM, a bounded GPU-resident retrieved window, MTP speculative decoding with state replay, an OpenAI-compatible server. Reports LongMemEval-S accuracy close to the full history. Tested under WSL2 | A retrieval-window design evaluated on long-memory QA; LazyKV has no multi-turn evaluation yet |
+| **Adaptive KV Cache Streaming** | llama.cpp [discussion #28216](https://github.com/ggml-org/llama.cpp/discussions/28216) (2026-09-02) | Proposal and CUDA proof of concept: VRAM split into a resident region and a streaming ring buffer, less-needed KV evicted to RAM and streamed back with layer-sequential prefetch, partition sized to the active context | Dense streaming, design (a) in LazyKV's Phase 0 terms; LazyKV measured that fetching a layer's offloaded KV costs about an order of magnitude more than attending to it on this laptop's link, which is why LazyKV selects instead |
+
 ---
 
 ## Delta
