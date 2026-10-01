@@ -1,0 +1,45 @@
+# Phase 16: attention traces and the offline oracle study (upgrade plan items A2 and A3).
+#
+# Records, on the full-cache reference decode, the true attention mass per (layer, KV head, block)
+# and the Quest bound the selecting rungs rank by, then replays selectors and slot-replacement rules
+# offline (lazykv/residency_sim.py). Two oracles: the K blocks of highest true mass (selection) and
+# Belady (replacement).
+#
+# Held fixed so the traces join Phase 8's per-prompt results at 32K: the same model, revision,
+# block size, context, NIAH kinds, depths, samples, seed and token budgets, and the same two
+# teacher-forced windows. Phase 8 ran rung 5 on these exact prompts.
+phase: phase16
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+context: 32768
+
+# Traces are large (float32, every block of every selecting layer at every step), so they live with
+# the other data on D:, not in the repo. metrics.json records each file's name, size and shape.
+trace_dir: D:/CompSci/lazykv-data/traces/phase16
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+# Teacher-forced: the trajectory does not depend on any policy, so these are the clean traces for
+# replacement, and 256 steps cross four seals.
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+# Offline analysis.
+budgets: [0.75, 0.5, 0.25, 0.125, 0.0625]
+selectors: [oracle, quest, stale_oracle, window]
+# Slot pool = K * (1 + spare). spare 0 is the forced case; Phase 8's tier ran spare 1.0.
+spares: [0.0, 0.5, 1.0, 3.0]
+quality_source: phase8/policy_quality_ctx32768
