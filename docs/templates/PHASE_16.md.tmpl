@@ -1,0 +1,127 @@
+# Phase 16: attention traces and the offline oracle study
+
+Upgrade plan items A2 (trace recorder) and A3 (offline replay with an optimal oracle); see
+[GAP_TABLE.md](../GAP_TABLE.md) for why they were taken first and how their scope was narrowed.
+
+## What was built
+
+- `lazykv/trace.py`: `TraceRecorder`, a decode-time view over a prefilled full cache that attends
+  densely (the decode is the full cache's own) and records, at every decode step, in every selecting
+  layer and for every KV head, the **true attention mass** of every block (float32 softmax over the
+  whole KV, averaged over the head's query group) and the **Quest bound** of every candidate block,
+  the one rungs 5 to 8 rank by. Traces save to `.npz`.
+- `lazykv/residency_sim.py`: offline replay. Four selectors (the true-mass oracle, the Quest-style
+  bound, the previous step's true top-K, and the most recent K) scored by the mass they capture,
+  and two slot-replacement rules (the tier's least-recently-selected LRU, and Belady) scored by
+  fetches.
+- `scripts/06_record_traces.py`, `scripts/analyze_phase16.py`, `configs/phase16.yaml`.
+
+**How the simulator was checked against the runtime** (`tests/test_trace.py`,
+`tests/test_residency_sim.py`):
+
+- Replaying the tier's own recorded selection through the simulated LRU reproduces the tier's
+  per-step fetch counts exactly.
+- The simulated Quest selection picks the same bound values as `top_blocks` live; the block ids can
+  differ only at exact ties (below).
+- Belady matches an exhaustive search for the minimum fetch count on 40 random small instances, and
+  never fetches more than LRU.
+- Recording leaves the decode bit-identical, and each head's mass sums to one.
+
+## The run
+
+{{ phase16.analysis.summary.niah_prompts | int }} NIAH prompts at
+{{ phase16.analysis.context | int }} tokens, the exact prompts Phase 8 ran rung 5 on, plus
+{{ phase16.analysis.summary.tf_windows | int }} teacher-forced windows; Llama-3.2-1B-Instruct, 64-token
+blocks. The full cache's answers here match Phase 8's on
+{{ phase16.analysis.summary.full_scores_match_phase8 | int }} of
+{{ phase16.analysis.summary.niah_prompts | int }} prompts, so the join with Phase 8's per-prompt
+results below is on the same decode.
+
+**Which steps mean what.** A trace follows the full cache's trajectory. On the first answer token
+the query is the same under every policy, so that column is exact for each selector. Later NIAH
+tokens and the teacher-forced windows show the selectors on the reference trajectory.
+
+## 1. Selection: how much of the true attention mass each selector captures
+
+Mass captured per (step, layer, KV head), averaged; sink and current block always included, as in
+every selecting rung. The first-answer-token column has a 95% bootstrap CI over prompts.
+
+{{> p16_selection }}
+
+- **Quest-style selection is close to the selection ceiling, and further from it as the budget
+  shrinks.** At the first answer token it captures
+  {{ phase16.analysis.summary.quest_share_of_oracle_step0.min | pct }}–{{ phase16.analysis.summary.quest_share_of_oracle_step0.max | pct }}
+  of what the oracle captures across budgets; at
+  {{ phase16.analysis.summary.tightest_budget | budget }} that is
+  {{ phase16.analysis.summary.quest_step0_tightest | pct }} of the mass against the oracle's
+  {{ phase16.analysis.summary.oracle_step0_tightest | pct }} and recency's
+  {{ phase16.analysis.summary.window_step0_tightest | pct }}.
+- **The previous step's true attention is a better selector than the bound.** On later tokens it
+  captures {{ phase16.analysis.summary.stale_minus_quest_later.min | pp }} to
+  {{ phase16.analysis.summary.stale_minus_quest_later.max | pp }} more mass than Quest on NIAH, and
+  {{ phase16.analysis.summary.stale_minus_quest_tf.min | pp }} to
+  {{ phase16.analysis.summary.stale_minus_quest_tf.max | pp }} on the teacher-forced windows. That
+  matters for the one speed direction Phases 4 to 11 left open, a residency decision made on the GPU
+  without a per-layer host round trip: last step's attention is already on the GPU. **The caveat is
+  large and stated here:** this is an upper bound. A sparse decode only computes attention over the
+  blocks it attended, so a real stale selector sees last step's mass on those blocks alone.
+- **The bound ties at the K-th place more often than not.** In
+  {{ phase16.analysis.summary.quest_tie_share.min | pct0 }}–{{ phase16.analysis.summary.quest_tie_share.max | pct0 }}
+  of (step, layer, head) cells, depending on the budget, the K-th and (K+1)-th highest bounds are
+  equal in bf16, the dtype the runtime ranks in. Which block gets the last places is then decided by
+  `topk`'s tie order, not by the bound. How much mass a float32 bound would recover there is
+  not measured.
+
+## 2. Captured mass does not predict which answers are lost
+
+Per budget, Phase 8's rung 5 answers on the same prompts, split into prompts where it kept the full
+cache's score and prompts where it lost some; the mass Quest captured at the first answer token in
+each group. AUC is the probability that a kept prompt captured more mass than a lost one: 0.5 is no
+signal. Prompts the full cache misses are left out.
+
+{{> p16_quality }}
+
+**Negative result.** AUC runs
+{{ phase16.analysis.summary.auc_step0.min | .2f }}–{{ phase16.analysis.summary.auc_step0.max | .2f }}
+across budgets, on both sides of 0.5 with no consistent direction: mass averaged over every
+selecting layer and head does not tell which prompts Quest-style selection gets wrong. The prompts it
+lost captured about as much mass as the ones it kept, and at some budgets more.
+This is the same lesson as Phase 10's perplexity result, one level down: an average over the whole
+cache does not see the few blocks and heads retrieval depends on. Two limits on how far it goes:
+the lost groups at the loosest budgets are small, and only the first answer token is policy-exact.
+
+It changes how the upgrade plan can be carried out. The plan says to tune a working-set selector's
+weights (A5) on this simulator by mass captured. On this evidence, mass captured is not a quality
+target, and tuning to it would optimize something NIAH does not reward. A per-head or
+needle-position measure is the next thing to try, and it needs the owner's go-ahead.
+
+## 3. Replacement: LRU against Belady
+
+Quest's selection on the two teacher-forced windows (policy-independent, 256 steps), replayed
+through a slot pool of K × (1 + spare). Fetches are (head, block) pairs per token summed over
+selecting layers, steady state (the cold start after the boundary is excluded).
+
+{{> p16_replacement }}
+
+- **With exactly K slots the rule cannot matter**, as predicted in the gap table: every slot outside
+  the current selection must go. LRU and Belady fetch identically in every such condition
+  (`forced_case_identical`: {{ phase16.analysis.summary.forced_case_identical | str }}).
+- **With spare slots, Belady fetches
+  {{ phase16.analysis.summary.belady_over_lru_with_spare.min | .2f }}–{{ phase16.analysis.summary.belady_over_lru_with_spare.max | .2f }}×
+  what LRU does.** But Phases 4, 5 and 7
+  measured that fetch traffic is not what decode time is spent on (the host round trip is), so this is
+  a ceiling on bytes moved, not on speed. It would matter on a link slower than this laptop's, or once
+  the host round trip is gone.
+
+## What this phase does not show
+
+- One model (1B), one context (32K), 45 prompts, two teacher-forced windows.
+- Mass is averaged over each KV head's query group; Quest ranks by the group maximum.
+- The stale-oracle result is an upper bound (above), and nothing here was timed.
+
+## Provenance
+
+{{> p16_provenance }}
+
+Traces are not in the repository: they are written to the config's `trace_dir` on the data drive,
+and `results/phase16/traces/metrics.json` lists every file with its size and shape.
