@@ -374,7 +374,7 @@ git worktree pinned at the commit under test if you want to keep editing the mai
 | [14](docs/phases/PHASE_14.md) | `05_longbench.py --config configs\phase14.yaml` | `analyze_phase14.py` | Needs the LongBench data |
 | [15](docs/phases/PHASE_15.md) | `02_policy_quality.py --config configs\phase15.yaml --skip-block-full --skip-teacher-forced` | `analyze_phase15.py` | Needs the `quant` extra |
 | [16](docs/phases/PHASE_16.md) | `06_record_traces.py --config configs\phase16.yaml` | `analyze_phase16.py` | Traces go to the config's `trace_dir` |
-| [17](docs/phases/PHASE_17.md) | `07_prefill_capacity.py`, then `07_tiered_prefill_quality.py --context N` for 16384, 32768 (`--methods full tiered`) and 65536 | `analyze_phase17.py` | One process per capacity cell |
+| [17](docs/phases/PHASE_17.md) | `07_prefill_capacity.py`, then `07_tiered_prefill_quality.py --context N` for 16384, 24576 (`--methods full tiered`) and 65536 | `analyze_phase17.py` | One process per capacity cell |
 
 Finish every phase with `make_figures.py`, `render_docs.py` and `pytest`.
 
