@@ -1,0 +1,28 @@
+{
+ "model": "3b",
+ "method": "full",
+ "context": 49152,
+ "strategy": "cudnn_bucketed",
+ "load_s": 17.423008899961133,
+ "cap": {
+  "free_bytes_at_cap": 4029677568,
+  "total_bytes": 8546484224,
+  "margin_bytes": 268435456,
+  "fraction": 0.8285317731138189,
+  "limit_bytes": 7081033728
+ },
+ "weights_allocated_bytes": 2408014848,
+ "kv_bytes_per_token": 114688,
+ "capacity_tokens": 50176,
+ "status": "gpu_oom",
+ "error": "CUDA out of memory. Tried to allocate 98.00 MiB. GPU 0 has a total capacity of 7.96 GiB of which 309.00 MiB is free. 6.59 GiB allowed; Of the allocated memory 6.22 GiB is allocated by PyTorch, and 328.15 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try sett",
+ "failed_stage": "prefill",
+ "allocator": {
+  "num_alloc_retries": 2,
+  "num_ooms": 1
+ },
+ "process_gpu_memory": {
+  "dedicated_bytes": 7157129216,
+  "shared_bytes": 81788928
+ }
+}
