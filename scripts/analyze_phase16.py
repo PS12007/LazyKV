@@ -188,7 +188,33 @@ def main() -> None:
     forced = [r for r in replacement if r["spare"] == 0 and "lru" in r]
     rep_summary["forced_case_identical"] = all(r["lru"]["total"] == r["belady"]["total"] for r in forced)
 
+    # -- summary: dot-free keys for the doc templates (a budget like "0.75" cannot be a template path) --
+    def span(xs: list[float]) -> dict[str, float] | None:
+        xs = [x for x in xs if x is not None]
+        return {"min": min(xs), "max": max(xs)} if xs else None
+
+    sel = list(selection.values())
+    tight = selection[f"{min(budgets):g}"] if f"{min(budgets):g}" in selection else None
+    summary = {
+        "niah_prompts": len(niah),
+        "tf_windows": len(tf),
+        "full_scores_match_phase8": quality["full_scores_match_phase8"],
+        "quest_share_of_oracle_step0": span([s["quest_share_of_oracle_step0"] for s in sel]),
+        "stale_minus_quest_later": span([s["stale_minus_quest_later"] for s in sel]),
+        "stale_minus_quest_tf": span([s.get("stale_minus_quest_tf") for s in sel]),
+        "quest_tie_share": span([s["quest_tie_share"] for s in sel]),
+        "auc_step0": span([quality[f"{b:g}"]["auc_step0"] for b in budgets if f"{b:g}" in quality]),
+        "lost_at_tightest": quality.get(f"{min(budgets):g}", {}).get("lost"),
+        "tightest_budget": min(budgets),
+        "oracle_step0_tightest": tight["oracle"]["niah_step0"] if tight else None,
+        "quest_step0_tightest": tight["quest"]["niah_step0"] if tight else None,
+        "window_step0_tightest": tight["window"]["niah_step0"] if tight else None,
+        "belady_over_lru_with_spare": span([r.get("belady_over_lru_steady") for r in replacement if r["spare"] > 0]),
+        "forced_case_identical": rep_summary["forced_case_identical"],
+    }
+
     write_metrics(RESULTS_DIR / args.out, {
+        "summary": summary,
         "source": args.traces,
         "block_size": bs,
         "context": cfg["context"],
