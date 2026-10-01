@@ -66,7 +66,7 @@ cell that does not fit fails with OOM instead of spilling. Ladders stop at a met
 | 3B | 64K | tiered | ran | 7.00 | 4.82 | 3.73 | 6.60 | 45.6 | 113.4 | 64 |
 
 - **The tier now holds contexts the full cache cannot prefill at all.** The 1B model reaches the top of its
-  128K context window (a prompt one block short of 127K, plus the decode). On the 3B model with 4-bit weights the tier runs at
+  128K context window (a 127K-token prompt plus the decode). On the 3B model with 4-bit weights the tier runs at
   65,536 tokens, whose full KV alone
   (7.00 GiB) is more than this card has free; the tier's
   prefill peaked at 4.82 GiB.

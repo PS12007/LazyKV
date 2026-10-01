@@ -42,7 +42,7 @@ cell that does not fit fails with OOM instead of spilling. Ladders stop at a met
 {{> p17_capacity }}
 
 - **The tier now holds contexts the full cache cannot prefill at all.** The 1B model reaches the top of its
-  128K context window (a prompt one block short of 127K, plus the decode). On the 3B model with 4-bit weights the tier runs at
+  128K context window (a 127K-token prompt plus the decode). On the 3B model with 4-bit weights the tier runs at
   {{ phase17.analysis.capacity.models.3b.tiered_max_context | int }} tokens, whose full KV alone
   ({{ phase17.analysis.capacity.models.3b.tiered_max_full_kv_gib | .2f }} GiB) is more than this card has free; the tier's
   prefill peaked at {{ phase17.analysis.capacity.models.3b.tiered_max_prefill_peak_gib | .2f }} GiB.
