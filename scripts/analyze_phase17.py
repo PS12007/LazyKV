@@ -65,7 +65,13 @@ def capacity(cap: dict[str, Any]) -> dict[str, Any]:
         ratios = {str(x): pf[("tiered", x)]["prefill_wall_s"] / pf[("full", x)]["prefill_wall_s"] for x in both}
         peak_ratio = {str(x): pf[("tiered", x)]["prefill_peak_gib"] / pf[("full", x)]["prefill_peak_gib"] for x in both}
         first_fail = {meth: min([r["context"] for r in mrows if r["method"] == meth and r["status"] not in ("ok", "skipped")], default=None) for meth in ("full", "tiered")}
+        dec_ratio = {str(x): pf[("tiered", x)]["decode_ms"] / pf[("full", x)]["decode_ms"] for x in both}
+        top = pf.get(("tiered", max(tier_ok))) if tier_ok else None
         out["models"][m] = {
+            "decode_time_ratio_range": [min(dec_ratio.values()), max(dec_ratio.values())] if dec_ratio else None,
+            "tiered_max_full_kv_gib": None if top is None else top["full_kv_gib"],
+            "tiered_max_host_pinned_gib": None if top is None else top["host_pinned_gib"],
+            "tiered_max_prefill_peak_gib": None if top is None else top["prefill_peak_gib"],
             "full_max_context": max(full_ok, default=None), "tiered_max_context": max(tier_ok, default=None),
             "full_first_failure": first_fail["full"], "tiered_first_failure": first_fail["tiered"],
             "context_gain": (max(tier_ok) / max(full_ok)) if full_ok and tier_ok else None,

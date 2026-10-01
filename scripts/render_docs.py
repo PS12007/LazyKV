@@ -50,6 +50,7 @@ OUTPUTS = {
     "STATUS.md.tmpl": "docs/STATUS.md",
     "GAP_TABLE.md.tmpl": "docs/GAP_TABLE.md",
     "PHASE_16.md.tmpl": "docs/phases/PHASE_16.md",
+    "PHASE_17.md.tmpl": "docs/phases/PHASE_17.md",
 }
 
 GENERATED_BANNER = (
@@ -2184,6 +2185,73 @@ def block_p16_provenance(ctx: Mapping[str, Any]) -> str:
         if isinstance(p, Mapping):
             rows.append(_provenance_row(label, p))
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows) if rows else f"_{NOT_MEASURED}_"
+
+
+_P17_STATUS = {"ok": "ran", "gpu_oom": "**GPU OOM**", "host_oom": "**host OOM**", "skipped": "not attempted (a shorter context failed)", "crashed": "**crashed**", "error": "**error**"}
+
+
+def _ctx_k(n: int) -> str:
+    return f"{n / 1024:g}K"
+
+
+def block_p17_capacity(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase17.analysis.capacity.rows")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    gib = lambda v: "" if v is None else f"{v:.2f}"  # noqa: E731
+    rows = []
+    for r in sorted(rows_in, key=lambda r: (r["model"], r["context"], r["method"])):
+        ok = r["status"] == "ok"
+        rows.append([r["model"].upper(), _ctx_k(r["context"]), r["method"], _P17_STATUS.get(r["status"], r["status"]),
+                     gib(r["full_kv_gib"]), gib(r["prefill_peak_gib"]), gib(r["decode_peak_gib"]), gib(r["host_pinned_gib"]) if r["method"] == "tiered" and ok else "",
+                     f"{r['prefill_wall_s']:.1f}" if ok else "", f"{r['decode_ms']:.1f}" if ok else "",
+                     "" if r["shared_excess_mib"] is None or not ok else f"{r['shared_excess_mib']:.0f}"])
+    return table(["Model", "Context", "Prefill", "Outcome", "Full KV (GiB)", "Prefill peak (GiB)", "Decode peak (GiB)", "Host store (GiB)",
+                  "Prefill (s)", "Decode (ms/token)", "Shared beyond pins (MiB)"], rows, ["---", "--:", "---", "---", "--:", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p17_capacity_summary(ctx: Mapping[str, Any]) -> str:
+    models = lookup(ctx, "phase17.analysis.capacity.models")
+    if not isinstance(models, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for m, s in models.items():
+        top = "" if s["tiered_first_failure"] is not None else " (top of the ladder; no failure reached)"
+        rng = lambda v: NOT_MEASURED if not v else f"{v[0]:.2f}–{v[1]:.2f}"  # noqa: E731
+        rows.append([m.upper(), _ctx_k(s["full_max_context"]) if s["full_max_context"] else NOT_MEASURED,
+                     _ctx_k(s["full_first_failure"]) if s["full_first_failure"] else "none on the ladder",
+                     (_ctx_k(s["tiered_max_context"]) if s["tiered_max_context"] else NOT_MEASURED) + top,
+                     rng(s["prefill_peak_ratio_range"]), rng(s["prefill_time_ratio_range"])])
+    return table(["Model", "Full cache: longest that ran", "Full cache: first failure", "Tiered prefill: longest that ran",
+                  "Prefill peak, tiered ÷ full", "Prefill time, tiered ÷ full"], rows, ["---", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p17_validity(ctx: Mapping[str, Any]) -> str:
+    v = lookup(ctx, "phase17.analysis.validity.budgets")
+    if not isinstance(v, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[_pct_budget(float(b)), str(x["prompts"]), str(x["paired"]), str(x["same_answer"]), str(x["same_score"])] for b, x in v.items()]
+    return table(["Budget", "Prompts", "Paired with Phase 15", "Identical answer text", "Identical score"], rows, ["---", "--:", "--:", "--:", "--:"])
+
+
+def block_p17_quality(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase17.analysis.quality.rows")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for r in rows_in:
+        rows.append([_ctx_k(r["context"]), "full cache (rung 1)" if r["method"] == "full" else "tiered prefill + rung 6",
+                     "100%" if r["method"] == "full" else _pct_budget(r["budget"]), str(r["prompts"]),
+                     f"{100 * r['mean']:.1f}% ({100 * r['ci95'][0]:.1f}–{100 * r['ci95'][1]:.1f})", f"{r['peak_gib']:.2f}", f"{r['prefill_s_median']:.1f}"])
+    return table(["Context", "Method", "Budget", "Prompts", "NIAH score (95% CI)", "Peak VRAM (GiB)", "Prefill, median (s)"], rows,
+                 ["--:", "---", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p17_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase17.analysis.sources")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row(k, p) for k, p in src.items()])
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
