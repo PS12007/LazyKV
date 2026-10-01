@@ -1,0 +1,2005 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-01T22:17:29+00:00",
+    "git_commit": "4fcbecb30dbd7e06e43b12ecc5fdc900bc16cbf6",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\07_tiered_prefill_quality.py",
+      "--context",
+      "16384"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "phase": "phase17",
+    "block_size": 64,
+    "prefill_chunk": 2048,
+    "decode_tokens": 32,
+    "budget": 0.125,
+    "tier": {
+      "fetch": "gather",
+      "spare": 0.0
+    },
+    "models": {
+      "1b": {
+        "repo": "unsloth/Llama-3.2-1B-Instruct",
+        "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c",
+        "contexts": [
+          32768,
+          65536,
+          98304,
+          130048
+        ]
+      },
+      "3b": {
+        "repo": "D:\\CompSci\\lazykv-data\\models\\Llama-3.2-3B-Instruct",
+        "revision": null,
+        "source_repo": "unsloth/Llama-3.2-3B-Instruct",
+        "source_revision": "006f5dcd1393c3add266de40994ba96225e9689d",
+        "quant": "nf4",
+        "contexts": [
+          16384,
+          24576,
+          32768,
+          49152,
+          65536
+        ]
+      }
+    },
+    "capacity_prompt": {
+      "book": "moby_dick",
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "seed": 0
+    },
+    "quality": {
+      "model": "3b",
+      "budgets": [
+        0.125,
+        0.0625
+      ],
+      "niah": {
+        "book": "moby_dick",
+        "kinds": [
+          "single",
+          "multikey",
+          "multivalue"
+        ],
+        "depths": [
+          0.0,
+          0.25,
+          0.5,
+          0.75,
+          1.0
+        ],
+        "samples": 3,
+        "max_new_tokens": {
+          "single": 16,
+          "multikey": 16,
+          "multivalue": 48
+        },
+        "seed": 0
+      }
+    }
+  },
+  "context": 16384,
+  "methods": [
+    "tiered"
+  ],
+  "samples": 3,
+  "attention_strategy": "efficient",
+  "capacity_tokens": 17408,
+  "kv_bytes_per_token": 114688,
+  "niah": [
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "3510340"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "3510340.",
+      "prefill_wall_s": 7.837296899990179,
+      "boundary_s": 0.1988137001171708,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29065,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "3510340"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": "351.",
+      "prefill_wall_s": 7.5264220999670215,
+      "boundary_s": 0.16828000015811995,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16543,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1082357"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "1082357.",
+      "prefill_wall_s": 7.580795100016985,
+      "boundary_s": 0.1692990999436006,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 30292,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1082357"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": "108.",
+      "prefill_wall_s": 7.617166699958034,
+      "boundary_s": 0.17183680005837232,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15419,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "9374962"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "9374962.",
+      "prefill_wall_s": 7.654812900000252,
+      "boundary_s": 0.1666420999681577,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29938,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "9374962"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": "937.",
+      "prefill_wall_s": 7.655817499966361,
+      "boundary_s": 0.16842189995804802,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16194,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7623280"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 7623280.",
+      "prefill_wall_s": 7.653368700004648,
+      "boundary_s": 0.16891930007841438,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 30991,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7623280"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 7623280.",
+      "prefill_wall_s": 7.61530980002135,
+      "boundary_s": 0.17326979991048574,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16801,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "8356251"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 8356251.",
+      "prefill_wall_s": 7.598520900006406,
+      "boundary_s": 0.17505060002440587,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 31343,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "8356251"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": ": 835,625,1.",
+      "prefill_wall_s": 7.595491999993101,
+      "boundary_s": 0.1743971000541933,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16856,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "9278063"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 9278063.",
+      "prefill_wall_s": 7.587800300039817,
+      "boundary_s": 0.17243489995598793,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29405,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "9278063"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 9278063.",
+      "prefill_wall_s": 7.594273000024259,
+      "boundary_s": 0.17281180009013042,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15601,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6136285"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "6136285.",
+      "prefill_wall_s": 7.598772600002121,
+      "boundary_s": 0.17477700009476393,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 31502,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6136285"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": "6136285.",
+      "prefill_wall_s": 7.599557000037748,
+      "boundary_s": 0.17521989991655573,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 17693,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6482796"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 6482796.",
+      "prefill_wall_s": 7.587941100005992,
+      "boundary_s": 0.17408210004214197,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 30355,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6482796"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 6482796.",
+      "prefill_wall_s": 7.592286099970806,
+      "boundary_s": 0.17361280013574287,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16060,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "8484092"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 8484092.",
+      "prefill_wall_s": 7.595235100015998,
+      "boundary_s": 0.17381550004938617,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29812,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "8484092"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 8484092.",
+      "prefill_wall_s": 7.593030599993654,
+      "boundary_s": 0.17147719988133758,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16545,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5094918"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "5094918.",
+      "prefill_wall_s": 7.607344100018963,
+      "boundary_s": 0.17936820001341403,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29057,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5094918"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": "5094918.",
+      "prefill_wall_s": 7.591662699996959,
+      "boundary_s": 0.17175370000768453,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15716,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "3534847"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 3534847.",
+      "prefill_wall_s": 7.601558899972588,
+      "boundary_s": 0.17659930000081658,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28838,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "3534847"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 3534847.",
+      "prefill_wall_s": 7.590713700046763,
+      "boundary_s": 0.1729907998815179,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15615,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5765165"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 5765165.",
+      "prefill_wall_s": 7.604088000021875,
+      "boundary_s": 0.17287340003531426,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 30658,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5765165"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 5765165.",
+      "prefill_wall_s": 7.596376900037285,
+      "boundary_s": 0.1715997001156211,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15958,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "9402331"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "9402331.",
+      "prefill_wall_s": 7.6060616000322625,
+      "boundary_s": 0.17374240013305098,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 27888,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "9402331"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": "9402331.",
+      "prefill_wall_s": 7.5990059999749064,
+      "boundary_s": 0.17684259993257,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 14965,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "9193824"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 9193824.",
+      "prefill_wall_s": 7.604238800005987,
+      "boundary_s": 0.1706722000380978,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28334,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "9193824"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 9193824.",
+      "prefill_wall_s": 7.6046001999638975,
+      "boundary_s": 0.1765074001159519,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15328,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5989562"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 5989562.",
+      "prefill_wall_s": 7.600409899954684,
+      "boundary_s": 0.17223840003134683,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 27941,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5989562"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 5989562.",
+      "prefill_wall_s": 7.598533599986695,
+      "boundary_s": 0.17177109979093075,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15283,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6826142"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": "6826142.",
+      "prefill_wall_s": 7.591116500028875,
+      "boundary_s": 0.17677550006192178,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28122,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6826142"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": "6826142.",
+      "prefill_wall_s": 7.597230999963358,
+      "boundary_s": 0.17493779998039827,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15159,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6330131"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 6330131.oms.",
+      "prefill_wall_s": 7.597598299966194,
+      "boundary_s": 0.17334189999382943,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29821,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6330131"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 6330131.",
+      "prefill_wall_s": 7.593174999987241,
+      "boundary_s": 0.17407100013224408,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15333,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5780624"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 5780624.",
+      "prefill_wall_s": 7.597531099978369,
+      "boundary_s": 0.1723907997366041,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 27093,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "5780624"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 5780624.",
+      "prefill_wall_s": 7.603984099987429,
+      "boundary_s": 0.1732246998581104,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 14682,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5890094"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 5890094.",
+      "prefill_wall_s": 7.60424570000032,
+      "boundary_s": 0.1759832002571784,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29072,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5890094"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 5890094",
+      "prefill_wall_s": 7.6003658000263385,
+      "boundary_s": 0.17354159988462925,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15903,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "4779874"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "prefill_wall_s": 7.606961899960879,
+      "boundary_s": 0.1775949002476409,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28451,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "4779874"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": ": 4779877",
+      "prefill_wall_s": 7.599985299981199,
+      "boundary_s": 0.173091399774421,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15340,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3402742"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 3402742.",
+      "prefill_wall_s": 7.603458300000057,
+      "boundary_s": 0.17331009992631152,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29676,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3402742"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 3402742",
+      "prefill_wall_s": 7.600111500010826,
+      "boundary_s": 0.1738570999004878,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16145,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "3388775"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 3388775",
+      "prefill_wall_s": 7.5922717999783345,
+      "boundary_s": 0.1713846002239734,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29582,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "3388775"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 3388775",
+      "prefill_wall_s": 7.601313100021798,
+      "boundary_s": 0.17508840025402606,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16053,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1916012"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 1916012.",
+      "prefill_wall_s": 7.604557800048497,
+      "boundary_s": 0.17120350000914186,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29600,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1916012"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 1916012.",
+      "prefill_wall_s": 7.5983966999920085,
+      "boundary_s": 0.17648119991645217,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16700,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "6902605"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "prefill_wall_s": 7.6080324000213295,
+      "boundary_s": 0.1788765000528656,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29925,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "6902605"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "prefill_wall_s": 7.595121700025629,
+      "boundary_s": 0.17238910018932074,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15557,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7637053"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 7637053.",
+      "prefill_wall_s": 7.603850199957378,
+      "boundary_s": 0.17353800003184006,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29600,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7637053"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 7637053.",
+      "prefill_wall_s": 7.601138100028038,
+      "boundary_s": 0.17613870021887124,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 16103,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6154954"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 6154954.",
+      "prefill_wall_s": 7.605785699968692,
+      "boundary_s": 0.17637729999842122,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 26993,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "6154954"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 6154954.",
+      "prefill_wall_s": 7.600421099981759,
+      "boundary_s": 0.1738095001783222,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 14798,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "1472714"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "prefill_wall_s": 7.600529599993024,
+      "boundary_s": 0.1732147999573499,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28203,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "1472714"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "prefill_wall_s": 7.605276199989021,
+      "boundary_s": 0.1759665000718087,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 14728,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "4798586"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 4798586.",
+      "prefill_wall_s": 7.600793400022667,
+      "boundary_s": 0.17291370005114004,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 29430,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "4798586"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 4798586.",
+      "prefill_wall_s": 7.60665530001279,
+      "boundary_s": 0.17425210011424497,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15701,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "9276576"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 9276576",
+      "prefill_wall_s": 7.615731500030961,
+      "boundary_s": 0.17489360010949895,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28496,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "9276576"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 9276576",
+      "prefill_wall_s": 7.6056863000267185,
+      "boundary_s": 0.17497600003844127,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 15105,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "1260085"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ": 1260085.",
+      "prefill_wall_s": 7.6062042999546975,
+      "boundary_s": 0.1765527999959886,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 28050,
+      "selected_pairs": 93600
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "1260085"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ": 1260085.",
+      "prefill_wall_s": 7.595973599993158,
+      "boundary_s": 0.1784099002252333,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 14570,
+      "selected_pairs": 43680
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4620748\n3. 3428697",
+      "prefill_wall_s": 7.596940099960193,
+      "boundary_s": 0.17355939996195957,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 85998,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ":\n\n1. 7529401\n2. 4425229\n3. 4620748\n4. 3428697",
+      "prefill_wall_s": 7.603480199992191,
+      "boundary_s": 0.1724707002285868,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 46932,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 7064276\n2. 2235723\n3. 6461968\n4. 6368150",
+      "prefill_wall_s": 7.612930800009053,
+      "boundary_s": 0.17639419989427552,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 83199,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.75,
+      "answer": ":\n\n1. 7064276\n2. 2235723\n3. 6461968\n4. 6461968",
+      "prefill_wall_s": 7.616416100005154,
+      "boundary_s": 0.17529900005320087,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 44787,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.75,
+      "answer": ":\n\n1. 41836008\n2. 5206252\n3. 9668821\n4. 4085572",
+      "prefill_wall_s": 7.608502299990505,
+      "boundary_s": 0.17449939996004105,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 79866,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.25,
+      "answer": ":\n\n1. 4183608\n2. 4183609\n3. 4183610\n4. 4183611\n5. 4183612\n6. 4183613\n7. 418361",
+      "prefill_wall_s": 7.6111856999923475,
+      "boundary_s": 0.17045810021227226,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 47007,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "prefill_wall_s": 7.620568600017577,
+      "boundary_s": 0.17249400017317384,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 81817,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.75,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 5073709",
+      "prefill_wall_s": 7.614506399957463,
+      "boundary_s": 0.17377300013322383,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 44371,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.75,
+      "answer": ":\n\n1. 2721775\n2. 2874903\n3. 7768618\n4. 7768618 \n5. 7768618 \n6. 7768618 \n7. 776861",
+      "prefill_wall_s": 7.6065819000359625,
+      "boundary_s": 0.17778469977201894,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 80703,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903 \n3. 7766611",
+      "prefill_wall_s": 7.612809099955484,
+      "boundary_s": 0.17493020003894344,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 42833,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.0,
+      "answer": ":\n\n1. 675839\n2. 6758399\n3. 6758399\n4. 6758399\n5. 6758399\n6. 6758399\n7. 6758399",
+      "prefill_wall_s": 7.605995100049768,
+      "boundary_s": 0.1734647999983281,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 79329,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.75,
+      "answer": ":\n\n1. 675\n2. 3162799\n3. 103\n4. 6934005\n5. 1034363\n6. 1034363\n7. 103\n8. 103",
+      "prefill_wall_s": 7.609245500003453,
+      "boundary_s": 0.17241330008255318,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 46776,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 7690801\n3. 9175989\n4. 7096956",
+      "prefill_wall_s": 7.610429499996826,
+      "boundary_s": 0.17254190001403913,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 82289,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.0,
+      "answer": ":\n\n1. 529112\n2. 529113\n3. 529114\n4. 529115\n5. 529116\n6. 529117\n7. 529118\n8. 529119",
+      "prefill_wall_s": 7.604997100017499,
+      "boundary_s": 0.17282220005290583,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 46062,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.25,
+      "answer": ":\n\n1. 448\n2. 1976000\n3. 448\n4. 1976000\n5. 448\n6. 1976000\n7. 448\n8. 1976000",
+      "prefill_wall_s": 7.617002199986018,
+      "boundary_s": 0.1776303999358788,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 89488,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.25,
+      "answer": ":\n\n1. 448\n2. 197\n3. 197587\n4. 1976000\n5. 1976008\n6. 448\n7. 447\n8. 447\n9.",
+      "prefill_wall_s": 7.613840200006962,
+      "boundary_s": 0.1738259003031999,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 51494,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 9343739\n4. 7969963",
+      "prefill_wall_s": 7.602822299988475,
+      "boundary_s": 0.17494750011246651,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 83339,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.5,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 9343299",
+      "prefill_wall_s": 7.605649699980859,
+      "boundary_s": 0.17359070031670853,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 46899,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 7220547\n2. 4570461\n3. 1409787\n4. 2034916",
+      "prefill_wall_s": 7.605557599978056,
+      "boundary_s": 0.17443270003423095,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 82138,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ":\n\n1. 7220547\n2. 4570461\n3. 1409787\n4. 2034916",
+      "prefill_wall_s": 7.604349400033243,
+      "boundary_s": 0.17706239997642115,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 44783,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 3115256\n2. 9886886\n3. 4188838\n4. 5475654",
+      "prefill_wall_s": 7.610900599975139,
+      "boundary_s": 0.17275150021305308,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 82214,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ":\n\n1. 3115256\n2. 9886886\n3. 4188838\n4. 5475654",
+      "prefill_wall_s": 7.620156499964651,
+      "boundary_s": 0.17629459995077923,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 45045,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 0.25,
+      "answer": ":\n\n1. 8623953\n2. 8623953\n3. 8623953\n4. 8623953\n5. 8623953\n6. 8623953\n7. 862395",
+      "prefill_wall_s": 7.605931899975985,
+      "boundary_s": 0.17392129980726168,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 82711,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "prefill_wall_s": 7.600255199999083,
+      "boundary_s": 0.17432840017136186,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 46812,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 5809031",
+      "prefill_wall_s": 7.6002230000449345,
+      "boundary_s": 0.1723188999458216,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 79327,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 16384,
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 4698795\n5. 8000593\n6. 5809031\n7. 703490",
+      "prefill_wall_s": 7.608568299969193,
+      "boundary_s": 0.1758253998705186,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 43097,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 1381329\n2. 8579353\n3. 6764434\n4. 2713574",
+      "prefill_wall_s": 7.615544300002512,
+      "boundary_s": 0.17266959976404905,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 85244,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 16384,
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 8579353\n3. 6764434",
+      "prefill_wall_s": 7.610301700013224,
+      "boundary_s": 0.17667840007925406,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 47189,
+      "selected_pairs": 136864
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.125,
+      "k_blocks": 30,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 6759960 (same as above, possibly a typo)\n3. 5619538\n4. 8559832\n5. 3571180",
+      "prefill_wall_s": 7.619130500010215,
+      "boundary_s": 0.17255489993840456,
+      "peak_allocated_bytes": 3220532736,
+      "fetched_pairs": 78763,
+      "selected_pairs": 293280
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 16384,
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "method": "tiered",
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "k_blocks": 14,
+      "score": 0.25,
+      "answer": ":\n\n1. 6759960\n2. 6759960 (not explicitly mentioned, but mentioned in the next number)\n3. 6759960 (again, not explicitly ",
+      "prefill_wall_s": 7.612035400001332,
+      "boundary_s": 0.173333199985791,
+      "peak_allocated_bytes": 3115649536,
+      "fetched_pairs": 41830,
+      "selected_pairs": 136864
+    }
+  ],
+  "peak_allocated_bytes_max": 3220532736,
+  "memory_guard": {
+    "cap": {
+      "free_bytes_at_cap": 4029677568,
+      "total_bytes": 8546484224,
+      "margin_bytes": 268435456,
+      "fraction": 0.8285317731138189,
+      "limit_bytes": 7081033728
+    },
+    "shared_bytes_baseline": 81788928,
+    "shared_bytes_after": 1952448512,
+    "allocator": {
+      "num_alloc_retries": 0,
+      "num_ooms": 0
+    }
+  },
+  "wall_s": 931.7114708000445
+}

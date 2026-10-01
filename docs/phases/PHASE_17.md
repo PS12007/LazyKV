@@ -97,10 +97,13 @@ cell that does not fit fails with OOM instead of spilling. Ladders stop at a met
 At 16K on the 3B model, rung 6 built by tiered prefill, against Phase 15's rung 6 built from a full
 prefill, on the same prompts, budgets, kernel, K and slots.
 
-_not measured_
+| Budget | Prompts | Paired with Phase 15 | Identical answer text | Identical score |
+| --- | --: | --: | --: | --: |
+| 12.5% | 45 | 45 | 45 | 45 |
+| 6.25% | 45 | 45 | 45 | 45 |
 
-not measured of not measured
-answers are identical (`all_identical`: not measured).
+90 of 90
+answers are identical (`all_identical`: True).
 
 ## 3. Quality beyond the full cache's limit
 
@@ -109,7 +112,10 @@ cache's longest context, both the full cache and the tier ran, so the tier's num
 with a reference. At 64K the full cache cannot run, so the tier's score is an absolute accuracy and
 is not a retention.
 
-_not measured_
+| Context | Method | Budget | Prompts | NIAH score (95% CI) | Peak VRAM (GiB) | Prefill, median (s) |
+| --: | --- | --: | --: | --: | --: | --: |
+| 16K | tiered prefill + rung 6 | 12.5% | 45 | 92.8% (86.1–98.3) | 3.00 | 7.6 |
+| 16K | tiered prefill + rung 6 | 6.25% | 45 | 76.7% (65.6–86.7) | 2.90 | 7.6 |
 
 ## What this phase does not show
 
@@ -124,3 +130,4 @@ _not measured_
 | Run | Finished (UTC) | Commit | Uncommitted tracked changes |
 | --- | --- | --- | --- |
 | capacity | 2026-10-01T22:00:26+00:00 | `4fcbecb` | no |
+| quality_ctx16384 | 2026-10-01T22:17:29+00:00 | `4fcbecb` | no |
