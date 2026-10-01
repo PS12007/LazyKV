@@ -271,8 +271,9 @@ can be compared on the same budget, prompts and kernels.
 Most results are for one 1B model, on needle retrieval, at one context, with
 {{ ladder.summary.prompts }} prompts per condition; only rung 5 at 50% and 75% was rerun on
 {{ phase9.analysis.summary.prompts | int }}. The 3B model ran at one context, with 4-bit weights,
-because its full reference cache is what did not fit. Prefill is not tiered, so peak VRAM during
-prefill is the full KV. Rung 9 is exact in the algebra, not in the bits (bf16 on the GPU, float32
+because its full reference cache is what did not fit. The experiments prefill into a full GPU cache, so their
+peak VRAM during prefill is the full KV; a layer-major prefill into the tier, added afterwards
+(Phase 17), is bit-identical to it and removes that limit. Rung 9 is exact in the algebra, not in the bits (bf16 on the GPU, float32
 on the CPU). All latency is from one laptop, controlled for by interleaving and repetition rather
 than eliminated. The latency conclusion is specific to a platform where the host round trip is
 expensive and PCIe is comparatively fast; it should be retested on others before it is generalized.

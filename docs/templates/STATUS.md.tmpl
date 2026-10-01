@@ -28,14 +28,19 @@ nf4 weights (Phase 15) as the larger stress model. Batch size 1, greedy decoding
   every sealed block (`allocate_host_pools`). There is **no SSD tier** and no session snapshot.
 - **Host store precision:** bf16 (rungs 6, 7) or int8 with per-channel scales for keys and per-token scales for values (rung 8,
   `lazykv/quant.py`). The VRAM slot pool is always the model dtype.
-- **Host store allocation:** preallocated, pinned, for the maximum capacity, once per process.
+- **Host store allocation:** preallocated, pinned at its exact size with `cudaHostRegister`
+  (`lazykv/pinned.py`; until Phase 17 the caching host allocator rounded each pool up to a power of
+  two), for the maximum capacity, once per process.
 - **Writes:** each block is copied device-to-host exactly once, when it seals. KV is immutable, so
   eviction never writes back.
 - **Protected blocks:** the attention sink (block 0) and the block being filled are always resident
   and always attended. The first two layers stay dense (Quest's rule).
-- **Prefill is not tiered.** Prefill runs on a full GPU cache, so peak VRAM during prefill is the
-  full KV. The tier governs decode-time residency only. This is the most important gap for any
-  "maximum context" claim (see [GAP_TABLE.md](GAP_TABLE.md), validity note 3).
+- **Prefill can go straight into the tier** ([Phase 17](phases/PHASE_17.md)). `lazykv/tiered_prefill.py`
+  runs prefill layer by layer and hands each selecting layer's KV to the tier when that layer
+  finishes, bit-identical to the full-cache path. With it the 1B model runs
+  {{ phase17.analysis.capacity.models.1b.tiered_max_context | int }} tokens (full cache: {{ phase17.analysis.capacity.models.1b.full_max_context | int }}) and the 3B nf4 model
+  {{ phase17.analysis.capacity.models.3b.tiered_max_context | int }} (full cache: {{ phase17.analysis.capacity.models.3b.full_max_context | int }}). The default path still prefills into a full
+  GPU cache first, and the sweep drivers of Phases 2 to 16 use it.
 
 ## Policies (the nine-rung ladder)
 
@@ -97,7 +102,6 @@ Installable package `lazykv` (v0.1.0, GitHub release, not on PyPI), a runnable e
 
 ## Half-finished or explicitly open
 
-- Prefill into the tier (chunked prefill that never holds the full KV on the GPU).
 - An adaptive controller from the original brief (budget chosen at run time).
 - The 3B model's teacher-forced and KL pass, which did not fit at 16K.
 - Most frontier cells are at 45 prompts; only rung 5 at 50% and 75% was rerun at 300.

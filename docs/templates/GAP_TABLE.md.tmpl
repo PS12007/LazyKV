@@ -44,8 +44,9 @@ Effort is a rough estimate in working sessions, not a measurement.
 
 - Usability: no server, no CLI, no GGUF, no llama.cpp. TierKV and KVMem are usable agents' backends.
 - Scale: 1B and 3B Hugging Face models against a 27B GGUF model.
-- Context: prefill is not tiered, so LazyKV cannot yet run a context whose full KV does not fit on
-  the GPU at prefill time. This is the largest gap.
+- Context: host RAM bounds it, and no SSD tier exists. Since [Phase 17](phases/PHASE_17.md) prefill
+  goes into the tier, so a context whose full KV does not fit on the GPU runs; before it, this was
+  the largest gap.
 - Speed: decode over the tier is slower than the full cache at every measured context; the cost is
   the per-layer host round trip, not PCIe.
 - No SSD tier, no session resume, no multi-turn or agent evaluation, no speculative decoding.
@@ -77,7 +78,9 @@ before it changes the research direction.
    admit on the GPU, no host round trip), which is a design change.
 3. **"Max context before OOM" cannot show a LazyKV gain yet.** Prefill holds the full KV on the GPU,
    so the context limit is the full cache's. The prerequisite for every context-length headline in
-   the plan is **chunked prefill into the tier**, which the plan does not list.
+   the plan is **chunked prefill into the tier**, which the plan does not list. *Done in
+   [Phase 17](phases/PHASE_17.md): layer-major prefill into the tier, bit-identical to the
+   full-cache path.*
 4. **A3 is valid, with a narrower payoff than the plan expects.** In the tier, K slots hold exactly
    the selected set, so the victim set is forced and Belady equals LRU; the replacement policy only
    matters when the slot pool is larger than K (Phase 4's slot-doubling experiment). And since bytes
@@ -96,7 +99,7 @@ before it changes the research direction.
 1. **A3, the selection-oracle study, plus Belady over a larger slot pool.** No new dependency, short
    GPU runs to record traces, then CPU-only analysis. It also delivers A2's recorder.
 2. **Chunked prefill into the tier** (not in the plan; note 3). This is what turns "decode-time
-   residency" into "more context on 8 GB".
+   residency" into "more context on 8 GB". *Done: [Phase 17](phases/PHASE_17.md).*
 3. **A1 entry point** over the existing scripts; llama.cpp baselines only after sign-off.
 4. **A multi-turn evaluation, then A5.**
 5. **Device-side ranking** as the honest successor to A4, if the owner wants a speed result.

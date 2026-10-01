@@ -379,8 +379,9 @@ claim in this study is quoted with a range over independent runs.
   frontier's x axis is GPU-resident KV, so rung 9 looks free there and is not.
 - **Rungs 8 and 9 were measured at one slot count**, so their memory columns are not comparable to
   rungs 6 and 7.
-- **Prefill is not tiered.** Peak VRAM during prefill is still the full KV; the tier governs
-  decode-time residency only.
+- **Prefill was not tiered in these experiments.** Every result above prefilled into a full GPU
+  cache. [Phase 17](phases/PHASE_17.md) added a layer-major prefill straight into the tier,
+  bit-identical to that path, which lifts the context limit to what host RAM holds.
 - **The fast kernel is not bit-repeatable** for single-query decode, so quality is measured on a
   separate deterministic kernel and agreement is reported rather than assumed.
 - **This is a laptop.** Thermal behaviour is controlled for by interleaving and repeating, not
