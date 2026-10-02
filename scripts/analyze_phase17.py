@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
 from lazykv.selection import QUEST_DENSE_LAYERS  # noqa: E402
-from lazykv.stats import bootstrap_mean_ci  # noqa: E402
+from lazykv.stats import bootstrap_mean_ci, paired_ratio_ci  # noqa: E402
 
 SPILL_SLACK = 64 * 2**20
 GIB = 2**30
@@ -103,6 +103,9 @@ def validity(q16: dict[str, Any], p15: dict[str, Any]) -> dict[str, Any]:
     v = out["budgets"].values()
     out["all_identical"] = all(x["paired"] == x["prompts"] and x["same_answer"] == x["paired"] for x in v) if v else None
     out["paired_total"] = sum(x["paired"] for x in v)
+    full = [r["score"] for r in p15["niah"] if r["policy"] == "full"]
+    out["phase15_full_mean"] = sum(full) / len(full) if full else None
+    out["phase15_full_prompts"] = len(full)
     out["identical_total"] = sum(x["same_answer"] for x in v)
     return out
 
@@ -146,6 +149,27 @@ def quality(runs: dict[int, dict[str, Any]]) -> dict[str, Any]:
     return out
 
 
+def _key(method: str, ctx: int, budget: float) -> str:
+    """Dot-free, so templates can address it: tiered_65536_b625 is the tier at 64K and 6.25%."""
+    return f"{method}_{ctx}" if method == "full" else f"{method}_{ctx}_b{round(budget * 1e4)}"
+
+
+def quality_summary(runs: dict[int, dict[str, Any]], rows: list[dict[str, Any]]) -> dict[str, Any]:
+    out: dict[str, Any] = {_key(r["method"], r["context"], r["budget"]): {"mean": r["mean"], "lo": r["ci95"][0], "hi": r["ci95"][1], "peak_gib": r["peak_gib"]} for r in rows}
+    # Retention where both ran: the tier's score over the full cache's on the same prompts.
+    for ctx, run in runs.items():
+        full = {(r["kind"], r["depth"], r["sample"]): r["score"] for r in run["niah"] if r["method"] == "full"}
+        if not full:
+            continue
+        for b in sorted({r["budget"] for r in run["niah"] if r["method"] == "tiered"}):
+            pairs = [(r["score"], full[(r["kind"], r["depth"], r["sample"])]) for r in run["niah"] if r["method"] == "tiered" and r["budget"] == b and (r["kind"], r["depth"], r["sample"]) in full]
+            num, den = [p[0] for p in pairs], [p[1] for p in pairs]
+            lo, hi = paired_ratio_ci(num, den, iters=10000, seed=0)
+            out[f"retention_{ctx}_b{round(b * 1e4)}"] = {"value": sum(num) / sum(den), "lo": lo, "hi": hi, "prompts": len(pairs),
+                                                         "tier_worse": sum(a < f for a, f in pairs), "tier_better": sum(a > f for a, f in pairs)}
+    return out
+
+
 def main() -> None:
     base = RESULTS_DIR / "phase17"
     payload: dict[str, Any] = {"sources": {}}
@@ -165,6 +189,7 @@ def main() -> None:
         payload["validity"] = validity(runs[16384], p15)
     if runs:
         payload["quality"] = quality(runs)
+        payload["quality"]["summary"] = quality_summary(runs, payload["quality"]["rows"])
     path = write_metrics(base / "analysis", payload)
     print(f"wrote {path}")
 
