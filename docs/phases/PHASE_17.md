@@ -116,6 +116,8 @@ is not a retention.
 | --: | --- | --: | --: | --: | --: | --: |
 | 16K | tiered prefill + rung 6 | 12.5% | 45 | 92.8% (86.1–98.3) | 3.00 | 7.6 |
 | 16K | tiered prefill + rung 6 | 6.25% | 45 | 76.7% (65.6–86.7) | 2.90 | 7.6 |
+| 64K | tiered prefill + rung 6 | 12.5% | 45 | 85.6% (76.1–93.9) | 5.14 | 73.1 |
+| 64K | tiered prefill + rung 6 | 6.25% | 45 | 81.1% (71.1–90.0) | 4.75 | 73.1 |
 
 ## What this phase does not show
 
@@ -131,3 +133,4 @@ is not a retention.
 | --- | --- | --- | --- |
 | capacity | 2026-10-01T22:00:26+00:00 | `4fcbecb` | no |
 | quality_ctx16384 | 2026-10-01T22:17:29+00:00 | `4fcbecb` | no |
+| quality_ctx65536 | 2026-10-02T00:14:20+00:00 | `4fcbecb` | no |

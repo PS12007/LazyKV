@@ -1,13 +1,10 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-10-01T22:18:27+00:00",
-    "git_commit": "ab1e102e65c4e330848c07edbc98e457b5abb25d",
-    "git_dirty": true,
-    "git_dirty_files": [
-      "results/phase17/analysis/metrics.json",
-      "scripts/analyze_phase17.py"
-    ],
+    "generated_at_utc": "2026-10-02T00:14:41+00:00",
+    "git_commit": "dd998f1ad211177d69ef60249d2819357c37930e",
+    "git_dirty": false,
+    "git_dirty_files": [],
     "argv": [
       "scripts/analyze_phase17.py"
     ],
@@ -35,6 +32,19 @@
         "scripts\\07_tiered_prefill_quality.py",
         "--context",
         "16384"
+      ],
+      "python": "3.12.10"
+    },
+    "quality_ctx65536": {
+      "schema_version": 1,
+      "generated_at_utc": "2026-10-02T00:14:20+00:00",
+      "git_commit": "4fcbecb30dbd7e06e43b12ecc5fdc900bc16cbf6",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\07_tiered_prefill_quality.py",
+        "--context",
+        "65536"
       ],
       "python": "3.12.10"
     }
@@ -537,6 +547,40 @@
         "host_store_bytes": 1853882368,
         "shared_growth_bytes": 1870659584,
         "shared_beyond_host_store_mib": 16.0,
+        "inside_dedicated": true
+      },
+      {
+        "context": 65536,
+        "method": "tiered",
+        "budget": 0.125,
+        "prompts": 45,
+        "mean": 0.8555555555555555,
+        "ci95": [
+          0.7611111111111111,
+          0.9388888888888889
+        ],
+        "peak_gib": 5.136319637298584,
+        "prefill_s_median": 73.12989679997554,
+        "host_store_bytes": 7088373760,
+        "shared_growth_bytes": 7155482624,
+        "shared_beyond_host_store_mib": 64.0,
+        "inside_dedicated": true
+      },
+      {
+        "context": 65536,
+        "method": "tiered",
+        "budget": 0.0625,
+        "prompts": 45,
+        "mean": 0.8111111111111111,
+        "ci95": [
+          0.7111111111111111,
+          0.9
+        ],
+        "peak_gib": 4.745599269866943,
+        "prefill_s_median": 73.1439834999619,
+        "host_store_bytes": 7088373760,
+        "shared_growth_bytes": 7155482624,
+        "shared_beyond_host_store_mib": 64.0,
         "inside_dedicated": true
       }
     ]
