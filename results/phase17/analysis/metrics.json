@@ -1,10 +1,14 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-10-02T00:14:41+00:00",
-    "git_commit": "dd998f1ad211177d69ef60249d2819357c37930e",
-    "git_dirty": false,
-    "git_dirty_files": [],
+    "generated_at_utc": "2026-10-02T00:21:12+00:00",
+    "git_commit": "48461faef64b77b6f84dd25763757b5f10471b4e",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "docs/templates/PHASE_17.md.tmpl",
+      "results/phase17/analysis/metrics.json",
+      "scripts/analyze_phase17.py"
+    ],
     "argv": [
       "scripts/analyze_phase17.py"
     ],
@@ -421,6 +425,7 @@
         "tiered_max_full_kv_gib": 3.96875,
         "tiered_max_host_pinned_gib": 3.5,
         "tiered_max_prefill_peak_gib": 4.82774019241333,
+        "tiered_max_prefill_s": 62.592200899962336,
         "full_max_context": 98304,
         "tiered_max_context": 130048,
         "full_first_failure": 130048,
@@ -457,6 +462,7 @@
         "tiered_max_full_kv_gib": 7.0,
         "tiered_max_host_pinned_gib": 6.6015625,
         "tiered_max_prefill_peak_gib": 4.8238654136657715,
+        "tiered_max_prefill_s": 45.63811120000901,
         "full_max_context": 32768,
         "tiered_max_context": 65536,
         "full_first_failure": 49152,
@@ -511,6 +517,8 @@
     },
     "all_identical": true,
     "paired_total": 90,
+    "phase15_full_mean": 1.0,
+    "phase15_full_prompts": 45,
     "identical_total": 90
   },
   "quality": {
@@ -583,6 +591,36 @@
         "shared_beyond_host_store_mib": 64.0,
         "inside_dedicated": true
       }
-    ]
+    ],
+    "summary": {
+      "tiered_16384_b1250": {
+        "mean": 0.9277777777777778,
+        "lo": 0.8611111111111112,
+        "hi": 0.9833333333333333,
+        "peak_gib": 2.999354839324951,
+        "prefill_s_median": 7.604557800048497
+      },
+      "tiered_16384_b625": {
+        "mean": 0.7666666666666667,
+        "lo": 0.6555555555555556,
+        "hi": 0.8666666666666667,
+        "peak_gib": 2.901674747467041,
+        "prefill_s_median": 7.601313100021798
+      },
+      "tiered_65536_b1250": {
+        "mean": 0.8555555555555555,
+        "lo": 0.7611111111111111,
+        "hi": 0.9388888888888889,
+        "peak_gib": 5.136319637298584,
+        "prefill_s_median": 73.12989679997554
+      },
+      "tiered_65536_b625": {
+        "mean": 0.8111111111111111,
+        "lo": 0.7111111111111111,
+        "hi": 0.9,
+        "peak_gib": 4.745599269866943,
+        "prefill_s_median": 73.1439834999619
+      }
+    }
   }
 }

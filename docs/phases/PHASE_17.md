@@ -107,10 +107,18 @@ answers are identical (`all_identical`: True).
 
 ## 3. Quality beyond the full cache's limit
 
-NIAH (single, multi-key, multi-value; five depths; three samples) on the 3B model. At 32K, the full
-cache's longest context, both the full cache and the tier ran, so the tier's numbers there pair
-with a reference. At 64K the full cache cannot run, so the tier's score is an absolute accuracy and
-is not a retention.
+NIAH (single, multi-key, multi-value; five depths; three samples) on the 3B model, scored on the
+deterministic quality kernel every quality phase uses. At 64K the full cache cannot run, so the
+tier's score there is an absolute accuracy and is not a retention. At 24K both ran, so the tier's
+numbers there pair with a reference.
+
+**Why 24K and not 32K (a change made during the run, stated here).** The paired run was first
+launched at 32K, the full cache's longest context in the capacity table. Under the quality kernel the
+full cache OOMed in its first 32K prefill: that kernel materializes the GQA-expanded keys and values
+for every prefill chunk, which cuDNN does not, so the full cache's limit depends on the kernel and
+is shorter here. The config's question 4 says to pair at the longest context the full cache can
+run, so the comparison moved to 24K. No quality result beyond 16K had been read when that was
+decided. The 32K attempt left no metrics; its log is kept locally, not in the repository.
 
 | Context | Method | Budget | Prompts | NIAH score (95% CI) | Peak VRAM (GiB) | Prefill, median (s) |
 | --: | --- | --: | --: | --: | --: | --: |
@@ -118,6 +126,32 @@ is not a retention.
 | 16K | tiered prefill + rung 6 | 6.25% | 45 | 76.7% (65.6–86.7) | 2.90 | 7.6 |
 | 64K | tiered prefill + rung 6 | 12.5% | 45 | 85.6% (76.1–93.9) | 5.14 | 73.1 |
 | 64K | tiered prefill + rung 6 | 6.25% | 45 | 81.1% (71.1–90.0) | 4.75 | 73.1 |
+
+- **The tier answers most NIAH prompts at a context the full cache cannot hold.** At 64K, rung 6
+  over tiered prefill scores
+  85.6% (76.1%–93.9%)
+  at a 12.5% budget and
+  81.1% (71.1%–90.0%)
+  at 6.25%, peaking at 5.14 GiB of VRAM. For scale, the same
+  model's full cache scored 100.0% at 16K
+  (Phase 15), but that is a different context, so the gap is not a retention.
+- **Paired at 24K**, against the full cache's
+  not measured on the same prompts, the tier keeps
+  not measured (not measured–not measured)
+  of its score at 12.5% and
+  not measured (not measured–not measured)
+  at 6.25%. Tiered prefill is bit-identical to the full-cache path, so these are rung 6's own
+  retentions at 24K.
+- **How quality moves with context at a fixed budget fraction is not resolved.** From 16K to 64K
+  the tier's score goes from 92.8% to 85.6%
+  at 12.5% and from 76.7% to 81.1% at
+  6.25%: in opposite directions, with overlapping CIs at 45 prompts per cell. A fixed fraction is
+  four times as many blocks at 64K as at 16K, while a needle is still about one block, so there is
+  no reason to expect the fraction alone to set quality; this data cannot say more.
+- **The quality kernel costs more memory and time than the capacity run's.** The 64K prefill took
+  73.1 s (median) against
+  45.6 s on cuDNN, with the allocator
+  hitting its cap and flushing repeatedly. Capacity under the quality kernel was not swept.
 
 ## What this phase does not show
 

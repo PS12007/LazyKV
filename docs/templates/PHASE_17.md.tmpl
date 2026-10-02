@@ -80,12 +80,46 @@ answers are identical (`all_identical`: {{ phase17.analysis.validity.all_identic
 
 ## 3. Quality beyond the full cache's limit
 
-NIAH (single, multi-key, multi-value; five depths; three samples) on the 3B model. At 32K, the full
-cache's longest context, both the full cache and the tier ran, so the tier's numbers there pair
-with a reference. At 64K the full cache cannot run, so the tier's score is an absolute accuracy and
-is not a retention.
+NIAH (single, multi-key, multi-value; five depths; three samples) on the 3B model, scored on the
+deterministic quality kernel every quality phase uses. At 64K the full cache cannot run, so the
+tier's score there is an absolute accuracy and is not a retention. At 24K both ran, so the tier's
+numbers there pair with a reference.
+
+**Why 24K and not 32K (a change made during the run, stated here).** The paired run was first
+launched at 32K, the full cache's longest context in the capacity table. Under the quality kernel the
+full cache OOMed in its first 32K prefill: that kernel materializes the GQA-expanded keys and values
+for every prefill chunk, which cuDNN does not, so the full cache's limit depends on the kernel and
+is shorter here. The config's question 4 says to pair at the longest context the full cache can
+run, so the comparison moved to 24K. No quality result beyond 16K had been read when that was
+decided. The 32K attempt left no metrics; its log is kept locally, not in the repository.
 
 {{> p17_quality }}
+
+- **The tier answers most NIAH prompts at a context the full cache cannot hold.** At 64K, rung 6
+  over tiered prefill scores
+  {{ phase17.analysis.quality.summary.tiered_65536_b1250.mean | pct }} ({{ phase17.analysis.quality.summary.tiered_65536_b1250.lo | pct }}–{{ phase17.analysis.quality.summary.tiered_65536_b1250.hi | pct }})
+  at a 12.5% budget and
+  {{ phase17.analysis.quality.summary.tiered_65536_b625.mean | pct }} ({{ phase17.analysis.quality.summary.tiered_65536_b625.lo | pct }}–{{ phase17.analysis.quality.summary.tiered_65536_b625.hi | pct }})
+  at 6.25%, peaking at {{ phase17.analysis.quality.summary.tiered_65536_b1250.peak_gib | .2f }} GiB of VRAM. For scale, the same
+  model's full cache scored {{ phase17.analysis.validity.phase15_full_mean | pct }} at 16K
+  (Phase 15), but that is a different context, so the gap is not a retention.
+- **Paired at 24K**, against the full cache's
+  {{ phase17.analysis.quality.summary.full_24576.mean | pct }} on the same prompts, the tier keeps
+  {{ phase17.analysis.quality.summary.retention_24576_b1250.value | pct }} ({{ phase17.analysis.quality.summary.retention_24576_b1250.lo | pct }}–{{ phase17.analysis.quality.summary.retention_24576_b1250.hi | pct }})
+  of its score at 12.5% and
+  {{ phase17.analysis.quality.summary.retention_24576_b625.value | pct }} ({{ phase17.analysis.quality.summary.retention_24576_b625.lo | pct }}–{{ phase17.analysis.quality.summary.retention_24576_b625.hi | pct }})
+  at 6.25%. Tiered prefill is bit-identical to the full-cache path, so these are rung 6's own
+  retentions at 24K.
+- **How quality moves with context at a fixed budget fraction is not resolved.** From 16K to 64K
+  the tier's score goes from {{ phase17.analysis.quality.summary.tiered_16384_b1250.mean | pct }} to {{ phase17.analysis.quality.summary.tiered_65536_b1250.mean | pct }}
+  at 12.5% and from {{ phase17.analysis.quality.summary.tiered_16384_b625.mean | pct }} to {{ phase17.analysis.quality.summary.tiered_65536_b625.mean | pct }} at
+  6.25%: in opposite directions, with overlapping CIs at 45 prompts per cell. A fixed fraction is
+  four times as many blocks at 64K as at 16K, while a needle is still about one block, so there is
+  no reason to expect the fraction alone to set quality; this data cannot say more.
+- **The quality kernel costs more memory and time than the capacity run's.** The 64K prefill took
+  {{ phase17.analysis.quality.summary.tiered_65536_b1250.prefill_s_median | .1f }} s (median) against
+  {{ phase17.analysis.capacity.models.3b.tiered_max_prefill_s | .1f }} s on cuDNN, with the allocator
+  hitting its cap and flushing repeatedly. Capacity under the quality kernel was not swept.
 
 ## What this phase does not show
 

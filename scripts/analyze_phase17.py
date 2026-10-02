@@ -73,6 +73,7 @@ def capacity(cap: dict[str, Any]) -> dict[str, Any]:
             "tiered_max_full_kv_gib": None if top is None else top["full_kv_gib"],
             "tiered_max_host_pinned_gib": None if top is None else top["host_pinned_gib"],
             "tiered_max_prefill_peak_gib": None if top is None else top["prefill_peak_gib"],
+            "tiered_max_prefill_s": None if top is None else top["prefill_wall_s"],
             "full_max_context": max(full_ok, default=None), "tiered_max_context": max(tier_ok, default=None),
             "full_first_failure": first_fail["full"], "tiered_first_failure": first_fail["tiered"],
             "context_gain": (max(tier_ok) / max(full_ok)) if full_ok and tier_ok else None,
@@ -155,7 +156,7 @@ def _key(method: str, ctx: int, budget: float) -> str:
 
 
 def quality_summary(runs: dict[int, dict[str, Any]], rows: list[dict[str, Any]]) -> dict[str, Any]:
-    out: dict[str, Any] = {_key(r["method"], r["context"], r["budget"]): {"mean": r["mean"], "lo": r["ci95"][0], "hi": r["ci95"][1], "peak_gib": r["peak_gib"]} for r in rows}
+    out: dict[str, Any] = {_key(r["method"], r["context"], r["budget"]): {"mean": r["mean"], "lo": r["ci95"][0], "hi": r["ci95"][1], "peak_gib": r["peak_gib"], "prefill_s_median": r["prefill_s_median"]} for r in rows}
     # Retention where both ran: the tier's score over the full cache's on the same prompts.
     for ctx, run in runs.items():
         full = {(r["kind"], r["depth"], r["sample"]): r["score"] for r in run["niah"] if r["method"] == "full"}
