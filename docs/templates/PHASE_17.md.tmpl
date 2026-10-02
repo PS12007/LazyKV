@@ -109,7 +109,11 @@ decided. The 32K attempt left no metrics; its log is kept locally, not in the re
   of its score at 12.5% and
   {{ phase17.analysis.quality.summary.retention_24576_b625.value | pct }} ({{ phase17.analysis.quality.summary.retention_24576_b625.lo | pct }}–{{ phase17.analysis.quality.summary.retention_24576_b625.hi | pct }})
   at 6.25%. Tiered prefill is bit-identical to the full-cache path, so these are rung 6's own
-  retentions at 24K.
+  retentions at 24K. Every difference is a loss: the tier scores lower than the full cache on
+  {{ phase17.analysis.quality.summary.retention_24576_b1250.tier_worse | int }} prompts at 12.5% and
+  {{ phase17.analysis.quality.summary.retention_24576_b625.tier_worse | int }} at 6.25%, and higher on
+  {{ phase17.analysis.quality.summary.retention_24576_b625.tier_better | int }}. The tier's peak VRAM there is
+  {{ phase17.analysis.quality.summary.tiered_24576_b1250.peak_gib | .2f }} GiB against the full cache's {{ phase17.analysis.quality.summary.full_24576.peak_gib | .2f }}.
 - **How quality moves with context at a fixed budget fraction is not resolved.** From 16K to 64K
   the tier's score goes from {{ phase17.analysis.quality.summary.tiered_16384_b1250.mean | pct }} to {{ phase17.analysis.quality.summary.tiered_65536_b1250.mean | pct }}
   at 12.5% and from {{ phase17.analysis.quality.summary.tiered_16384_b625.mean | pct }} to {{ phase17.analysis.quality.summary.tiered_65536_b625.mean | pct }} at

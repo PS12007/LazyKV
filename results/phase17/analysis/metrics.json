@@ -1,14 +1,10 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-10-02T00:21:12+00:00",
-    "git_commit": "48461faef64b77b6f84dd25763757b5f10471b4e",
-    "git_dirty": true,
-    "git_dirty_files": [
-      "docs/templates/PHASE_17.md.tmpl",
-      "results/phase17/analysis/metrics.json",
-      "scripts/analyze_phase17.py"
-    ],
+    "generated_at_utc": "2026-10-02T00:59:19+00:00",
+    "git_commit": "4a27a7c08249ea8caafec34646709ad8689da1fa",
+    "git_dirty": false,
+    "git_dirty_files": [],
     "argv": [
       "scripts/analyze_phase17.py"
     ],
@@ -36,6 +32,22 @@
         "scripts\\07_tiered_prefill_quality.py",
         "--context",
         "16384"
+      ],
+      "python": "3.12.10"
+    },
+    "quality_ctx24576": {
+      "schema_version": 1,
+      "generated_at_utc": "2026-10-02T00:58:57+00:00",
+      "git_commit": "48461faef64b77b6f84dd25763757b5f10471b4e",
+      "git_dirty": false,
+      "git_dirty_files": [],
+      "argv": [
+        "scripts\\07_tiered_prefill_quality.py",
+        "--context",
+        "24576",
+        "--methods",
+        "full",
+        "tiered"
       ],
       "python": "3.12.10"
     },
@@ -558,6 +570,57 @@
         "inside_dedicated": true
       },
       {
+        "context": 24576,
+        "method": "full",
+        "budget": 1.0,
+        "prompts": 45,
+        "mean": 0.9777777777777777,
+        "ci95": [
+          0.9333333333333333,
+          1.0
+        ],
+        "peak_gib": 5.341714382171631,
+        "prefill_s_median": 13.8414079999784,
+        "host_store_bytes": 2726297600,
+        "shared_growth_bytes": 2759852032,
+        "shared_beyond_host_store_mib": 32.0,
+        "inside_dedicated": true
+      },
+      {
+        "context": 24576,
+        "method": "tiered",
+        "budget": 0.125,
+        "prompts": 45,
+        "mean": 0.95,
+        "ci95": [
+          0.8833333333333333,
+          1.0
+        ],
+        "peak_gib": 3.355459690093994,
+        "prefill_s_median": 14.03068440000061,
+        "host_store_bytes": 2726297600,
+        "shared_growth_bytes": 2759852032,
+        "shared_beyond_host_store_mib": 32.0,
+        "inside_dedicated": true
+      },
+      {
+        "context": 24576,
+        "method": "tiered",
+        "budget": 0.0625,
+        "prompts": 45,
+        "mean": 0.8333333333333334,
+        "ci95": [
+          0.7277777777777777,
+          0.9222222222222223
+        ],
+        "peak_gib": 3.208939552307129,
+        "prefill_s_median": 14.02234760002466,
+        "host_store_bytes": 2726297600,
+        "shared_growth_bytes": 2759852032,
+        "shared_beyond_host_store_mib": 32.0,
+        "inside_dedicated": true
+      },
+      {
         "context": 65536,
         "method": "tiered",
         "budget": 0.125,
@@ -607,6 +670,27 @@
         "peak_gib": 2.901674747467041,
         "prefill_s_median": 7.601313100021798
       },
+      "full_24576": {
+        "mean": 0.9777777777777777,
+        "lo": 0.9333333333333333,
+        "hi": 1.0,
+        "peak_gib": 5.341714382171631,
+        "prefill_s_median": 13.8414079999784
+      },
+      "tiered_24576_b1250": {
+        "mean": 0.95,
+        "lo": 0.8833333333333333,
+        "hi": 1.0,
+        "peak_gib": 3.355459690093994,
+        "prefill_s_median": 14.03068440000061
+      },
+      "tiered_24576_b625": {
+        "mean": 0.8333333333333334,
+        "lo": 0.7277777777777777,
+        "hi": 0.9222222222222223,
+        "peak_gib": 3.208939552307129,
+        "prefill_s_median": 14.02234760002466
+      },
       "tiered_65536_b1250": {
         "mean": 0.8555555555555555,
         "lo": 0.7611111111111111,
@@ -620,6 +704,22 @@
         "hi": 0.9,
         "peak_gib": 4.745599269866943,
         "prefill_s_median": 73.1439834999619
+      },
+      "retention_24576_b625": {
+        "value": 0.8522727272727273,
+        "lo": 0.7556818181818182,
+        "hi": 0.9375,
+        "prompts": 45,
+        "tier_worse": 10,
+        "tier_better": 0
+      },
+      "retention_24576_b1250": {
+        "value": 0.9715909090909091,
+        "lo": 0.9261363636363636,
+        "hi": 1.0,
+        "prompts": 45,
+        "tier_worse": 2,
+        "tier_better": 0
       }
     }
   }

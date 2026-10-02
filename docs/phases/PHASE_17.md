@@ -124,6 +124,9 @@ decided. The 32K attempt left no metrics; its log is kept locally, not in the re
 | --: | --- | --: | --: | --: | --: | --: |
 | 16K | tiered prefill + rung 6 | 12.5% | 45 | 92.8% (86.1–98.3) | 3.00 | 7.6 |
 | 16K | tiered prefill + rung 6 | 6.25% | 45 | 76.7% (65.6–86.7) | 2.90 | 7.6 |
+| 24K | full cache (rung 1) | 100% | 45 | 97.8% (93.3–100.0) | 5.34 | 13.8 |
+| 24K | tiered prefill + rung 6 | 12.5% | 45 | 95.0% (88.3–100.0) | 3.36 | 14.0 |
+| 24K | tiered prefill + rung 6 | 6.25% | 45 | 83.3% (72.8–92.2) | 3.21 | 14.0 |
 | 64K | tiered prefill + rung 6 | 12.5% | 45 | 85.6% (76.1–93.9) | 5.14 | 73.1 |
 | 64K | tiered prefill + rung 6 | 6.25% | 45 | 81.1% (71.1–90.0) | 4.75 | 73.1 |
 
@@ -136,12 +139,16 @@ decided. The 32K attempt left no metrics; its log is kept locally, not in the re
   model's full cache scored 100.0% at 16K
   (Phase 15), but that is a different context, so the gap is not a retention.
 - **Paired at 24K**, against the full cache's
-  not measured on the same prompts, the tier keeps
-  not measured (not measured–not measured)
+  97.8% on the same prompts, the tier keeps
+  97.2% (92.6%–100.0%)
   of its score at 12.5% and
-  not measured (not measured–not measured)
+  85.2% (75.6%–93.8%)
   at 6.25%. Tiered prefill is bit-identical to the full-cache path, so these are rung 6's own
-  retentions at 24K.
+  retentions at 24K. Every difference is a loss: the tier scores lower than the full cache on
+  2 prompts at 12.5% and
+  10 at 6.25%, and higher on
+  0. The tier's peak VRAM there is
+  3.36 GiB against the full cache's 5.34.
 - **How quality moves with context at a fixed budget fraction is not resolved.** From 16K to 64K
   the tier's score goes from 92.8% to 85.6%
   at 12.5% and from 76.7% to 81.1% at
@@ -167,4 +174,5 @@ decided. The 32K attempt left no metrics; its log is kept locally, not in the re
 | --- | --- | --- | --- |
 | capacity | 2026-10-01T22:00:26+00:00 | `4fcbecb` | no |
 | quality_ctx16384 | 2026-10-01T22:17:29+00:00 | `4fcbecb` | no |
+| quality_ctx24576 | 2026-10-02T00:58:57+00:00 | `48461fa` | no |
 | quality_ctx65536 | 2026-10-02T00:14:20+00:00 | `4fcbecb` | no |

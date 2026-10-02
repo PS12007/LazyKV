@@ -7,6 +7,37 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-01: Phase 17, chunked prefill into the tier
+
+Item 2 of the gap table's recommended order. `lazykv/tiered_prefill.py` prefills layer by layer
+and hands each selecting layer's KV to the tier as soon as that layer finishes, so the selecting
+layers' full KV is never in VRAM at once. It is bit-identical to the full-cache path (unit tests,
+an 8K check on the 1B model, and 90 of
+90 Phase 15 rung 6 answers reproduced exactly).
+
+### Result
+
+The 1B model now runs 130,048 tokens (full cache:
+98,304) and the 3B nf4 model 65,536
+(full cache: 32,768), with prefill time unchanged. Neither tiered
+ladder reached its limit. At 64K the 3B model's rung 6 scores 85.6%
+on NIAH at a 12.5% budget, a context its full cache cannot run; paired at 24K it keeps
+97.2% of the full cache's score. Decode over the tier is
+as slow as before.
+
+### Incidents
+
+- **Pinned host memory was rounded up to a power of two** by PyTorch's caching host allocator in
+  every phase so far, up to twice the host store's size in RAM. Found from the shared-memory
+  counter of the first smoke cell; fixed with `cudaHostRegister` (`lazykv/pinned.py`). Timings
+  are not affected.
+- **The full cache OOMed at 32K under the quality kernel**, which the capacity run (cuDNN) had
+  passed, so the paired comparison moved to 24K by question 4's own rule (see the config's
+  amendment). Its first 24K attempt then crashed on a bug in the driver change made for it (a freed
+  variable read afterwards); it was fixed, smoke-tested, and rerun from a fresh worktree.
+- The quality runs' spill check first counted the pinned host store as spill (WDDM reports it as
+  shared memory); the analysis now subtracts it.
+
 ## 2026-09-30: Upgrade plan Step 0, and Phase 16 (attention traces, offline oracles)
 
 ### Step 0
