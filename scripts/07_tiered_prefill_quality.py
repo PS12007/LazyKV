@@ -99,11 +99,12 @@ def main() -> None:
                     full = FullGPUCache(lm.num_layers, cap)
                     pre = prefill(lm.model, full, prompt.input_ids, chunk)
                     dec = greedy_decode(lm.model, full, pre.last_logits, n_new - 1)
+                    prefill_s = pre.wall_s
                     del full, pre
                     text = answer(dec.tokens)
                     peaks.append(torch.cuda.max_memory_allocated())
                     rows.append({**base, "method": "full", "policy": "full", "budget": 1.0, "score": score(prompt, text), "answer": text.strip()[:120],
-                                 "prefill_wall_s": pre.wall_s, "peak_allocated_bytes": peaks[-1]})
+                                 "prefill_wall_s": prefill_s, "peak_allocated_bytes": peaks[-1]})
                 for budget in q["budgets"] if pools is not None else []:
                     k = blocks_for_budget(budget, total, bs)
                     torch.cuda.empty_cache()
