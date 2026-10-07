@@ -163,11 +163,21 @@ def cmd_audit(args: argparse.Namespace) -> int:
             steps.append({"phase": ph, "argv": list(a), "exit": rc, "seconds": round(dt, 2), "tail": tail if rc else ""})
         compared = []
         for key, path in sorted(outputs.items()):
-            old = without_provenance(json.loads(snapshot[key]))
-            new = without_provenance(json.loads(path.read_text(encoding="utf-8")))
-            d = diff_paths(old, new)
-            compared.append({"result": key, "identical": not d, "differing_paths": d})
+            raw = path.read_bytes()
+            if raw == snapshot[key]:
+                # Every write stamps a fresh generated_at_utc, so unchanged bytes mean the analysis
+                # never wrote: it failed. Counting that as "identical" would pass a broken step.
+                compared.append({"result": key, "regenerated": False, "identical": None, "differing_paths": []})
+                log.info("%s: NOT REGENERATED", key)
+                continue
+            old_doc, new_doc = json.loads(snapshot[key]), json.loads(raw)
+            d = diff_paths(without_provenance(old_doc), without_provenance(new_doc))
+            compared.append({"result": key, "regenerated": True, "identical": not d, "differing_paths": d})
             log.info("%s: %s", key, "identical" if not d else f"DIFFERS at {d[:5]}")
+            # Docs are re-rendered with the committed provenance put back, so a changed doc means a
+            # changed number; the run stamps (time, commit, dirty flag) differ by construction.
+            new_doc["provenance"] = old_doc.get("provenance")
+            path.write_text(json.dumps(new_doc, indent=2) + "\n", encoding="utf-8")
         rerendered = renderer.render_all()
         docs = []
         for p, text in sorted(rerendered.items()):
@@ -179,13 +189,14 @@ def cmd_audit(args: argparse.Namespace) -> int:
             path.write_bytes(snapshot[key])
     left = _tracked_dirty()
 
-    n_id = sum(c["identical"] for c in compared)
+    regen = [c for c in compared if c["regenerated"]]
     summary = {
         "analyses_run": len(steps),
         "analyses_failed": sum(1 for s in steps if s["exit"]),
-        "outputs_compared": len(compared),
-        "outputs_identical": n_id,
-        "outputs_differing": len(compared) - n_id,
+        "outputs": len(compared),
+        "outputs_not_regenerated": len(compared) - len(regen),
+        "outputs_identical": sum(1 for c in regen if c["identical"]),
+        "outputs_differing": sum(1 for c in regen if not c["identical"]),
         "docs_rendered": len(docs),
         "docs_identical": sum(d["identical"] for d in docs),
         "docs_differing": sum(not d["identical"] for d in docs),
