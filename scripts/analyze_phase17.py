@@ -111,6 +111,22 @@ def validity(q16: dict[str, Any], p15: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _model_config_path(m: dict[str, Any]) -> Path:
+    """The model's config.json: the local copy the run loaded, or else its source revision in the HF cache.
+
+    The 3B run loaded a 4-bit copy from the external data drive, quantized from `source_revision`.
+    Only the geometry is read here, which quantization does not change, so the source's config gives
+    the same bytes when the drive is not mounted (Phase 18's audit could not rerun this analysis
+    without it).
+    """
+    local = Path(m["repo"]) / "config.json"
+    if local.exists() or not m.get("source_repo"):
+        return local
+    from huggingface_hub import hf_hub_download
+
+    return Path(hf_hub_download(m["source_repo"], "config.json", revision=m["source_revision"], local_files_only=True))
+
+
 def host_store_bytes(run: dict[str, Any]) -> int:
     """Bytes the quality driver pinned for its host store, from the model's own config.
 
@@ -121,7 +137,7 @@ def host_store_bytes(run: dict[str, Any]) -> int:
     if "tiered" not in run["methods"]:
         return 0
     cfg = run["config"]
-    model = json.loads((Path(cfg["models"][cfg["quality"]["model"]]["repo"]) / "config.json").read_text(encoding="utf-8"))
+    model = json.loads(_model_config_path(cfg["models"][cfg["quality"]["model"]]).read_text(encoding="utf-8"))
     head_dim = model.get("head_dim") or model["hidden_size"] // model["num_attention_heads"]
     bs = cfg["block_size"]
     blocks = -(-run["capacity_tokens"] // bs)
