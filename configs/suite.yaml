@@ -41,6 +41,7 @@ analysis_order:
   - {phase: 15, argv: [scripts/analyze_phase15.py]}
   - {phase: 16, argv: [scripts/analyze_phase16.py]}
   - {phase: 17, argv: [scripts/analyze_phase17.py]}
+  - {phase: 19, argv: [scripts/analyze_phase19.py]}
 
 # Run after any analysis, in this order.
 finish:

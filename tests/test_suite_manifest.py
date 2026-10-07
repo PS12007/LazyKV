@@ -13,7 +13,7 @@ def test_every_result_directory_has_a_phase() -> None:
 def test_every_recorded_analysis_is_in_the_order() -> None:
     suite = load_suite()
     ordered = {a for _, a in analysis_steps(suite)}
-    missing = sorted({r.argv for r in recorded() if r.is_analysis} - ordered)
+    missing = sorted({r.argv for r in recorded() if r.is_analysis and not r.is_smoke} - ordered)
     assert not missing, f"add to analysis_order in configs/suite.yaml: {missing}"
 
 

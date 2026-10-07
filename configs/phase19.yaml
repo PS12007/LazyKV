@@ -1,0 +1,57 @@
+# Phase 19: a multi-turn evaluation (gap table, recommended item 4, first half).
+#
+# Every quality test so far was single-turn: one prompt, one short answer. Gap table item A5, a
+# working-set-aware selector that protects recent history, is motivated by a failure only a
+# conversation can show: a policy that ranks blocks by the current query alone might drop something
+# said a few turns ago. The gap table says A5 needs this evaluation first, because the failure it
+# fixes cannot be observed yet. This phase observes it, or fails to.
+#
+# Sessions (lazykv/multiturn.py): a 32K-token document with four doc needles at depths 10/35/60/85%,
+# then seven more turns. Each later user turn pastes a ~192-token passage from a different book,
+# may introduce a chat needle, and asks one question. Schedule: lazykv.multiturn.DEFAULT_SCHEDULE.
+# Chat needles are asked 2 or 3 turns after they are given; the last turn re-asks doc needle 0, whose
+# answer is by then also in the conversation. Every token after the document goes through the decode
+# path one at a time, under every policy, and the model's answers are its own greedy output.
+#
+# Questions, fixed before any run (including the smoke test, whose output is not reported):
+#   1. A5's premise. On chat-needle turns, does Quest-style selection (rung 5) lose facts the full
+#      cache answers? Retention against the full cache, paired by (session, turn), with a bootstrap CI
+#      over sessions. Decision rule: the failure counts as observed at a budget only if rung 5's
+#      chat-needle retention has a 95% CI upper bound below 100% AND it is below window_sink's on the
+#      same turns. If it is not observed, A5 is not built without the owner (CLAUDE.md rule 8).
+#   2. The document across turns. Doc-needle accuracy at turn 0 against later doc turns, per policy,
+#      each against the full cache on the same turns.
+#   3. The contrast. window_sink keeps the most recent tokens, so it should hold the conversation and
+#      lose the document; rung 5 is expected to do the opposite if anything. Reported per question type.
+#   4. Validity. Rung 6 (the CPU tier) must give rung 5's answer on every turn of every session at the
+#      budget it runs, as in single-turn: fed turns seal blocks into the tier mid-session.
+#
+# Viability, as in Phase 12: if the full cache answers fewer than half of the chat-needle turns, the
+# 1B model cannot do the task and question 1 is reported as unanswerable here, not retuned.
+#
+# Budgets are fractions of the session's planned length (document + every fed turn + max_new per
+# turn), so K blocks are fixed for the session. The conversation is about 5% of that length.
+phase: phase19
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+prefill_chunk: 2048
+context: 32768
+sessions: 20
+seed: 0
+book: moby_dick
+passage_book: pride_and_prejudice
+passage_tokens: 192
+max_new_tokens: 16
+
+budgets: [0.125, 0.0625]
+policies: [window_sink, quest]
+# Rung 6 at one budget only: it is a validity check (question 4), and rung 6 == rung 5 has held on
+# every single-turn prompt since Phase 4.
+tier_check: {policy: tiered_sync, budget: 0.0625}
+tier:
+  fetch: gather
+  spare: 0.0
