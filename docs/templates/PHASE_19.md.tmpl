@@ -1,0 +1,93 @@
+# Phase 19: a multi-turn evaluation
+
+Item 4 of the [gap table](../GAP_TABLE.md)'s recommended order, first half. Every quality test
+before this phase was single-turn: one prompt, one short answer, so the KV a policy managed was
+almost entirely the prompt. Gap table item A5 (a working-set-aware selector that protects recent
+history) is motivated by a failure only a conversation can show, and the gap table says the
+evaluation has to exist before A5 is built. Questions, the decision rule for A5 and the viability
+rule were fixed in `configs/phase19.yaml` before any run, including the smoke test, whose output is
+not reported.
+
+## What was built
+
+- `lazykv/multiturn.py`: **multi-turn retrieval sessions.** A document of exactly
+  {{ phase19.analysis.summary.context | int }} tokens with four doc needles (RULER's multi-key NIAH
+  needles at 10, 35, 60 and 85% depth, which needle sits where varying by session), then
+  {{ phase19.analysis.summary.turns_per_session | int }} turns in total. Each turn after the first
+  pastes a passage from a different book (so the conversation grows by real text, as a document chat
+  does), may introduce a **chat needle** ("Also note: one of the special magic numbers for X is: N."),
+  and asks one question. The schedule is fixed: doc needles are each asked once; three chat needles
+  are each asked 2 or 3 turns after they are given; the last turn re-asks the turn-0 doc needle, whose
+  answer is by then also in the conversation. Turn 0 is the single-turn NIAH multi-key question
+  verbatim.
+- **How a session is fed.** Every token after the document goes through the decode path one token
+  at a time, under every policy. The tier is decode-only, and rung 5 attends densely to a
+  multi-token forward, so feeding a user turn as one chunk would give rung 5 an attention the tier
+  cannot have. The model's answers are its own greedy output, so each policy follows its own
+  conversation; later turns are paired by position in the schedule, not by identical context.
+- **Budgets** are fractions of the session's planned length (document, every fed turn, and the
+  answer allowance per turn), so K blocks are fixed for the session. The conversation added a median of
+  {{ phase19.analysis.summary.conversation_tokens_median | int }} tokens to the document.
+- `scripts/08_multiturn.py`, `scripts/analyze_phase19.py`. Tests (`tests/test_multiturn.py`): the
+  document has exact length and every needle where recorded; chat needles never appear in the
+  document and are always given before they are asked; the KV length after a session is exactly the
+  document plus the fed turns plus the answers (the end-of-turn token is never fed twice); and over a
+  session that seals blocks mid-conversation, the tier answers every turn token for token as rung 5.
+
+## The run
+
+Llama-3.2-1B-Instruct, {{ phase19.analysis.summary.sessions | int }} sessions, 64-token blocks, the
+quality kernel. Conditions: the full cache, window + sink (rung 2) and Quest-style selection
+(rung 5) at 12.5% and 6.25%, and the CPU tier (rung 6) at 6.25% as a validity check. Conditions ran
+in a shuffled order per session, each from the same document prefill.
+
+### Accuracy by question type (turns scored)
+
+{{> p19_accuracy }}
+
+### Retention against the full cache (paired by session and turn; 95% CI resampling sessions)
+
+{{> p19_retention }}
+
+### Question 1: A5's premise
+
+{{> p19_decision }}
+
+- **The failure A5 is meant to fix is observed, at both budgets, under the rule fixed beforehand.** On
+  chat-needle turns, rung 5 keeps {{ phase19.analysis.summary.decision.12_5.quest_retention | pct }} of
+  the full cache's score at 12.5% and {{ phase19.analysis.summary.decision.6_25.quest_retention | pct }}
+  at 6.25%; the window keeps all of it. The full cache answers
+  {{ phase19.analysis.summary.full_chat_accuracy | pct }} of chat-needle turns, so the task is viable.
+- **The document fails too, which A5 would not fix.** At 6.25%, rung 5 answers
+  {{ phase19.analysis.conditions.quest_6_25.doc_turn0.mean | pct }} of doc questions at turn 0 and
+  {{ phase19.analysis.conditions.quest_6_25.doc_later.mean | pct }} at later turns. The window answers no
+  doc question at any turn: it holds the conversation, not the document.
+- **Rung 6 is rung 5.** The CPU tier gave rung 5's answer text on
+  {{ phase19.analysis.summary.validity.same_answer | int }} of {{ phase19.analysis.summary.validity.turns | int }}
+  turns, with blocks sealed into the tier mid-conversation.
+
+### Post hoc: the loss is in reading the user's turn, not in answering
+
+Decided after four sessions of the main run and labelled as such (`configs/phase19.yaml`, amendment).
+Same sessions, rung 5 only, with each user turn fed in one dense forward and only the answers decoded
+sparsely, which is what every single-turn test did.
+
+{{> p19_followup }}
+
+- With dense turns, rung 5 answers {{ phase19.analysis.followup.budgets.6_25.after_turn0.dense_turn_accuracy | pct }}
+  of turns after turn 0 at 6.25%, against {{ phase19.analysis.followup.budgets.6_25.after_turn0.per_token_accuracy | pct }}
+  token by token ({{ phase19.analysis.followup.budgets.6_25.after_turn0.dense_better | int }} turns better,
+  {{ phase19.analysis.followup.budgets.6_25.after_turn0.dense_worse | int }} worse). Chat needles recover almost
+  completely ({{ phase19.analysis.followup.budgets.6_25.chat.dense_turn_accuracy | pct }}).
+- **So the remedy the data points to is not A5 as planned.** Protecting recent history would help
+  chat needles but not the document, while processing a new turn with exact attention fixes most of
+  both. The tier is decode-only, so it cannot do this today. A dense way for the tier to ingest a
+  turn (for each layer, attend the turn's tokens over the whole layer, as tiered prefill does) is
+  the candidate next item. That changes the planned direction, so it needs the owner (rule 8).
+- Caveats: one model (1B), one context, one schedule, 20 sessions; the dense-turn full cache is a
+  different (but also exact) feeding of the same conversation, and answers follow each policy's own
+  trajectory.
+
+## Provenance
+
+{{> p19_provenance }}

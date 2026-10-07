@@ -52,6 +52,7 @@ OUTPUTS = {
     "PHASE_16.md.tmpl": "docs/phases/PHASE_16.md",
     "PHASE_17.md.tmpl": "docs/phases/PHASE_17.md",
     "PHASE_18.md.tmpl": "docs/phases/PHASE_18.md",
+    "PHASE_19.md.tmpl": "docs/phases/PHASE_19.md",
 }
 
 GENERATED_BANNER = (
@@ -2278,6 +2279,79 @@ def block_p18_failed(ctx: Mapping[str, Any]) -> str:
         return f"_{NOT_MEASURED}_"
     rows = [[f"`{' '.join(s['argv'])}`", str(s["exit"]), f"`{s['tail'].rsplit(' | ', 1)[-1]}`"] for s in steps if s["exit"]]
     return table(["Analysis", "Exit", "Last line of its output"], rows) if rows else "None."
+
+
+_P19_COND = {"full": "Full cache (rung 1)", "window_sink": "Window + sink (rung 2)", "quest": "Quest-style (rung 5)", "tiered_sync": "CPU tier (rung 6)"}
+
+
+def _p19_name(c: Mapping[str, Any]) -> str:
+    name = _P19_COND.get(c["policy"], c["policy"])
+    return name if c["policy"] == "full" else f"{name} @ {_pct_budget(c['budget'])}"
+
+
+def block_p19_accuracy(ctx: Mapping[str, Any]) -> str:
+    conds = lookup(ctx, "phase19.analysis.conditions")
+    if not isinstance(conds, Mapping):
+        return f"_{NOT_MEASURED}_"
+    cols = [("doc_turn0", "Doc, turn 0"), ("doc_later", "Doc, later turns"), ("doc_reask", "Doc, re-asked last turn"),
+            ("chat_2_turns", "Chat, 2 turns back"), ("chat_3_turns", "Chat, 3 turns back")]
+    rows = []
+    for c in conds.values():
+        rows.append([_p19_name(c)] + [f"{100 * c[k]['mean']:.1f}% ({c[k]['n']})" if c[k]["mean"] is not None else NOT_MEASURED for k, _ in cols])
+    return table(["Condition"] + [h for _, h in cols], rows, ["---"] + ["--:"] * len(cols))
+
+
+def block_p19_retention(ctx: Mapping[str, Any]) -> str:
+    conds = lookup(ctx, "phase19.analysis.conditions")
+    if not isinstance(conds, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for c in conds.values():
+        if c["policy"] == "full":
+            continue
+        cells = []
+        for k in ("chat", "doc_turn0", "doc_later", "doc_reask"):
+            r = c[k]["retention"]
+            cells.append(NOT_MEASURED if r["value"] is None else f"{100 * r['value']:.1f}% ({100 * r['lo']:.1f}–{100 * r['hi']:.1f}); {r['worse']} worse, {r['better']} better")
+        rows.append([_p19_name(c)] + cells)
+    return table(["Condition", "Chat needles", "Doc, turn 0", "Doc, later turns", "Doc, re-asked"], rows, ["---", "--:", "--:", "--:", "--:"])
+
+
+def block_p19_decision(ctx: Mapping[str, Any]) -> str:
+    d = lookup(ctx, "phase19.analysis.summary.decision")
+    if not isinstance(d, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[f"{b.replace('_', '.')}%", f"{100 * x['quest_retention']:.1f}%", f"{100 * x['quest_hi']:.1f}%",
+             NOT_MEASURED if x["window_retention"] is None else f"{100 * x['window_retention']:.1f}%", "**yes**" if x["observed"] else "no"] for b, x in d.items()]
+    return table(["Budget", "Rung 5 chat retention", "Its 95% CI upper bound", "Window chat retention", "Failure observed (config rule)"], rows, ["--:", "--:", "--:", "--:", "---"])
+
+
+def block_p19_followup(ctx: Mapping[str, Any]) -> str:
+    fu = lookup(ctx, "phase19.analysis.followup")
+    if not isinstance(fu, Mapping):
+        return f"_{NOT_MEASURED}_"
+    names = {"chat": "Chat needles", "doc_later": "Doc, later turns", "doc_reask": "Doc, re-asked", "after_turn0": "Every turn after turn 0"}
+    rows = []
+    for b, entry in fu["budgets"].items():
+        for k, label in names.items():
+            e = entry[k]
+            r = e["dense_turn_retention"]
+            rows.append([f"{b.replace('_', '.')}%", label, str(e["turns"]), f"{100 * e['per_token_accuracy']:.1f}%", f"{100 * e['dense_turn_accuracy']:.1f}%",
+                         f"{e['dense_better']} / {e['dense_worse']}", f"{e['sign_p']:.2g}",
+                         NOT_MEASURED if r["value"] is None else f"{100 * r['value']:.1f}% ({100 * r['lo']:.1f}–{100 * r['hi']:.1f})"])
+    return table(["Budget", "Questions", "Turns", "Rung 5, turns fed per token", "Rung 5, turns fed densely", "Dense better / worse", "Sign test p", "Dense-turn retention (95% CI)"],
+                 rows, ["--:", "---", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p19_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase19.analysis.source")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row("Multi-turn sessions", src)]
+    fu = lookup(ctx, "phase19.analysis.followup_source")
+    if isinstance(fu, Mapping):
+        rows.append(_provenance_row("Post hoc: dense-turn follow-up", fu))
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {

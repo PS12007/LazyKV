@@ -82,7 +82,7 @@ def dense_turn_followup(rows: list[dict[str, Any]], fu: dict[str, Any]) -> dict[
                 "dense_turn_retention": retention(frows, ("quest", b), sel),
                 "dense_better": better, "dense_worse": worse, "sign_p": sign_test_p(worse, better),
             }
-        out["budgets"][f"{100 * b:g}"] = entry
+        out["budgets"][f"{100 * b:g}".replace(".", "_")] = entry
     full = [r["score"] for r in frows if r["policy"] == "full" and r["turn"] > 0]
     out["full_dense_turn_accuracy_after_turn0"] = sum(full) / len(full) if full else None
     return out
@@ -123,7 +123,7 @@ def main() -> None:
     for b in budgets:
         q = per[label("quest", b)]["chat"]["retention"]
         w = per.get(label("window_sink", b), {}).get("chat", {}).get("retention")
-        decision[f"{100 * b:g}"] = {
+        decision[f"{100 * b:g}".replace(".", "_")] = {
             "quest_retention": q["value"], "quest_hi": q["hi"], "window_retention": None if w is None else w["value"],
             "observed": bool(q["hi"] is not None and q["hi"] < 1.0 and w is not None and q["value"] < w["value"]),
         }

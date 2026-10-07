@@ -1,0 +1,1034 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-07T20:56:04+00:00",
+    "git_commit": "256635a9a8d54699582682725b486e152b03bc41",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "scripts/analyze_phase19.py",
+      "scripts/render_docs.py"
+    ],
+    "argv": [
+      "scripts/analyze_phase19.py"
+    ],
+    "python": "3.12.10"
+  },
+  "source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-07T20:47:17+00:00",
+    "git_commit": "8d579105ff1bd0a1950549fe5fd9165de9ec03bd",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\08_multiturn.py"
+    ],
+    "python": "3.12.10"
+  },
+  "followup_source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-07T20:55:43+00:00",
+    "git_commit": "256635a9a8d54699582682725b486e152b03bc41",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\08_multiturn.py",
+      "--policies",
+      "quest",
+      "--no-tier-check",
+      "--turn-chunk",
+      "4096",
+      "--out",
+      "multiturn_dense_turns"
+    ],
+    "python": "3.12.10"
+  },
+  "conditions": {
+    "full": {
+      "policy": "full",
+      "budget": 1.0,
+      "chat": {
+        "n": 60,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.8666666666666667,
+        "ci95": [
+          0.7666666666666667,
+          0.95
+        ]
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.95,
+        "ci95": [
+          0.9125,
+          0.98125
+        ]
+      }
+    },
+    "quest_12_5": {
+      "policy": "quest",
+      "budget": 0.125,
+      "chat": {
+        "n": 60,
+        "mean": 0.5833333333333334,
+        "ci95": [
+          0.45,
+          0.7
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.5833333333333334,
+          "full_accuracy": 1.0,
+          "value": 0.5833333333333334,
+          "lo": 0.45,
+          "hi": 0.7166666666666667,
+          "worse": 25,
+          "better": 0,
+          "sign_p": 5.960464477539063e-08
+        }
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 0.95,
+        "ci95": [
+          0.85,
+          1.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.95,
+          "full_accuracy": 1.0,
+          "value": 0.95,
+          "lo": 0.85,
+          "hi": 1.0,
+          "worse": 1,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.5,
+        "ci95": [
+          0.38333333333333336,
+          0.6166666666666667
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.5,
+          "full_accuracy": 0.8666666666666667,
+          "value": 0.5769230769230769,
+          "lo": 0.4074074074074074,
+          "hi": 0.75,
+          "worse": 24,
+          "better": 2,
+          "sign_p": 1.049041748046875e-05
+        }
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 0.65,
+        "ci95": [
+          0.45,
+          0.85
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.65,
+          "full_accuracy": 1.0,
+          "value": 0.65,
+          "lo": 0.45,
+          "hi": 0.85,
+          "worse": 7,
+          "better": 0,
+          "sign_p": 0.015625
+        }
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 0.65,
+        "ci95": [
+          0.5,
+          0.8
+        ],
+        "retention": {
+          "turns": 40,
+          "sessions": 20,
+          "accuracy": 0.65,
+          "full_accuracy": 1.0,
+          "value": 0.65,
+          "lo": 0.5,
+          "hi": 0.8,
+          "worse": 14,
+          "better": 0,
+          "sign_p": 0.0001220703125
+        }
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 0.45,
+        "ci95": [
+          0.25,
+          0.65
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.45,
+          "full_accuracy": 1.0,
+          "value": 0.45,
+          "lo": 0.25,
+          "hi": 0.65,
+          "worse": 11,
+          "better": 0,
+          "sign_p": 0.0009765625
+        }
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.60625,
+        "ci95": [
+          0.53125,
+          0.68125
+        ],
+        "retention": {
+          "turns": 160,
+          "sessions": 20,
+          "accuracy": 0.60625,
+          "full_accuracy": 0.95,
+          "value": 0.6381578947368421,
+          "lo": 0.5419354838709678,
+          "hi": 0.7350993377483444,
+          "worse": 57,
+          "better": 2,
+          "sign_p": 6.144390551909851e-15
+        }
+      }
+    },
+    "quest_6_25": {
+      "policy": "quest",
+      "budget": 0.0625,
+      "chat": {
+        "n": 60,
+        "mean": 0.25,
+        "ci95": [
+          0.15,
+          0.36666666666666664
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.25,
+          "full_accuracy": 1.0,
+          "value": 0.25,
+          "lo": 0.15,
+          "hi": 0.36666666666666664,
+          "worse": 45,
+          "better": 0,
+          "sign_p": 5.684341886080802e-14
+        }
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 0.7,
+        "ci95": [
+          0.5,
+          0.9
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.7,
+          "full_accuracy": 1.0,
+          "value": 0.7,
+          "lo": 0.5,
+          "hi": 0.9,
+          "worse": 6,
+          "better": 0,
+          "sign_p": 0.03125
+        }
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.23333333333333334,
+        "ci95": [
+          0.13333333333333333,
+          0.35
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.23333333333333334,
+          "full_accuracy": 0.8666666666666667,
+          "value": 0.2692307692307692,
+          "lo": 0.15384615384615385,
+          "hi": 0.39215686274509803,
+          "worse": 38,
+          "better": 0,
+          "sign_p": 7.275957614183426e-12
+        }
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 0.25,
+        "ci95": [
+          0.05,
+          0.45
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.25,
+          "full_accuracy": 1.0,
+          "value": 0.25,
+          "lo": 0.05,
+          "hi": 0.45,
+          "worse": 15,
+          "better": 0,
+          "sign_p": 6.103515625e-05
+        }
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 0.325,
+        "ci95": [
+          0.175,
+          0.475
+        ],
+        "retention": {
+          "turns": 40,
+          "sessions": 20,
+          "accuracy": 0.325,
+          "full_accuracy": 1.0,
+          "value": 0.325,
+          "lo": 0.2,
+          "hi": 0.475,
+          "worse": 27,
+          "better": 0,
+          "sign_p": 1.4901161193847656e-08
+        }
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 0.1,
+        "ci95": [
+          0.0,
+          0.25
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.1,
+          "full_accuracy": 1.0,
+          "value": 0.1,
+          "lo": 0.0,
+          "hi": 0.25,
+          "worse": 18,
+          "better": 0,
+          "sign_p": 7.62939453125e-06
+        }
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.3,
+        "ci95": [
+          0.23125,
+          0.375
+        ],
+        "retention": {
+          "turns": 160,
+          "sessions": 20,
+          "accuracy": 0.3,
+          "full_accuracy": 0.95,
+          "value": 0.3157894736842105,
+          "lo": 0.23333333333333334,
+          "hi": 0.4,
+          "worse": 104,
+          "better": 0,
+          "sign_p": 9.860761315262648e-32
+        }
+      }
+    },
+    "tiered_sync_6_25": {
+      "policy": "tiered_sync",
+      "budget": 0.0625,
+      "chat": {
+        "n": 60,
+        "mean": 0.25,
+        "ci95": [
+          0.15,
+          0.36666666666666664
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.25,
+          "full_accuracy": 1.0,
+          "value": 0.25,
+          "lo": 0.15,
+          "hi": 0.36666666666666664,
+          "worse": 45,
+          "better": 0,
+          "sign_p": 5.684341886080802e-14
+        }
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 0.7,
+        "ci95": [
+          0.5,
+          0.9
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.7,
+          "full_accuracy": 1.0,
+          "value": 0.7,
+          "lo": 0.5,
+          "hi": 0.9,
+          "worse": 6,
+          "better": 0,
+          "sign_p": 0.03125
+        }
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.23333333333333334,
+        "ci95": [
+          0.13333333333333333,
+          0.35
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.23333333333333334,
+          "full_accuracy": 0.8666666666666667,
+          "value": 0.2692307692307692,
+          "lo": 0.15384615384615385,
+          "hi": 0.39215686274509803,
+          "worse": 38,
+          "better": 0,
+          "sign_p": 7.275957614183426e-12
+        }
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 0.25,
+        "ci95": [
+          0.05,
+          0.45
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.25,
+          "full_accuracy": 1.0,
+          "value": 0.25,
+          "lo": 0.05,
+          "hi": 0.45,
+          "worse": 15,
+          "better": 0,
+          "sign_p": 6.103515625e-05
+        }
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 0.325,
+        "ci95": [
+          0.175,
+          0.475
+        ],
+        "retention": {
+          "turns": 40,
+          "sessions": 20,
+          "accuracy": 0.325,
+          "full_accuracy": 1.0,
+          "value": 0.325,
+          "lo": 0.2,
+          "hi": 0.475,
+          "worse": 27,
+          "better": 0,
+          "sign_p": 1.4901161193847656e-08
+        }
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 0.1,
+        "ci95": [
+          0.0,
+          0.25
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.1,
+          "full_accuracy": 1.0,
+          "value": 0.1,
+          "lo": 0.0,
+          "hi": 0.25,
+          "worse": 18,
+          "better": 0,
+          "sign_p": 7.62939453125e-06
+        }
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.3,
+        "ci95": [
+          0.23125,
+          0.375
+        ],
+        "retention": {
+          "turns": 160,
+          "sessions": 20,
+          "accuracy": 0.3,
+          "full_accuracy": 0.95,
+          "value": 0.3157894736842105,
+          "lo": 0.23333333333333334,
+          "hi": 0.4,
+          "worse": 104,
+          "better": 0,
+          "sign_p": 9.860761315262648e-32
+        }
+      }
+    },
+    "window_sink_12_5": {
+      "policy": "window_sink",
+      "budget": 0.125,
+      "chat": {
+        "n": 60,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 1.0,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 20,
+          "better": 0,
+          "sign_p": 1.9073486328125e-06
+        }
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 0.8666666666666667,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 52,
+          "better": 0,
+          "sign_p": 4.440892098500626e-16
+        }
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 1.0,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 20,
+          "better": 0,
+          "sign_p": 1.9073486328125e-06
+        }
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 40,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.375,
+        "ci95": [
+          0.3,
+          0.45
+        ],
+        "retention": {
+          "turns": 160,
+          "sessions": 20,
+          "accuracy": 0.375,
+          "full_accuracy": 0.95,
+          "value": 0.39473684210526316,
+          "lo": 0.38461538461538464,
+          "hi": 0.40540540540540543,
+          "worse": 92,
+          "better": 0,
+          "sign_p": 4.0389678347315804e-28
+        }
+      }
+    },
+    "window_sink_6_25": {
+      "policy": "window_sink",
+      "budget": 0.0625,
+      "chat": {
+        "n": 60,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "doc_turn0": {
+        "n": 20,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 1.0,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 20,
+          "better": 0,
+          "sign_p": 1.9073486328125e-06
+        }
+      },
+      "doc_later": {
+        "n": 60,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 60,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 0.8666666666666667,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 52,
+          "better": 0,
+          "sign_p": 4.440892098500626e-16
+        }
+      },
+      "doc_reask": {
+        "n": 20,
+        "mean": 0.0,
+        "ci95": [
+          0.0,
+          0.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 0.0,
+          "full_accuracy": 1.0,
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "worse": 20,
+          "better": 0,
+          "sign_p": 1.9073486328125e-06
+        }
+      },
+      "chat_2_turns": {
+        "n": 40,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 40,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "chat_3_turns": {
+        "n": 20,
+        "mean": 1.0,
+        "ci95": [
+          1.0,
+          1.0
+        ],
+        "retention": {
+          "turns": 20,
+          "sessions": 20,
+          "accuracy": 1.0,
+          "full_accuracy": 1.0,
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "worse": 0,
+          "better": 0,
+          "sign_p": 1.0
+        }
+      },
+      "all": {
+        "n": 160,
+        "mean": 0.375,
+        "ci95": [
+          0.3,
+          0.45
+        ],
+        "retention": {
+          "turns": 160,
+          "sessions": 20,
+          "accuracy": 0.375,
+          "full_accuracy": 0.95,
+          "value": 0.39473684210526316,
+          "lo": 0.38461538461538464,
+          "hi": 0.40540540540540543,
+          "worse": 92,
+          "better": 0,
+          "sign_p": 4.0389678347315804e-28
+        }
+      }
+    }
+  },
+  "summary": {
+    "sessions": 20,
+    "turns_per_session": 8,
+    "context": 32768,
+    "final_length_min": 34570,
+    "final_length_max": 34588,
+    "conversation_tokens_median": 1811,
+    "full_chat_accuracy": 1.0,
+    "viable": true,
+    "decision": {
+      "12_5": {
+        "quest_retention": 0.5833333333333334,
+        "quest_hi": 0.7166666666666667,
+        "window_retention": 1.0,
+        "observed": true
+      },
+      "6_25": {
+        "quest_retention": 0.25,
+        "quest_hi": 0.36666666666666664,
+        "window_retention": 1.0,
+        "observed": true
+      }
+    },
+    "a5_failure_observed_any_budget": true,
+    "validity": {
+      "budget": 0.0625,
+      "turns": 160,
+      "paired": 160,
+      "same_answer": 160,
+      "same_score": 160
+    },
+    "k_blocks": {
+      "quest_6_25": 31,
+      "tiered_sync_6_25": 31,
+      "quest_12_5": 65
+    }
+  },
+  "followup": {
+    "turn_chunk": 4096,
+    "budgets": {
+      "12_5": {
+        "chat": {
+          "turns": 60,
+          "per_token_accuracy": 0.5833333333333334,
+          "dense_turn_accuracy": 0.9833333333333333,
+          "dense_turn_retention": {
+            "turns": 60,
+            "sessions": 20,
+            "accuracy": 0.9833333333333333,
+            "full_accuracy": 1.0,
+            "value": 0.9833333333333333,
+            "lo": 0.95,
+            "hi": 1.0,
+            "worse": 1,
+            "better": 0,
+            "sign_p": 1.0
+          },
+          "dense_better": 24,
+          "dense_worse": 0,
+          "sign_p": 1.1920928955078125e-07
+        },
+        "doc_later": {
+          "turns": 60,
+          "per_token_accuracy": 0.5,
+          "dense_turn_accuracy": 0.7666666666666667,
+          "dense_turn_retention": {
+            "turns": 60,
+            "sessions": 20,
+            "accuracy": 0.7666666666666667,
+            "full_accuracy": 0.8666666666666667,
+            "value": 0.8846153846153846,
+            "lo": 0.7962962962962963,
+            "hi": 0.9795918367346939,
+            "worse": 7,
+            "better": 1,
+            "sign_p": 0.0703125
+          },
+          "dense_better": 17,
+          "dense_worse": 1,
+          "sign_p": 0.00014495849609375
+        },
+        "doc_reask": {
+          "turns": 20,
+          "per_token_accuracy": 0.65,
+          "dense_turn_accuracy": 0.85,
+          "dense_turn_retention": {
+            "turns": 20,
+            "sessions": 20,
+            "accuracy": 0.85,
+            "full_accuracy": 1.0,
+            "value": 0.85,
+            "lo": 0.7,
+            "hi": 1.0,
+            "worse": 3,
+            "better": 0,
+            "sign_p": 0.25
+          },
+          "dense_better": 4,
+          "dense_worse": 0,
+          "sign_p": 0.125
+        },
+        "after_turn0": {
+          "turns": 140,
+          "per_token_accuracy": 0.5571428571428572,
+          "dense_turn_accuracy": 0.8714285714285714,
+          "dense_turn_retention": {
+            "turns": 140,
+            "sessions": 20,
+            "accuracy": 0.8714285714285714,
+            "full_accuracy": 0.9428571428571428,
+            "value": 0.9242424242424242,
+            "lo": 0.8702290076335878,
+            "hi": 0.9767441860465116,
+            "worse": 11,
+            "better": 1,
+            "sign_p": 0.00634765625
+          },
+          "dense_better": 45,
+          "dense_worse": 1,
+          "sign_p": 1.3358203432289883e-12
+        }
+      },
+      "6_25": {
+        "chat": {
+          "turns": 60,
+          "per_token_accuracy": 0.25,
+          "dense_turn_accuracy": 0.95,
+          "dense_turn_retention": {
+            "turns": 60,
+            "sessions": 20,
+            "accuracy": 0.95,
+            "full_accuracy": 1.0,
+            "value": 0.95,
+            "lo": 0.9,
+            "hi": 1.0,
+            "worse": 3,
+            "better": 0,
+            "sign_p": 0.25
+          },
+          "dense_better": 42,
+          "dense_worse": 0,
+          "sign_p": 4.547473508864641e-13
+        },
+        "doc_later": {
+          "turns": 60,
+          "per_token_accuracy": 0.23333333333333334,
+          "dense_turn_accuracy": 0.55,
+          "dense_turn_retention": {
+            "turns": 60,
+            "sessions": 20,
+            "accuracy": 0.55,
+            "full_accuracy": 0.8666666666666667,
+            "value": 0.6346153846153846,
+            "lo": 0.5185185185185185,
+            "hi": 0.75,
+            "worse": 19,
+            "better": 0,
+            "sign_p": 3.814697265625e-06
+          },
+          "dense_better": 20,
+          "dense_worse": 1,
+          "sign_p": 2.09808349609375e-05
+        },
+        "doc_reask": {
+          "turns": 20,
+          "per_token_accuracy": 0.25,
+          "dense_turn_accuracy": 0.6,
+          "dense_turn_retention": {
+            "turns": 20,
+            "sessions": 20,
+            "accuracy": 0.6,
+            "full_accuracy": 1.0,
+            "value": 0.6,
+            "lo": 0.4,
+            "hi": 0.8,
+            "worse": 8,
+            "better": 0,
+            "sign_p": 0.0078125
+          },
+          "dense_better": 7,
+          "dense_worse": 0,
+          "sign_p": 0.015625
+        },
+        "after_turn0": {
+          "turns": 140,
+          "per_token_accuracy": 0.24285714285714285,
+          "dense_turn_accuracy": 0.7285714285714285,
+          "dense_turn_retention": {
+            "turns": 140,
+            "sessions": 20,
+            "accuracy": 0.7285714285714285,
+            "full_accuracy": 0.9428571428571428,
+            "value": 0.7727272727272727,
+            "lo": 0.7076923076923077,
+            "hi": 0.8396946564885496,
+            "worse": 30,
+            "better": 0,
+            "sign_p": 1.862645149230957e-09
+          },
+          "dense_better": 69,
+          "dense_worse": 1,
+          "sign_p": 1.2027867851011065e-19
+        }
+      }
+    },
+    "full_dense_turn_accuracy_after_turn0": 0.9428571428571428
+  }
+}
