@@ -55,3 +55,18 @@ tier_check: {policy: tiered_sync, budget: 0.0625}
 tier:
   fetch: gather
   spare: 0.0
+
+# Amended 2026-10-07, after the first four sessions of the main run were logged and before it
+# finished. POST HOC, labelled as such: rung 5 lost most turns after turn 0, on doc and chat
+# questions alike. One difference from every single-turn test could explain it: there the question
+# was prefilled densely and only the answer was sparse, while here every token of each user turn,
+# the question included, goes through sparse selection. Follow-up, same sessions, rung 5 only:
+# feed each user turn in one dense forward (`--turn-chunk 4096`; rung 5 attends densely to a
+# multi-token forward) and decode only the answers sparsely, with the full cache fed the same way as
+# its reference. If rung 5 recovers, the loss is in processing the user's turn, not in answering,
+# and the tier needs a dense way to ingest a turn; if it does not, the explanation is elsewhere.
+# The tier cannot run this condition (it is decode-only), which is the point being measured.
+followup_dense_turns:
+  policies: [quest]
+  budgets: [0.125, 0.0625]
+  turn_chunk: 4096
