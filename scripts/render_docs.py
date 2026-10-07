@@ -51,6 +51,7 @@ OUTPUTS = {
     "GAP_TABLE.md.tmpl": "docs/GAP_TABLE.md",
     "PHASE_16.md.tmpl": "docs/phases/PHASE_16.md",
     "PHASE_17.md.tmpl": "docs/phases/PHASE_17.md",
+    "PHASE_18.md.tmpl": "docs/phases/PHASE_18.md",
 }
 
 GENERATED_BANNER = (
@@ -2252,6 +2253,31 @@ def block_p17_provenance(ctx: Mapping[str, Any]) -> str:
     if not isinstance(src, Mapping):
         return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row(k, p) for k, p in src.items()])
+
+
+def block_p18_audit(ctx: Mapping[str, Any]) -> str:
+    outputs = lookup(ctx, "phase18.audit.outputs")
+    steps = lookup(ctx, "phase18.audit.steps")
+    if not isinstance(outputs, list) or not isinstance(steps, list):
+        return f"_{NOT_MEASURED}_"
+    rows = []
+    for o in outputs:
+        if not o["regenerated"]:
+            verdict = "**not regenerated** (analysis failed)"
+        elif o["identical"]:
+            verdict = "identical"
+        else:
+            verdict = "**differs** at " + ", ".join(f"`{p}`" for p in o["differing_paths"])
+        rows.append([f"`results/{o['result']}`", verdict])
+    return table(["Analysis output", "Regenerated from committed raw results"], rows)
+
+
+def block_p18_failed(ctx: Mapping[str, Any]) -> str:
+    steps = lookup(ctx, "phase18.audit.steps")
+    if not isinstance(steps, list):
+        return f"_{NOT_MEASURED}_"
+    rows = [[f"`{' '.join(s['argv'])}`", str(s["exit"]), f"`{s['tail'].rsplit(' | ', 1)[-1]}`"] for s in steps if s["exit"]]
+    return table(["Analysis", "Exit", "Last line of its output"], rows) if rows else "None."
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {

@@ -1,0 +1,85 @@
+# Phase 18: one entry point, and a reproducibility audit
+
+Item 3 of the [gap table](../GAP_TABLE.md)'s recommended order, gap A1: one entry point over the
+per-phase scripts. No GPU work. The experiment is an audit of the docs pipeline itself: regenerate
+every analysis from the committed raw results and check that every documented number comes back.
+
+## What was built
+
+- `scripts/reproduce.py` with five subcommands:
+  - `list`: every phase, the drivers that produced its results and its analyses.
+  - `plan --phase N`: the exact commands behind a phase.
+  - `chain --phase N --out x.cmd`: the same commands as a `.cmd` chain that records each step's exit
+    code in a status file and touches a `.done` file at the end, so it can be launched outside the
+    session's process tree and polled.
+  - `analyze [--phase N ...]`: rerun analyses in dependency order, then figures and docs.
+  - `audit`: the experiment below.
+- **Driver commands are read from provenance, not written down.** Every `metrics.json` already
+  records the argv and commit that produced it (`harness/results.py`). `harness/suite.py` reads them
+  back, so `plan` prints what produced the published numbers rather than what a README says did,
+  and it flags a command that can no longer be replayed from a clone (one Phase 4 probe ran with a
+  config from a session scratchpad). `configs/suite.yaml` holds only what provenance cannot say:
+  which phase owns `results/ladder`, `results/kl` and `results/phase12_pilot`, and the order the
+  analyses must run in, since several read another phase's analysis output.
+- `tests/test_suite_manifest.py` fails if a results directory has no phase, if a recorded analysis
+  is missing from the order, or if a new reported result cannot be replayed from a clone.
+- The plan's `results/<date>/` layout was not adopted: it would break the docs pipeline, which
+  addresses results as `results/<phase>/`.
+
+**Not built:** the gap table's other A1 items. Stock llama.cpp baselines and GGUF models are new
+external binaries and downloads (rule 5: ask first). A 7–8B model does not fit with a long KV in
+this runtime. A multi-turn evaluation is the next item in the recommended order.
+
+## The audit
+
+`reproduce.py audit` requires a clean tree. It snapshots every analysis output, reruns all
+{{ phase18.audit.summary.analyses_run | int }} analyses in order on the committed raw results,
+compares each regenerated output with the committed one, re-renders every doc, and then restores
+every file byte for byte. Outputs are compared exactly, field by field, without their provenance
+(run time, commit, dirty flag), which differs by construction. Docs are re-rendered with the
+committed provenance put back, so a doc that changes means a number changed. An output whose bytes
+did not change at all was never rewritten, because every write stamps a new time, so its analysis
+failed; it is counted as not regenerated rather than as identical. (The first version of the audit
+counted it as identical. The fix is in the second commit of this phase.)
+
+Run from a worktree pinned at the commit under test, detached. Total analysis time
+{{ phase18.audit.summary.seconds_total | .0f }} s.
+
+| | Count |
+| --- | --: |
+| Analysis outputs | {{ phase18.audit.summary.outputs | int }} |
+| Regenerated, identical to the committed file | {{ phase18.audit.summary.outputs_identical | int }} |
+| Regenerated, different | {{ phase18.audit.summary.outputs_differing | int }} |
+| Not regenerated (analysis failed) | {{ phase18.audit.summary.outputs_not_regenerated | int }} |
+| Docs re-rendered | {{ phase18.audit.summary.docs_rendered | int }} |
+| Docs identical after re-rendering | {{ phase18.audit.summary.docs_identical | int }} |
+
+{{> p18_audit }}
+
+**Failed analyses:**
+
+{{> p18_failed }}
+
+### What it found
+
+- **Every documented number that could be regenerated came back.** All
+  {{ phase18.audit.summary.docs_rendered | int }} docs re-render identically from the regenerated outputs.
+- **Two analyses depend on data outside the repository, and it was offline.** The Phase 16 analysis
+  reads attention traces, and the Phase 17 analysis reads the 3B model's `config.json`, both on the
+  external data drive (`D:\CompSci\lazykv-data`, see the memory notes on downloads), which was not
+  mounted during this session. Their outputs could not be checked. That is a real reproducibility gap:
+  a clone cannot rerun those two analyses without the Phase 16 traces and the 3B weights.
+  directory. Phase 17's dependency is only the model's geometry. It could be recorded in the raw
+  results at run time instead, which would remove that dependency. Not done here.
+- **One committed output is stale, with no changed number.** `results/phase5/ceiling` was written
+  by `analyze_ceiling.py` at Phase 6. Phase 11 later added two fields to that analyzer (`previous`,
+  a comparison slot, and `summary.replay_ms`). Rerunning it today produces those two extra fields and
+  every existing field unchanged. The file was left as committed, since it is what Phase 6 published.
+  It now has a known, explained difference from a fresh run.
+
+## What this phase does not show
+
+- That the drivers reproduce. The audit reruns analyses on committed raw results; rerunning the GPU
+  drivers is hours of machine time per phase, and timings would not repeat exactly anyway (Phase 1).
+  `plan` and `chain` make such a rerun one command, but none was done here.
+- Figures are not compared: PNG bytes carry renderer metadata.
