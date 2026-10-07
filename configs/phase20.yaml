@@ -1,0 +1,40 @@
+# Phase 20: session snapshots (gap table item C1).
+#
+# A long-document chat pays its prefill once per session. Since Phase 17 the prefill goes into the
+# tier, and since Phase 19 a session can keep going for many turns. Resuming a saved session should
+# cost a sequential disk read instead of a prefill. lazykv/snapshot.py saves a tier as its host store
+# already is (sealed blocks are immutable) plus the few tokens still on the GPU and the next-token
+# logits, and restores it through the same boundary code as tiered prefill. A unit test shows a
+# restored tier continues bit-identically on a tiny model.
+#
+# Questions, fixed before any run:
+#   1. Cost. Wall time to resume a session at each context: restore (unbuffered disk read, so the
+#      page cache the save just filled cannot help, plus H2D and the tier boundary) against the
+#      layer-major tiered prefill it replaces. Medians of `repeats` each, one process.
+#   2. Size. Snapshot bytes against the session's KV bytes (expected: equal, plus alignment).
+#   3. Exactness at scale. The restored tier's full state hash (host blocks, Quest metadata, sink,
+#      tail, dense KV) must equal the prefilled tier's on every restore; the decoded tokens are
+#      compared too, with the cuDNN repeatability caveat.
+#
+# Brief §B9 allows an SSD tier only as a capacity-only demonstration, because NVMe is slower than
+# PCIe. A snapshot is not in the decode path at all: it replaces a prefill, which is compute-bound,
+# so the question is whether a sequential read beats recomputation, not whether it beats PCIe.
+phase: phase20
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+# The speed kernel: question 1 is a timing question, as Phase 17's capacity run was.
+strategy: cudnn_bucketed
+block_size: 64
+prefill_chunk: 2048
+decode_tokens: 32
+budget: 0.125
+tier:
+  fetch: gather
+contexts: [32768, 65536, 130048]
+repeats: 3
+# Snapshots go to the system temp directory (the internal NVMe, C:) and are deleted after each context.
+snapshot_dir: null
+prompt: {book: moby_dick, kind: single, depth: 0.5, sample: 0, seed: 0}
