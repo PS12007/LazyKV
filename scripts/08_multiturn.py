@@ -44,10 +44,24 @@ def main() -> None:
     p.add_argument("--context", type=int, help="override config context (smoke tests)")
     p.add_argument("--sessions", type=int, help="override config sessions (smoke tests)")
     p.add_argument("--session-start", type=int, default=0, help="first session index (chunked runs)")
+    p.add_argument("--policies", nargs="+", help="override config policies")
+    p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
+    p.add_argument("--no-tier-check", action="store_true", help="drop the rung 6 validity condition")
+    # Post hoc (configs/phase19.yaml, amendment): feed each user turn in one dense forward, so only the
+    # answers are decoded sparsely, as in every single-turn test. Rung 5 only; the tier is decode-only.
+    p.add_argument("--turn-chunk", type=int, help="feed user turns in forwards of this many tokens")
     p.add_argument("--out", default="multiturn")
     args = p.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     cfg = load_config(Path(args.config))
+    if args.policies:
+        cfg["policies"] = args.policies
+    if args.budgets:
+        cfg["budgets"] = args.budgets
+    if args.no_tier_check:
+        cfg["tier_check"] = None
+    if args.turn_chunk and (any(pol != "quest" for pol in cfg["policies"]) or cfg.get("tier_check")):
+        raise SystemExit("--turn-chunk is for rung 5 only (--policies quest --no-tier-check): the tier is decode-only")
     ctx = args.context or cfg["context"]
     n_sessions = args.sessions or cfg["sessions"]
     bs, chunk, max_new = cfg["block_size"], cfg["prefill_chunk"], cfg["max_new_tokens"]
@@ -77,7 +91,7 @@ def main() -> None:
 
     def save() -> None:
         write_metrics(RESULTS_DIR / cfg["phase"] / args.out, {
-            "config": {**cfg, "context": ctx, "sessions": n_sessions, "session_start": args.session_start},
+            "config": {**cfg, "context": ctx, "sessions": n_sessions, "session_start": args.session_start, "turn_chunk": args.turn_chunk},
             "attention_strategy": QUALITY_STRATEGY,
             "conditions": [c.label for c in conds],
             "schedule": [[t.asks, t.introduces] for t in sessions[0].turns],
@@ -102,7 +116,7 @@ def main() -> None:
             built = build_cache(full, cond, total, bs, None, lm.model, host, tier=tier_opts)
             t0 = time.perf_counter()
             try:
-                for res in run_session(lm.model, built.cache, pre.last_logits, session, eot, max_new, session.ctx):
+                for res in run_session(lm.model, built.cache, pre.last_logits, session, eot, max_new, session.ctx, turn_chunk=args.turn_chunk):
                     turn = session.turns[res.index]
                     text = lm.tokenizer.decode(res.answer_ids)
                     s = score_turn(turn, text)

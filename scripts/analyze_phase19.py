@@ -56,10 +56,43 @@ def retention(rows: list[dict[str, Any]], cond: tuple[str, float], select: Any) 
     }
 
 
+def dense_turn_followup(rows: list[dict[str, Any]], fu: dict[str, Any]) -> dict[str, Any]:
+    """The post hoc amendment: rung 5 with each user turn fed densely, against rung 5 fed token by token.
+
+    Each run's retention is against its own full cache, fed the same way. The direct comparison of
+    the two rung 5 runs is a paired sign test on the same (session, turn), over the turns after
+    turn 0: turn 0 is the identical prefill and answer in both.
+    """
+    frows = fu["turns"]
+    kinds = {"chat": lambda r: r["kind"] == "chat", "doc_later": lambda r: r["kind"] == "doc" and r["turn"] > 0 and r["asks"] != "d0",
+             "doc_reask": lambda r: r["kind"] == "doc" and r["turn"] > 0 and r["asks"] == "d0", "after_turn0": lambda r: r["turn"] > 0}
+    out: dict[str, Any] = {"provenance": fu["provenance"], "turn_chunk": fu["config"].get("turn_chunk"), "budgets": {}}
+    for b in sorted({r["budget"] for r in frows if r["policy"] == "quest"}, reverse=True):
+        entry: dict[str, Any] = {}
+        for name, sel in kinds.items():
+            per_token = {(r["session"], r["turn"]): r["score"] for r in rows if r["policy"] == "quest" and r["budget"] == b and sel(r)}
+            dense = {(r["session"], r["turn"]): r["score"] for r in frows if r["policy"] == "quest" and r["budget"] == b and sel(r)}
+            keys = sorted(k for k in per_token if k in dense)
+            better = sum(1 for k in keys if dense[k] > per_token[k])
+            worse = sum(1 for k in keys if dense[k] < per_token[k])
+            entry[name] = {
+                "turns": len(keys),
+                "per_token_accuracy": sum(per_token[k] for k in keys) / len(keys) if keys else None,
+                "dense_turn_accuracy": sum(dense[k] for k in keys) / len(keys) if keys else None,
+                "dense_turn_retention": retention(frows, ("quest", b), sel),
+                "dense_better": better, "dense_worse": worse, "sign_p": sign_test_p(worse, better),
+            }
+        out["budgets"][f"{100 * b:g}"] = entry
+    full = [r["score"] for r in frows if r["policy"] == "full" and r["turn"] > 0]
+    out["full_dense_turn_accuracy_after_turn0"] = sum(full) / len(full) if full else None
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", default="multiturn", help="results/phase19/<run> to analyze")
     ap.add_argument("--out", default="analysis")
+    ap.add_argument("--followup", default="multiturn_dense_turns", help="the post hoc dense-turn run, if present")
     args = ap.parse_args()
     src = json.loads((RESULTS_DIR / "phase19" / args.run / "metrics.json").read_text(encoding="utf-8"))
     rows = src["turns"]
@@ -123,7 +156,12 @@ def main() -> None:
         "validity": validity,
         "k_blocks": {label(f["policy"], f["budget"]): f.get("k_blocks") for f in facts if f.get("k_blocks") is not None},
     }
-    write_metrics(RESULTS_DIR / "phase19" / args.out, {"source": src["provenance"], "conditions": per, "summary": summary})
+    followup = None
+    fpath = RESULTS_DIR / "phase19" / args.followup / "metrics.json"
+    if fpath.exists():
+        followup = dense_turn_followup(rows, json.loads(fpath.read_text(encoding="utf-8")))
+    write_metrics(RESULTS_DIR / "phase19" / args.out, {"source": src["provenance"], "followup_source": None if followup is None else followup.pop("provenance"),
+                                                        "conditions": per, "summary": summary, "followup": followup})
     print(json.dumps(summary, indent=2))
 
 

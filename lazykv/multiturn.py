@@ -202,12 +202,17 @@ class TurnResult:
 
 
 @torch.inference_mode()
-def run_session(model: PreTrainedModel, cache: Cache, first_logits: torch.Tensor, session: Session, eot: int, max_new: int, start_len: int) -> Iterator[TurnResult]:
+def run_session(model: PreTrainedModel, cache: Cache, first_logits: torch.Tensor, session: Session, eot: int, max_new: int, start_len: int, turn_chunk: int | None = None) -> Iterator[TurnResult]:
     """Drive a prefilled cache through every turn, one token per forward. Yields each turn's answer.
 
     The answer stops at the end-of-turn token or after `max_new` tokens. The end-of-turn token itself is
     not fed: every later turn's feed begins with it (the template closes the previous answer), so a
     session's KV is the same whether or not the model ended its answer on its own.
+
+    `turn_chunk` feeds each user turn in forwards of up to that many tokens instead of one at a time.
+    Rung 5 attends densely to a multi-token forward, so this processes the user's turn (the question
+    included) with exact attention and only the answer sparsely, as every single-turn test did. The
+    tier cannot do this (it is decode-only); the option exists to measure what that costs.
     """
     ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
     extra = cache_model_kwargs(cache)
@@ -219,9 +224,15 @@ def run_session(model: PreTrainedModel, cache: Cache, first_logits: torch.Tensor
         return model(input_ids=ids, past_key_values=cache, use_cache=True, logits_to_keep=1, **extra).logits[0, -1]
 
     for turn in session.turns:
-        for tok in turn.feed_ids:
-            logits = step(tok)
-            length += 1
+        if turn_chunk and turn.feed_ids:
+            feed = torch.tensor(turn.feed_ids, dtype=torch.long, device="cuda").view(1, -1)
+            for s in range(0, feed.shape[1], turn_chunk):
+                logits = model(input_ids=feed[:, s : s + turn_chunk], past_key_values=cache, use_cache=True, logits_to_keep=1, **extra).logits[0, -1]
+            length += feed.shape[1]
+        else:
+            for tok in turn.feed_ids:
+                logits = step(tok)
+                length += 1
         answer: list[int] = []
         before = length
         while len(answer) < max_new:

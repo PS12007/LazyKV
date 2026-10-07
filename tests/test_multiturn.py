@@ -98,8 +98,9 @@ def _synthetic_session(vocab: int, prefix: int, feeds: list[int]):  # noqa: ANN2
 
 
 @cuda
+@pytest.mark.parametrize("turn_chunk", [None, 16])
 @pytest.mark.parametrize("eot", [7, 10_000])  # 10_000 is outside the vocab: every answer runs to max_new
-def test_kv_length_is_document_plus_feeds_plus_answers(tiny, eot: int) -> None:  # noqa: ANN001
+def test_kv_length_is_document_plus_feeds_plus_answers(tiny, eot: int, turn_chunk: int | None) -> None:  # noqa: ANN001
     from lazykv.cache import FullGPUCache
     from lazykv.generate import prefill
     from lazykv.multiturn import run_session
@@ -108,7 +109,7 @@ def test_kv_length_is_document_plus_feeds_plus_answers(tiny, eot: int) -> None: 
     s = _synthetic_session(cfg.vocab_size, 100, [30, 17, 41])
     full = FullGPUCache(cfg.num_hidden_layers, 512)
     pre = prefill(model, full, s.prefix_ids, chunk_size=32)
-    res = list(run_session(model, full, pre.last_logits, s, eot=eot, max_new=6, start_len=100))
+    res = list(run_session(model, full, pre.last_logits, s, eot=eot, max_new=6, start_len=100, turn_chunk=turn_chunk))
     assert [r.index for r in res] == [0, 1, 2, 3]
     assert all(len(r.answer_ids) <= 6 and eot not in r.answer_ids for r in res)
     assert full.get_seq_length() == 100 + 30 + 17 + 41 + sum(len(r.answer_ids) for r in res)
