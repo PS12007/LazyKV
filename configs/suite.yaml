@@ -1,0 +1,48 @@
+# The one entry point's manifest (gap table item A1), read by scripts/reproduce.py.
+#
+# Driver commands are NOT listed here. Every metrics.json records the argv and commit that produced
+# it, so the runner reads them from results/ instead: a hand-kept list of commands would drift from
+# what actually ran, and the recorded one cannot. This file only holds what provenance cannot say:
+# which phase a top-level results directory belongs to, and the order analyses must run in, because
+# several read another phase's analysis output.
+#
+# tests/test_suite_manifest.py fails if a result directory has no phase here, or if a recorded
+# analysis command is missing from the order.
+
+# Top-level results/ directories whose name is not phaseN.
+groups:
+  phase12_pilot: 12
+  ladder: 7   # the ladder frontier first appears in Phase 7's gate report
+  kl: 10      # the KL study is Phase 10's supporting measure
+
+# Analysis commands in dependency order. Each entry is the argv after the interpreter, as recorded.
+#   analyze_phase1  reads phase0/analysis
+#   analyze_ladder  reads phase{2,3,4,5,7}/analysis
+#   analyze_kl      reads phase10 raw results and ladder
+#   analyze_ceiling --phase phase11 --compare-to phase5  reads phase5/ceiling and phase5/analysis
+analysis_order:
+  - {phase: 0, argv: [scripts/analyze_phase0.py]}
+  - {phase: 1, argv: [scripts/analyze_phase1.py]}
+  - {phase: 2, argv: [scripts/analyze_phase2.py]}
+  - {phase: 3, argv: [scripts/analyze_phase3.py]}
+  - {phase: 4, argv: [scripts/analyze_phase4.py]}
+  - {phase: 5, argv: [scripts/analyze_phase5.py]}
+  - {phase: 6, argv: [scripts/analyze_ceiling.py]}
+  - {phase: 7, argv: [scripts/analyze_phase7.py]}
+  - {phase: 7, argv: [scripts/analyze_ladder.py]}
+  - {phase: 8, argv: [scripts/analyze_phase8.py]}
+  - {phase: 9, argv: [scripts/analyze_phase9.py]}
+  - {phase: 10, argv: [scripts/analyze_phase10.py]}
+  - {phase: 10, argv: [scripts/analyze_kl.py]}
+  - {phase: 11, argv: [scripts/analyze_ceiling.py, --phase, phase11, --compare-to, phase5]}
+  - {phase: 12, argv: [scripts/analyze_phase12.py]}
+  - {phase: 13, argv: [scripts/analyze_phase13.py]}
+  - {phase: 14, argv: [scripts/analyze_phase14.py]}
+  - {phase: 15, argv: [scripts/analyze_phase15.py]}
+  - {phase: 16, argv: [scripts/analyze_phase16.py]}
+  - {phase: 17, argv: [scripts/analyze_phase17.py]}
+
+# Run after any analysis, in this order.
+finish:
+  - [scripts/make_figures.py]
+  - [scripts/render_docs.py]
