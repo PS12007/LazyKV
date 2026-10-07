@@ -7,6 +7,23 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-07: Phase 18, one entry point and a reproducibility audit
+
+Gap table item A1, without the parts that need sign-off (llama.cpp, GGUF, bigger models).
+`scripts/reproduce.py` reads every driver command back from the provenance each result recorded,
+instead of a hand-kept list. Its `audit` reruns every analysis on the committed raw results:
+17 of 20 outputs
+came back identical, and every doc re-rendered identically. 2
+could not run because their inputs live on the external data drive, which was offline. One
+(`phase5/ceiling`) is stale by two fields its analyzer gained later, with no number changed.
+
+### Incidents
+
+- The audit's first version counted an analysis that crashed as "identical", because the crashed
+  step left the committed file untouched. Caught on its first run (two analyses failed and their
+  outputs were still reported identical). Fixed before the reported run: unchanged bytes now mean
+  "not regenerated".
+
 ## 2026-10-01: Phase 17, chunked prefill into the tier
 
 Item 2 of the gap table's recommended order. `lazykv/tiered_prefill.py` prefills layer by layer

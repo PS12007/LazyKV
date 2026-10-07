@@ -355,7 +355,7 @@ tier in one process):
 .venv\Scripts\python.exe scripts\render_docs.py
 ```
 
-## Reproduce Phases 6–15
+## Reproduce Phases 6–18
 
 Each gate report records the exact command, commit and flags behind its numbers; this table is the
 short version. Every driver is long, so launch it detached with output to `logs/`, and run it from a
@@ -376,7 +376,13 @@ git worktree pinned at the commit under test if you want to keep editing the mai
 | [16](docs/phases/PHASE_16.md) | `06_record_traces.py --config configs\phase16.yaml` | `analyze_phase16.py` | Traces go to the config's `trace_dir` |
 | [17](docs/phases/PHASE_17.md) | `07_prefill_capacity.py`, then `07_tiered_prefill_quality.py --context N` for 16384, 24576 (`--methods full tiered`) and 65536 | `analyze_phase17.py` | One process per capacity cell |
 
+| [18](docs/phases/PHASE_18.md) | none (no GPU work) | `reproduce.py audit` | Needs a clean tree |
+
 Finish every phase with `make_figures.py`, `render_docs.py` and `pytest`.
+
+`scripts/reproduce.py` does all of this from the commands each result recorded: `reproduce.py plan --phase N`
+prints the exact driver commands behind a phase, `reproduce.py chain --phase N --out run.cmd` writes them as a
+detachable chain, and `reproduce.py analyze` reruns every analysis, the figures and the docs.
 
 ## Measurement discipline
 
