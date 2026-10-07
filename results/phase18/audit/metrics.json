@@ -1,0 +1,475 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-07T18:06:21+00:00",
+    "git_commit": "0e55df70b245ce9b8ba1751342b6a90342dc7cb7",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\reproduce.py",
+      "audit"
+    ],
+    "python": "3.12.10"
+  },
+  "steps": [
+    {
+      "phase": 0,
+      "argv": [
+        "scripts/analyze_phase0.py"
+      ],
+      "exit": 0,
+      "seconds": 0.23,
+      "tail": ""
+    },
+    {
+      "phase": 1,
+      "argv": [
+        "scripts/analyze_phase1.py"
+      ],
+      "exit": 0,
+      "seconds": 0.21,
+      "tail": ""
+    },
+    {
+      "phase": 2,
+      "argv": [
+        "scripts/analyze_phase2.py"
+      ],
+      "exit": 0,
+      "seconds": 0.65,
+      "tail": ""
+    },
+    {
+      "phase": 3,
+      "argv": [
+        "scripts/analyze_phase3.py"
+      ],
+      "exit": 0,
+      "seconds": 0.92,
+      "tail": ""
+    },
+    {
+      "phase": 4,
+      "argv": [
+        "scripts/analyze_phase4.py"
+      ],
+      "exit": 0,
+      "seconds": 1.29,
+      "tail": ""
+    },
+    {
+      "phase": 5,
+      "argv": [
+        "scripts/analyze_phase5.py"
+      ],
+      "exit": 0,
+      "seconds": 0.56,
+      "tail": ""
+    },
+    {
+      "phase": 6,
+      "argv": [
+        "scripts/analyze_ceiling.py"
+      ],
+      "exit": 0,
+      "seconds": 0.23,
+      "tail": ""
+    },
+    {
+      "phase": 7,
+      "argv": [
+        "scripts/analyze_phase7.py"
+      ],
+      "exit": 0,
+      "seconds": 0.55,
+      "tail": ""
+    },
+    {
+      "phase": 7,
+      "argv": [
+        "scripts/analyze_ladder.py"
+      ],
+      "exit": 0,
+      "seconds": 0.25,
+      "tail": ""
+    },
+    {
+      "phase": 8,
+      "argv": [
+        "scripts/analyze_phase8.py"
+      ],
+      "exit": 0,
+      "seconds": 5.99,
+      "tail": ""
+    },
+    {
+      "phase": 9,
+      "argv": [
+        "scripts/analyze_phase9.py"
+      ],
+      "exit": 0,
+      "seconds": 11.31,
+      "tail": ""
+    },
+    {
+      "phase": 10,
+      "argv": [
+        "scripts/analyze_phase10.py"
+      ],
+      "exit": 0,
+      "seconds": 6.93,
+      "tail": ""
+    },
+    {
+      "phase": 10,
+      "argv": [
+        "scripts/analyze_kl.py"
+      ],
+      "exit": 0,
+      "seconds": 3.13,
+      "tail": ""
+    },
+    {
+      "phase": 11,
+      "argv": [
+        "scripts/analyze_ceiling.py",
+        "--phase",
+        "phase11",
+        "--compare-to",
+        "phase5"
+      ],
+      "exit": 0,
+      "seconds": 0.21,
+      "tail": ""
+    },
+    {
+      "phase": 12,
+      "argv": [
+        "scripts/analyze_phase12.py"
+      ],
+      "exit": 0,
+      "seconds": 25.17,
+      "tail": ""
+    },
+    {
+      "phase": 13,
+      "argv": [
+        "scripts/analyze_phase13.py"
+      ],
+      "exit": 0,
+      "seconds": 4.34,
+      "tail": ""
+    },
+    {
+      "phase": 14,
+      "argv": [
+        "scripts/analyze_phase14.py"
+      ],
+      "exit": 0,
+      "seconds": 30.52,
+      "tail": ""
+    },
+    {
+      "phase": 15,
+      "argv": [
+        "scripts/analyze_phase15.py"
+      ],
+      "exit": 0,
+      "seconds": 8.34,
+      "tail": ""
+    },
+    {
+      "phase": 16,
+      "argv": [
+        "scripts/analyze_phase16.py"
+      ],
+      "exit": 1,
+      "seconds": 3.57,
+      "tail": "    fid = stack.enter_context(open(os.fspath(file), \"rb\")) |                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ | FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\CompSci\\\\lazykv-data\\\\traces\\\\phase16\\\\ctx32768\\\\niah_single_d0_s0.npz'"
+    },
+    {
+      "phase": 17,
+      "argv": [
+        "scripts/analyze_phase17.py"
+      ],
+      "exit": 1,
+      "seconds": 3.57,
+      "tail": "    return io.open(self, mode, buffering, encoding, errors, newline) |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ | FileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\CompSci\\\\lazykv-data\\\\models\\\\Llama-3.2-3B-Instruct\\\\config.json'"
+    }
+  ],
+  "outputs": [
+    {
+      "result": "kl",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "ladder",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase0/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase1/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase10/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase11/ceiling",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase12/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase13/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase14/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase15/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase16/analysis",
+      "regenerated": false,
+      "identical": null,
+      "differing_paths": []
+    },
+    {
+      "result": "phase17/analysis",
+      "regenerated": false,
+      "identical": null,
+      "differing_paths": []
+    },
+    {
+      "result": "phase2/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase3/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase4/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase5/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase5/ceiling",
+      "regenerated": true,
+      "identical": false,
+      "differing_paths": [
+        "previous",
+        "summary.replay_ms"
+      ]
+    },
+    {
+      "result": "phase7/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase8/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    },
+    {
+      "result": "phase9/analysis",
+      "regenerated": true,
+      "identical": true,
+      "differing_paths": []
+    }
+  ],
+  "docs": [
+    {
+      "doc": "docs/FINDINGS.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/GAP_TABLE.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/IMPLEMENTATION_PLAN.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/KV_MEMORY_MODEL.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/PAPER.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_0.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_1.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_10.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_11.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_12.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_13.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_14.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_15.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_16.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_17.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_2.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_3.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_4.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_5.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_6.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_7.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_8.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/phases/PHASE_9.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/RESEARCH_LOG.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "docs/STATUS.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "README.md",
+      "identical": true,
+      "changed_lines": []
+    },
+    {
+      "doc": "SYSTEM_INFO.md",
+      "identical": true,
+      "changed_lines": []
+    }
+  ],
+  "summary": {
+    "analyses_run": 20,
+    "analyses_failed": 2,
+    "outputs": 20,
+    "outputs_not_regenerated": 2,
+    "outputs_identical": 17,
+    "outputs_differing": 1,
+    "docs_rendered": 27,
+    "docs_identical": 27,
+    "docs_differing": 0,
+    "tree_restored": true,
+    "seconds_total": 108.0
+  }
+}
