@@ -1,0 +1,192 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-08T17:54:58+00:00",
+    "git_commit": "bfb4aa72b70b488a895eadfa95a007d65816eef1",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "configs/suite.yaml",
+      "docs/GAP_TABLE.md",
+      "docs/templates/GAP_TABLE.md.tmpl",
+      "scripts/render_docs.py"
+    ],
+    "argv": [
+      "scripts/analyze_phase20.py"
+    ],
+    "python": "3.12.10"
+  },
+  "source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-08T17:54:48+00:00",
+    "git_commit": "a82dfcc70fa48fd38be02bf7dcc28a4fe2c3d8c7",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\09_snapshot.py"
+    ],
+    "python": "3.12.10"
+  },
+  "contexts": {
+    "32768": {
+      "context": 32768,
+      "status": "ok",
+      "error": null,
+      "k_blocks": 62,
+      "prefill_s": {
+        "median": 5.737774299981538,
+        "min": 5.730538100004196,
+        "max": 7.261598699958995,
+        "n": 3
+      },
+      "restore_s": {
+        "median": 0.641365300049074,
+        "min": 0.6351522000040859,
+        "max": 0.7534197000204585,
+        "n": 3
+      },
+      "read_s": {
+        "median": 0.33484029985265806,
+        "min": 0.33387229999061674,
+        "max": 0.3429063999792561,
+        "n": 3
+      },
+      "rebuild_s": {
+        "median": 0.286910499969963,
+        "min": 0.2861393000348471,
+        "max": 0.2927795998984948,
+        "n": 3
+      },
+      "read_gbps": {
+        "median": 3.2082603213314265,
+        "min": 3.132793228895659,
+        "max": 3.217562067982852,
+        "n": 3
+      },
+      "speedup": 8.946187608750447,
+      "speedup_worst": 7.6060369802496375,
+      "save_s": 1.0538615999976173,
+      "save_gbps": 1.0193577752547667,
+      "snapshot_bytes": 1074262016,
+      "kv_bytes": 1073741824,
+      "snapshot_over_kv": 1.0004844665527344,
+      "host_pinned_bytes": 968884224,
+      "restores": 3,
+      "state_match": 3,
+      "tokens_match": 3,
+      "niah_score": 1.0
+    },
+    "65536": {
+      "context": 65536,
+      "status": "ok",
+      "error": null,
+      "k_blocks": 126,
+      "prefill_s": {
+        "median": 18.015175699954852,
+        "min": 17.95993490004912,
+        "max": 18.757993299979717,
+        "n": 3
+      },
+      "restore_s": {
+        "median": 1.22739219997311,
+        "min": 1.2228670999757014,
+        "max": 1.3773927000002004,
+        "n": 3
+      },
+      "read_s": {
+        "median": 0.6584989999537356,
+        "min": 0.652450900117401,
+        "max": 0.6663400000543334,
+        "n": 3
+      },
+      "rebuild_s": {
+        "median": 0.5589960999204777,
+        "min": 0.5581628000363708,
+        "max": 0.5710421999683604,
+        "n": 3
+      },
+      "read_gbps": {
+        "median": 3.261958897661063,
+        "min": 3.2235745592713214,
+        "max": 3.292196656657984,
+        "n": 3
+      },
+      "speedup": 14.677603214644456,
+      "speedup_worst": 13.039080938970061,
+      "save_s": 1.8371206999872811,
+      "save_gbps": 1.1692230347275883,
+      "snapshot_bytes": 2148003840,
+      "kv_bytes": 2147483648,
+      "snapshot_over_kv": 1.0002422332763672,
+      "host_pinned_bytes": 1908408320,
+      "restores": 3,
+      "state_match": 3,
+      "tokens_match": 2,
+      "niah_score": 0.0
+    },
+    "130048": {
+      "context": 130048,
+      "status": "ok",
+      "error": null,
+      "k_blocks": 252,
+      "prefill_s": {
+        "median": 60.69227130000945,
+        "min": 60.62582700001076,
+        "max": 62.31300460000057,
+        "n": 3
+      },
+      "restore_s": {
+        "median": 2.3392307000467554,
+        "min": 2.335203399998136,
+        "max": 2.485008299991023,
+        "n": 3
+      },
+      "read_s": {
+        "median": 1.2062454998958856,
+        "min": 1.205151399888564,
+        "max": 1.224541400151793,
+        "n": 3
+      },
+      "rebuild_s": {
+        "median": 1.1276412000879645,
+        "min": 1.1146862001623958,
+        "max": 1.1512322999769822,
+        "n": 3
+      },
+      "read_gbps": {
+        "median": 3.5332159899190163,
+        "min": 3.48042613134329,
+        "max": 3.536423629756465,
+        "n": 3
+      },
+      "speedup": 25.94539790316379,
+      "speedup_worst": 24.396629580766298,
+      "save_s": 4.671387100010179,
+      "save_gbps": 0.912348509073614,
+      "snapshot_bytes": 4261933056,
+      "kv_bytes": 4261412864,
+      "snapshot_over_kv": 1.0001220703125,
+      "host_pinned_bytes": 3758096384,
+      "restores": 3,
+      "state_match": 3,
+      "tokens_match": 2,
+      "niah_score": 0.0
+    }
+  },
+  "summary": {
+    "contexts": 3,
+    "contexts_ok": 3,
+    "max_context": 130048,
+    "restores": 9,
+    "state_match": 9,
+    "tokens_match": 7,
+    "all_states_match": true,
+    "speedup_min": 8.946187608750447,
+    "speedup_max": 25.94539790316379,
+    "speedup_worst_min": 7.6060369802496375,
+    "snapshot_over_kv_max": 1.0004844665527344,
+    "read_gbps_min": 3.2082603213314265,
+    "read_gbps_max": 3.5332159899190163,
+    "repeats": 3,
+    "budget": 0.125
+  }
+}
