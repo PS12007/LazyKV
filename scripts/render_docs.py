@@ -53,6 +53,7 @@ OUTPUTS = {
     "PHASE_17.md.tmpl": "docs/phases/PHASE_17.md",
     "PHASE_18.md.tmpl": "docs/phases/PHASE_18.md",
     "PHASE_19.md.tmpl": "docs/phases/PHASE_19.md",
+    "PHASE_20.md.tmpl": "docs/phases/PHASE_20.md",
 }
 
 GENERATED_BANNER = (
@@ -2352,6 +2353,43 @@ def block_p19_provenance(ctx: Mapping[str, Any]) -> str:
     if isinstance(fu, Mapping):
         rows.append(_provenance_row("Post hoc: dense-turn follow-up", fu))
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
+
+def block_p20_timing(ctx: Mapping[str, Any]) -> str:
+    cs = lookup(ctx, "phase20.analysis.contexts")
+    if not isinstance(cs, Mapping):
+        return f"_{NOT_MEASURED}_"
+
+    def rng(d: Mapping[str, Any]) -> str:
+        return f"{d['median']:.2f} s ({d['min']:.2f}–{d['max']:.2f})"
+
+    rows = []
+    for e in cs.values():
+        if e["status"] != "ok":
+            rows.append([f"{e['context']:,}", f"error: {e['error']}"] + [NOT_MEASURED] * 5)
+            continue
+        rows.append([f"{e['context']:,}", rng(e["prefill_s"]), rng(e["restore_s"]), f"{e['read_s']['median']:.2f} s",
+                     f"{e['rebuild_s']['median']:.2f} s", f"{e['read_gbps']['median']:.2f} GB/s", f"{e['speedup']:.1f}× ({e['speedup_worst']:.1f}× worst pair)"])
+    return table(["Context", "Tiered prefill (median, range)", "Restore (median, range)", "of which disk read", "of which rebuild", "Read rate", "Speedup"],
+                 rows, ["--:", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p20_size(ctx: Mapping[str, Any]) -> str:
+    cs = lookup(ctx, "phase20.analysis.contexts")
+    if not isinstance(cs, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[f"{e['context']:,}", f"{e['kv_bytes'] / 2**20:,.0f} MiB", f"{e['snapshot_bytes'] / 2**20:,.0f} MiB", f"{e['snapshot_over_kv']:.4f}",
+             f"{e['save_s']:.2f} s ({e['save_gbps']:.2f} GB/s)", f"{e['state_match']} / {e['restores']}", f"{e['tokens_match']} / {e['restores']}"]
+            for e in cs.values() if e["status"] == "ok"]
+    return table(["Context", "Session KV", "Snapshot", "Snapshot / KV", "Save (first prefill)", "State hash equal", "Decoded tokens equal"],
+                 rows, ["--:", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p20_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase20.analysis.source")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row("Snapshot resume", src)])
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {

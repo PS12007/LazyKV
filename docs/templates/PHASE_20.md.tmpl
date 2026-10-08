@@ -1,0 +1,73 @@
+# Phase 20: session snapshots
+
+Gap table item C1. A long-document chat pays its prefill once per session; since
+[Phase 17](PHASE_17.md) that prefill goes into the tier, and [Phase 19](PHASE_19.md) showed a
+session can go on for many turns. Resuming a saved session should cost a sequential disk read
+instead of a prefill. Questions were fixed in `configs/phase20.yaml` before any run.
+
+## What was built
+
+- `lazykv/snapshot.py`: **save a tier as its host store already is.** A sealed block is immutable
+  once it is on the host, so a snapshot is the host store in its native `[B, h, 2, bs, d]` layout
+  (written from the pinned pool without a permute), plus the few tokens still on the GPU (the dense
+  layers' KV and each tiered layer's unsealed tail) and the next-token logits. Sections are aligned
+  to 4 KiB so the reader can bypass the OS page cache.
+- **Restore goes through the same boundary as prefill.** Each tiered layer's KV is rebuilt on the GPU
+  one layer at a time and handed to `TieredLayer`'s constructor, exactly as `tiered_prefill` hands it
+  a freshly computed layer, so a restored tier is a tier built by prefill at that length. Only slot
+  residency is not carried over; it decides what is fetched, never what is attended.
+- `scripts/09_snapshot.py`, `scripts/analyze_phase20.py`. `tests/test_snapshot.py`: a restored tiny
+  model continues bit-identically, buffered and unbuffered, with the split before and after a block
+  seals; the int8 tier and foreign files are refused.
+
+## The run
+
+Llama-3.2-1B-Instruct, one NIAH prompt per context, the speed kernel, Quest-style tier at a
+{{ phase20.analysis.summary.budget | pct }} budget, {{ phase20.analysis.summary.repeats | int }} prefills
+and {{ phase20.analysis.summary.repeats | int }} restores per context in one process. The snapshot was
+written to the internal NVMe (C:) and every restore read it unbuffered, so the page cache the save had
+just filled could not help.
+
+### Question 1: cost
+
+{{> p20_timing }}
+
+- **Resuming is {{ phase20.analysis.summary.speedup_min | .1f }}× to {{ phase20.analysis.summary.speedup_max | .1f }}×
+  faster than prefilling again, and the gap grows with context.** Prefill is compute-bound and its
+  attention grows with the square of the context; a restore moves each KV byte once and grows
+  linearly. Even pairing the slowest restore with the fastest prefill, it is at least
+  {{ phase20.analysis.summary.speedup_worst_min | .1f }}× faster.
+- **About half of a restore is not the disk.** The disk read runs at
+  {{ phase20.analysis.summary.read_gbps_min | .1f }}–{{ phase20.analysis.summary.read_gbps_max | .1f }} GB/s; the rest is
+  the rebuild, which copies each layer to the GPU and back into the host store through the prefill
+  boundary, and the read and rebuild run one after the other. Reading straight into the pinned pool and computing the metadata from it and
+  overlapping the next layer's read with this layer's rebuild could remove most of it (an expectation, not measured). It was not built: the boundary reuse is what makes a restore provably a prefill.
+
+### Questions 2 and 3: size and exactness
+
+{{> p20_size }}
+
+- **A snapshot is the session's KV and nothing more:** at most
+  {{ phase20.analysis.summary.snapshot_over_kv_max | .4f }}× its bytes, the excess being alignment, the
+  header and the logits.
+- **Every restore is exact.** The full tier state hash matched the prefilled tier's on
+  {{ phase20.analysis.summary.state_match | int }} of {{ phase20.analysis.summary.restores | int }} restores.
+  The decoded tokens matched on {{ phase20.analysis.summary.tokens_match | int }} of
+  {{ phase20.analysis.summary.restores | int }}. With identical state, a token mismatch comes from the
+  decode, not the snapshot: cuDNN's single-query kernel is not bit-repeatable (Phase 1), which is why the
+  config named the state hash as the exactness check before the run.
+- The NIAH score in `metrics.json` is the 1B model's at a 12.5% budget on the prefilled tier; it
+  measures the model and the budget, not the snapshot, and is not a result of this phase.
+
+## What this phase does not show
+
+- One model, one prompt per context, one disk. A slower disk lowers the read rate and the speedup;
+  the rebuild half does not depend on it.
+- Save cost was measured once per context, after the first prefill; it is paid once per session and
+  is not on the resume path.
+- No session was resumed mid-conversation in this run; the unit tests cover a split after decoding,
+  this run splits at the prefill boundary.
+
+## Provenance
+
+{{> p20_provenance }}
