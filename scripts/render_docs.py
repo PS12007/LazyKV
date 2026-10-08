@@ -54,6 +54,7 @@ OUTPUTS = {
     "PHASE_18.md.tmpl": "docs/phases/PHASE_18.md",
     "PHASE_19.md.tmpl": "docs/phases/PHASE_19.md",
     "PHASE_20.md.tmpl": "docs/phases/PHASE_20.md",
+    "PHASE_21.md.tmpl": "docs/phases/PHASE_21.md",
 }
 
 GENERATED_BANNER = (
@@ -2390,6 +2391,69 @@ def block_p20_provenance(ctx: Mapping[str, Any]) -> str:
     if not isinstance(src, Mapping):
         return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row("Snapshot resume", src)])
+
+
+_P21_COND = {"full": "Full cache (rung 1)", "quest": "Quest-style (rung 5)", "tiered_sync": "CPU tier (rung 6)"}
+
+
+def block_p21_accuracy(ctx: Mapping[str, Any]) -> str:
+    conds = lookup(ctx, "phase21.analysis.conditions")
+    if not isinstance(conds, Mapping):
+        return f"_{NOT_MEASURED}_"
+    cols = [("doc_turn0", "Doc, turn 0"), ("doc_later", "Doc, later turns"), ("doc_reask", "Doc, re-asked"), ("chat", "Chat needles"), ("after_turn0", "Every turn after turn 0")]
+    rows = []
+    for c in conds.values():
+        name = _P21_COND.get(c["policy"], c["policy"]) + ("" if c["policy"] == "full" else f" @ {_pct_budget(c['budget'])}")
+        cells = []
+        for k, _ in cols:
+            m = c[k]["mean"]
+            r = c[k].get("retention")
+            ret = "" if not r or r["value"] is None else f"; keeps {100 * r['value']:.1f}%"
+            cells.append(NOT_MEASURED if m is None else f"{100 * m:.1f}% ({c[k]['n']}){ret}")
+        rows.append([name] + cells)
+    return table(["Condition, turns fed densely"] + [h for _, h in cols], rows, ["---"] + ["--:"] * len(cols))
+
+
+def block_p21_gain(ctx: Mapping[str, Any]) -> str:
+    q3 = lookup(ctx, "phase21.analysis.q3_tier_gain")
+    if not isinstance(q3, Mapping):
+        return f"_{NOT_MEASURED}_"
+    names = {"chat": "Chat needles", "doc_later": "Doc, later turns", "doc_reask": "Doc, re-asked", "after_turn0": "Every turn after turn 0"}
+    rows = [[f"{b.replace('_', '.')}%", label, str(e[k]["turns"]), f"{100 * e[k]['old_accuracy']:.1f}%", f"{100 * e[k]['new_accuracy']:.1f}%",
+             f"{e[k]['better']} / {e[k]['worse']}", f"{e[k]['sign_p']:.2g}"] for b, e in q3.items() for k, label in names.items()]
+    return table(["Budget", "Questions", "Turns", "Tier, turns token by token (Phase 19)", "Tier, turns dense (this phase)", "Better / worse", "Sign test p"],
+                 rows, ["--:", "---", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p21_cost(ctx: Mapping[str, Any]) -> str:
+    cs = lookup(ctx, "phase21.analysis.cost.contexts")
+    if not isinstance(cs, Mapping):
+        return f"_{NOT_MEASURED}_"
+    cells = [("dense_256", "Dense, 256 tokens"), ("dense_1024", "Dense, 1,024 tokens"), ("per_token_256", "Token by token, 256 tokens")]
+    rows = []
+    for e in cs.values():
+        if e["status"] != "ok":
+            rows.append([f"{e['context']:,}", f"error: {e['error']}"] + [NOT_MEASURED] * (len(cells) + 2))
+            continue
+        out = [f"{e['context']:,}"]
+        for k, _ in cells:
+            w = e[k]["wall_s"]
+            out.append(f"{w['median']:.2f} s ({w['min']:.2f}–{w['max']:.2f})")
+        out += [f"{e['speedup_256']:.1f}×", f"{e['dense_256']['h2d_bytes'] / 2**30:.2f} GiB", f"{e['dense_256']['peak_extra_bytes'] / 2**20:,.0f} / {e['dense_1024']['peak_extra_bytes'] / 2**20:,.0f} MiB"]
+        rows.append(out)
+    return table(["Context"] + [h for _, h in cells] + ["Dense speedup, 256 tokens", "Moved host to device per dense forward", "Extra peak VRAM, dense 256 / 1,024"],
+                 rows, ["--:"] * (len(cells) + 4))
+
+
+def block_p21_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase21.analysis.source")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row("Multi-turn sessions, dense turns", src)]
+    cs = lookup(ctx, "phase21.analysis.cost_source")
+    if isinstance(cs, Mapping):
+        rows.append(_provenance_row("Ingestion cost", cs))
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
