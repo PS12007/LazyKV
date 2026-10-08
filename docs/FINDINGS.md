@@ -474,8 +474,9 @@ claim in this study is quoted with a range over independent runs.
   sessions: fed token by token, rung 5 at 6.25% answers only
   24.3% of turns after the
   first; with each user turn read densely (post hoc), 72.9%.
-  The tier cannot read a turn densely today, so a long conversation over the tier loses more than
-  the single-turn frontier suggests.
+  Since [Phase 21](phases/PHASE_21.md) the tier reads a turn densely too, with rung 5's answer on
+  every turn; at 6.25% it keeps 77.3% of the full
+  cache's later turns, the loss now being the document's. One model, one context, 20 sessions.
 - **The fast kernel is not bit-repeatable** for single-query decode, so quality is measured on a
   separate deterministic kernel and agreement is reported rather than assumed.
 - **This is a laptop.** Thermal behaviour is controlled for by interleaving and repeating, not

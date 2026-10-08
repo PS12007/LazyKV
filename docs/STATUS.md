@@ -43,6 +43,11 @@ nf4 weights (Phase 15) as the larger stress model. Batch size 1, greedy decoding
   130,048 tokens (full cache: 98,304) and the 3B nf4 model
   65,536 (full cache: 32,768). The default path still prefills into a full
   GPU cache first, and the sweep drivers of Phases 2 to 16 use it.
+- **Multi-token forwards after prefill are ingested densely** ([Phase 21](phases/PHASE_21.md)). A
+  user's turn attends to each selecting layer's whole KV, brought back from the host store one layer
+  at a time, as rung 5 does; only single-token decode steps use selection. A 256-token turn into a
+  130,048-token 1B tier is
+  18.9× faster this way than token by token.
 
 ## Policies (the nine-rung ladder)
 

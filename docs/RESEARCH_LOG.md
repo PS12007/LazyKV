@@ -7,6 +7,19 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-08: Phase 21, dense turn ingestion for the tier
+
+The owner approved Phase 19's recommendation over A5 as planned. A multi-token forward through the
+tier now attends to each selecting layer's whole KV, brought back from the host store one layer at a
+time, and appends the new KV in bulk. On Phase 19's sessions the tier gave rung 5's answer on
+320 of 320 turns, and
+at 6.25% answers 72.9% of turns after
+turn 0, against 24.3% token by token.
+It is also faster: a 256-token turn is 18.9× to
+65.9× quicker to ingest than to feed token by token,
+at the price of a transient VRAM peak of about two layers' KV. What remains of the multi-turn loss is
+the document's, under selection, and the tier cannot fix that by moving bytes.
+
 ## 2026-10-08: Phase 20, session snapshots
 
 Gap table item C1. `lazykv/snapshot.py` writes a tier's host store as it already is, plus the few
