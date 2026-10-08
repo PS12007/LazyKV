@@ -1,0 +1,212 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-08T17:54:48+00:00",
+    "git_commit": "a82dfcc70fa48fd38be02bf7dcc28a4fe2c3d8c7",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\09_snapshot.py"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "phase": "phase20",
+    "model": {
+      "repo": "unsloth/Llama-3.2-1B-Instruct",
+      "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+    },
+    "strategy": "cudnn_bucketed",
+    "block_size": 64,
+    "prefill_chunk": 2048,
+    "decode_tokens": 32,
+    "budget": 0.125,
+    "tier": {
+      "fetch": "gather"
+    },
+    "contexts": [
+      32768,
+      65536,
+      130048
+    ],
+    "repeats": 3,
+    "snapshot_dir": null,
+    "prompt": {
+      "book": "moby_dick",
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "seed": 0
+    }
+  },
+  "rows": [
+    {
+      "context": 32768,
+      "capacity_tokens": 33792,
+      "k_blocks": 62,
+      "host_pinned_bytes": 968884224,
+      "kv_bytes": 1073741824,
+      "prefill_s": [
+        7.261598699958995,
+        5.730538100004196,
+        5.737774299981538
+      ],
+      "restore": [
+        {
+          "wall_s": 0.7534197000204585,
+          "read_s": 0.33387229999061674,
+          "rebuild_s": 0.286910499969963,
+          "bytes_read": 1074254848
+        },
+        {
+          "wall_s": 0.6351522000040859,
+          "read_s": 0.33484029985265806,
+          "rebuild_s": 0.2861393000348471,
+          "bytes_read": 1074254848
+        },
+        {
+          "wall_s": 0.641365300049074,
+          "read_s": 0.3429063999792561,
+          "rebuild_s": 0.2927795998984948,
+          "bytes_read": 1074254848
+        }
+      ],
+      "restore_tokens_match": [
+        true,
+        true,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true
+      ],
+      "state_digest": "2c7c95dd2febc9d5f0213c40f5aee938",
+      "save_s": 1.0538615999976173,
+      "snapshot_bytes": 1074262016,
+      "answer": "6136285.",
+      "score": 1.0,
+      "status": "ok",
+      "prefill_s_median": 5.737774299981538,
+      "restore_s_median": 0.641365300049074,
+      "read_gbps_median": 3.2082603213314265,
+      "speedup": 8.946187608750447
+    },
+    {
+      "context": 65536,
+      "capacity_tokens": 66560,
+      "k_blocks": 126,
+      "host_pinned_bytes": 1908408320,
+      "kv_bytes": 2147483648,
+      "prefill_s": [
+        18.757993299979717,
+        18.015175699954852,
+        17.95993490004912
+      ],
+      "restore": [
+        {
+          "wall_s": 1.3773927000002004,
+          "read_s": 0.6663400000543334,
+          "rebuild_s": 0.5589960999204777,
+          "bytes_read": 2147996672
+        },
+        {
+          "wall_s": 1.22739219997311,
+          "read_s": 0.652450900117401,
+          "rebuild_s": 0.5710421999683604,
+          "bytes_read": 2147996672
+        },
+        {
+          "wall_s": 1.2228670999757014,
+          "read_s": 0.6584989999537356,
+          "rebuild_s": 0.5581628000363708,
+          "bytes_read": 2147996672
+        }
+      ],
+      "restore_tokens_match": [
+        true,
+        false,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true
+      ],
+      "state_digest": "541d807fd55c915b52cf850870baf56d",
+      "save_s": 1.8371206999872811,
+      "snapshot_bytes": 2148003840,
+      "answer": "61328.",
+      "score": 0.0,
+      "status": "ok",
+      "prefill_s_median": 18.015175699954852,
+      "restore_s_median": 1.22739219997311,
+      "read_gbps_median": 3.261958897661063,
+      "speedup": 14.677603214644456
+    },
+    {
+      "context": 130048,
+      "capacity_tokens": 131072,
+      "k_blocks": 252,
+      "host_pinned_bytes": 3758096384,
+      "kv_bytes": 4261412864,
+      "prefill_s": [
+        62.31300460000057,
+        60.62582700001076,
+        60.69227130000945
+      ],
+      "restore": [
+        {
+          "wall_s": 2.485008299991023,
+          "read_s": 1.224541400151793,
+          "rebuild_s": 1.1512322999769822,
+          "bytes_read": 4261925888
+        },
+        {
+          "wall_s": 2.3392307000467554,
+          "read_s": 1.2062454998958856,
+          "rebuild_s": 1.1276412000879645,
+          "bytes_read": 4261925888
+        },
+        {
+          "wall_s": 2.335203399998136,
+          "read_s": 1.205151399888564,
+          "rebuild_s": 1.1146862001623958,
+          "bytes_read": 4261925888
+        }
+      ],
+      "restore_tokens_match": [
+        false,
+        true,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true
+      ],
+      "state_digest": "e43d396e4b6099b2da1841d01688bf18",
+      "save_s": 4.671387100010179,
+      "snapshot_bytes": 4261933056,
+      "answer": "613.",
+      "score": 0.0,
+      "status": "ok",
+      "prefill_s_median": 60.69227130000945,
+      "restore_s_median": 2.3392307000467554,
+      "read_gbps_median": 3.5332159899190163,
+      "speedup": 25.94539790316379
+    }
+  ],
+  "allocator_cap": {
+    "free_bytes_at_cap": 4834983936,
+    "total_bytes": 8546484224,
+    "margin_bytes": 268435456,
+    "fraction": 0.8285317731138189,
+    "limit_bytes": 7081033728
+  },
+  "snapshot_dir": "C:\\Users\\priya\\AppData\\Local\\Temp\\lazykv_snapshots",
+  "host": {
+    "power_throttling": "opted_out"
+  },
+  "wall_s": 353.6409255999606
+}
