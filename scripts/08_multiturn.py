@@ -60,6 +60,7 @@ def main() -> None:
         cfg["budgets"] = args.budgets
     if args.no_tier_check:
         cfg["tier_check"] = None
+    args.turn_chunk = args.turn_chunk or cfg.get("turn_chunk")
     ctx = args.context or cfg["context"]
     n_sessions = args.sessions or cfg["sessions"]
     bs, chunk, max_new = cfg["block_size"], cfg["prefill_chunk"], cfg["max_new_tokens"]

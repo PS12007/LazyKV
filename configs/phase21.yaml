@@ -1,0 +1,55 @@
+# Phase 21: dense turn ingestion for the tier (gap table A5 row; Phase 19's recommendation).
+#
+# Phase 19 found that feeding a user turn token by token through sparse selection loses most turns
+# after turn 0, and (post hoc) that reading each turn in one dense forward recovers most of them,
+# for rung 5. The tier could not do that: it was decode-only. Since commit 1e71eae, a multi-token
+# forward through the tier brings each selecting layer's sealed blocks back from the host store,
+# attends to the whole layer (as rung 5 does), and appends the new KV in bulk. Unit tests show the
+# tier's answers and stored KV equal rung 5's, bit for bit, on a tiny model.
+#
+# Questions, fixed before any run (including smoke tests, whose output is not reported):
+#   1. Validity at scale. Rung 6 with dense turns must give rung 5's answer text on every turn of
+#      every session, at both budgets, in the same run. Any mismatch is a bug, not a result: stop.
+#   2. Reproduction. Rung 5 with dense turns must reproduce Phase 19's post hoc follow-up
+#      (results/phase19/multiturn_dense_turns) answer for answer: same sessions, same kernel.
+#   3. What the tier gains. Rung 6 with dense turns against Phase 19's rung 6 fed token by token at
+#      6.25%, paired by (session, turn) over the turns after turn 0, with a sign test. Phase 19
+#      measured this only for rung 5; this is the tier's own number.
+#   4. Cost (scripts/10_ingest_cost.py, speed kernel, `cost:` below). Wall time to ingest one user
+#      turn into a tier densely against token by token, at each context; bytes moved host to device;
+#      the extra peak VRAM a dense ingestion needs over the tier's decode footprint. Descriptive, no
+#      decision rule. Expected: dense moves every sealed block once per selecting layer per forward,
+#      so its time grows with context, while token by token grows with turn length.
+phase: phase21
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+# Questions 1-3: Phase 19's sessions, schedule and kernel, unchanged.
+block_size: 64
+prefill_chunk: 2048
+context: 32768
+sessions: 20
+seed: 0
+book: moby_dick
+passage_book: pride_and_prejudice
+passage_tokens: 192
+max_new_tokens: 16
+budgets: [0.125, 0.0625]
+policies: [quest, tiered_sync]
+tier_check: null
+tier:
+  fetch: gather
+  spare: 0.0
+turn_chunk: 4096
+
+# Question 4.
+cost:
+  strategy: cudnn_bucketed
+  budget: 0.0625
+  contexts: [32768, 65536, 130048]
+  dense_turn_tokens: [256, 1024]
+  per_token_turn_tokens: [256]
+  repeats: 3
+  turn_book: pride_and_prejudice
