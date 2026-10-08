@@ -470,6 +470,12 @@ claim in this study is quoted with a range over independent runs.
 - **Prefill was not tiered in these experiments.** Every result above prefilled into a full GPU
   cache. [Phase 17](phases/PHASE_17.md) added a layer-major prefill straight into the tier,
   bit-identical to that path, which lifts the context limit to what host RAM holds.
+- **Every result above is single-turn.** [Phase 19](phases/PHASE_19.md) measured multi-turn
+  sessions: fed token by token, rung 5 at 6.25% answers only
+  24.3% of turns after the
+  first; with each user turn read densely (post hoc), 72.9%.
+  The tier cannot read a turn densely today, so a long conversation over the tier loses more than
+  the single-turn frontier suggests.
 - **The fast kernel is not bit-repeatable** for single-query decode, so quality is measured on a
   separate deterministic kernel and agreement is reported rather than assumed.
 - **This is a laptop.** Thermal behaviour is controlled for by interleaving and repeating, not

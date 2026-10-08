@@ -7,6 +7,29 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-07: Phase 19, a multi-turn evaluation
+
+Gap table item 4, first half. 20 sessions on the 1B model,
+each a 32,768-token document followed by
+8 turns that add text, plant chat needles and ask
+about both. The rule for A5's premise was fixed before any run.
+
+### Result
+
+The failure A5 targets is observed: on chat-needle turns rung 5 keeps
+25.0% of the full cache's score at 6.25%.
+But the document fails too, which A5 would not fix. A post hoc follow-up (labelled as such) fed each
+user turn densely and decoded only the answers sparsely: rung 5 then answers
+72.9% of turns after
+turn 0, against 24.3% token
+by token. The loss is mostly in reading the turn, not in answering it. Rung 6 gave rung 5's answer
+on 160 of 160 turns.
+
+### Direction
+
+This points away from A5 as planned and toward dense turn ingestion for the tier. That is a change
+of direction, so it waits for the owner (rule 8).
+
 ## 2026-10-07: Phase 18, one entry point and a reproducibility audit
 
 Gap table item A1, without the parts that need sign-off (llama.cpp, GGUF, bigger models).

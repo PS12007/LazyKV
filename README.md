@@ -33,7 +33,7 @@ negative results included.
 > [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
 > [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md) ·
 > [Phase 8](docs/phases/PHASE_8.md) · [Phase 9](docs/phases/PHASE_9.md) · [Phase 10](docs/phases/PHASE_10.md) · [Phase 11](docs/phases/PHASE_11.md) ·
-> [Phase 12](docs/phases/PHASE_12.md) · [Phase 13](docs/phases/PHASE_13.md) · [Phase 14](docs/phases/PHASE_14.md) · [Phase 15](docs/phases/PHASE_15.md) · [Phase 16](docs/phases/PHASE_16.md) · [Phase 17](docs/phases/PHASE_17.md).
+> [Phase 12](docs/phases/PHASE_12.md) · [Phase 13](docs/phases/PHASE_13.md) · [Phase 14](docs/phases/PHASE_14.md) · [Phase 15](docs/phases/PHASE_15.md) · [Phase 16](docs/phases/PHASE_16.md) · [Phase 17](docs/phases/PHASE_17.md) · [Phase 18](docs/phases/PHASE_18.md) · [Phase 19](docs/phases/PHASE_19.md).
 > Upgrade plan audit: [Status](docs/STATUS.md) · [Gap table and validity review](docs/GAP_TABLE.md).
 
 ## Where the ladder stands
@@ -375,8 +375,8 @@ git worktree pinned at the commit under test if you want to keep editing the mai
 | [15](docs/phases/PHASE_15.md) | `02_policy_quality.py --config configs\phase15.yaml --skip-block-full --skip-teacher-forced` | `analyze_phase15.py` | Needs the `quant` extra |
 | [16](docs/phases/PHASE_16.md) | `06_record_traces.py --config configs\phase16.yaml` | `analyze_phase16.py` | Traces go to the config's `trace_dir` |
 | [17](docs/phases/PHASE_17.md) | `07_prefill_capacity.py`, then `07_tiered_prefill_quality.py --context N` for 16384, 24576 (`--methods full tiered`) and 65536 | `analyze_phase17.py` | One process per capacity cell |
-
 | [18](docs/phases/PHASE_18.md) | none (no GPU work) | `reproduce.py audit` | Needs a clean tree |
+| [19](docs/phases/PHASE_19.md) | `08_multiturn.py`, then `08_multiturn.py --policies quest --no-tier-check --turn-chunk 4096 --out multiturn_dense_turns` | `analyze_phase19.py` | The second run is the post hoc dense-turn follow-up |
 
 Finish every phase with `make_figures.py`, `render_docs.py` and `pytest`.
 
