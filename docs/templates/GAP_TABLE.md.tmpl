@@ -15,13 +15,13 @@ Effort is a rough estimate in working sessions, not a measurement.
 | A2 | Policy plug-in interface + trace recorder | **partial → recorder done (Phase 16)** | `lazykv/policies.py` `Policy` for rungs 2–4; `selection.top_blocks` shared by rungs 5–9; `TieredCache(record_selection=True)` | 1–2 | Two interfaces, not one: eviction (rungs 2–4) and selection (5–9). The tier's victim rule is hard-coded LRU in `TieredLayer.admit`. The recorder keeps chosen block ids in memory only, with no attention mass and no save/load |
 | A3 | Offline replay simulator with an optimal oracle | **done ([Phase 16](phases/PHASE_16.md))** | The Phase 6/11 "replay" is a latency ablation (`scripts/03_host_ceiling.py`), not a replacement study | 2 | Valid and cheap, with two caveats (note 4): with slots equal to K the victim choice is forced, and fetch traffic is not this system's bottleneck. The oracle that matters most here is a *selection* oracle (true top-K attention mass), alongside Belady for the slot pool |
 | A4 | Asynchronous mid-generation prefetch | **yes** (rung 7) | `TieredCache(prefetch=True)`, `_make_hook`, copy stream, pinned pools, `overlap()`; PCIe microbenchmark in Phase 0 | n/a | Already built and measured: copies fully hidden, decode no faster, because decode is host-bound (note 2). |
-| A5 | Working-set-aware selector | **no** | Quest bound only; sink and current block protected; no recent-history budget | 2–3 + an eval | Phase 16 found captured attention mass does not predict NIAH losses, so the plan's "tune weights in the A3 simulator" step has no valid target yet. Also needs a multi-turn evaluation first: every quality test here is single-turn retrieval, so the failure A5 fixes cannot be observed yet |
+| A5 | Working-set-aware selector | **no; premise tested ([Phase 19](phases/PHASE_19.md))** | Quest bound only; sink and current block protected; no recent-history budget | 2–3 + an eval | Phase 16 found captured attention mass does not predict NIAH losses, so the plan's "tune weights in the A3 simulator" step has no valid target yet. Also needs a multi-turn evaluation first: every quality test here is single-turn retrieval, so the failure A5 fixes cannot be observed yet. *Phase 19 built that evaluation: the failure is observed, but a post hoc follow-up places most of the loss in reading each user turn sparsely, which A5 would not fix; dense turn ingestion for the tier is the candidate instead (owner's call)* |
 | B1 | Progressive precision tiers | **partial** | rung 8, `lazykv/quant.py` (int8 host tier, exact hot tier) | 2 | No SSD tier, no 4-bit or 2–3-bit ladder, no promotion on repeated recall. Phase 5 found int8 quality-neutral and slower |
 | B2 | 8 GB auto-tuner | **partial** | `scripts/kv_memory_model.py` computes KV bytes per token from `config.json` | 1–2 | No tuner. Budgets are fractions set in YAML |
 | B3 | Live observability view | **no** | Counters exist, nothing live | 2 | A terminal view needs no new dependency only if it stays plain text |
 | B4 | Page-sparse attention kernel | **no** | `QuestView.select` and `TieredLayer.gather` gather then call SDPA, the same limitation TierKV states | 4+ | Triton on Windows is a new dependency; the sibling `tritonkv` project must not share this env. A CUDA extension needs the toolchain. Ask first |
 | B5 | Long context + speculative decoding | **no** | No speculative decoding at all | 4+ | Needs a draft model (download) and a verification loop. Lower priority than prefill tiering |
-| C1 | Session snapshots to SSD | **no** | — | 1–2 | Simple given immutable sealed blocks |
+| C1 | Session snapshots to SSD | **yes ([Phase 20](phases/PHASE_20.md))** | `lazykv/snapshot.py`, `scripts/09_snapshot.py` | 1–2 | Simple given immutable sealed blocks |
 | C2 | OpenAI-compatible server + CLI | **no** | — | 2 | Needs an HTTP server; the standard library's is enough for a demo |
 | C3 | Tiny learned page scorer | **no** | Locret cited in RELATED_WORK only | 2 | Only if A3 shows a heuristic-to-oracle gap |
 | C4 | Dynamic host store growth | **no** | `allocate_host_pools` preallocates pinned pools for the full capacity, the same limitation TierKV states | 1 | Pinning is slow (on the order of a second per GiB), so chunked growth trades latency spikes for RAM |
@@ -49,7 +49,9 @@ Effort is a rough estimate in working sessions, not a measurement.
   the largest gap.
 - Speed: decode over the tier is slower than the full cache at every measured context; the cost is
   the per-layer host round trip, not PCIe.
-- No SSD tier, no session resume, no multi-turn or agent evaluation, no speculative decoding.
+- No SSD tier in the decode path and no speculative decoding. A multi-turn evaluation exists since
+  [Phase 19](phases/PHASE_19.md), and session snapshots since [Phase 20](phases/PHASE_20.md); there is
+  still no agent evaluation.
 
 **Where they are equal**
 
@@ -101,5 +103,6 @@ before it changes the research direction.
 2. **Chunked prefill into the tier** (not in the plan; note 3). This is what turns "decode-time
    residency" into "more context on 8 GB". *Done: [Phase 17](phases/PHASE_17.md).*
 3. **A1 entry point** over the existing scripts; llama.cpp baselines only after sign-off. *Done: [Phase 18](phases/PHASE_18.md), `scripts/reproduce.py`, with an audit that regenerates every analysis.*
-4. **A multi-turn evaluation, then A5.**
+4. **A multi-turn evaluation, then A5.** *Evaluation done: [Phase 19](phases/PHASE_19.md). Its data
+   points away from A5 as planned and toward dense turn ingestion; the owner decides.*
 5. **Device-side ranking** as the honest successor to A4, if the owner wants a speed result.

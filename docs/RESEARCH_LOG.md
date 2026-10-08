@@ -7,6 +7,17 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-08: Phase 20, session snapshots
+
+Gap table item C1. `lazykv/snapshot.py` writes a tier's host store as it already is, plus the few
+tokens still on the GPU, and restores it through the same boundary as tiered prefill. On the 1B
+model, resuming from the internal NVMe was 8.9× (32K) to
+25.9× (130,048 tokens)
+faster than prefilling again, and the restored tier's full state hash matched the prefilled tier's on
+9 of 9 restores.
+About half of a restore is the rebuild rather than the disk, which leaves room that was not taken:
+the boundary reuse is what makes a restore provably a prefill.
+
 ## 2026-10-07: Phase 19, a multi-turn evaluation
 
 Gap table item 4, first half. 20 sessions on the 1B model,
