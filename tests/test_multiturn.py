@@ -138,3 +138,66 @@ def test_tier_answers_every_turn_exactly_as_rung5(tiny) -> None:  # noqa: ANN001
     tier.close()
     assert got == ref
     assert tier.counters.seals > 0
+
+
+@cuda
+@pytest.mark.parametrize("turn_chunk", [16, 4096])  # 16: a turn spans several forwards and seals blocks mid-turn
+@pytest.mark.parametrize("fetch", ["gather", "runs"])
+def test_tier_ingests_turns_densely_exactly_as_rung5(tiny, turn_chunk: int, fetch: str) -> None:  # noqa: ANN001
+    """Phase 21: a multi-token forward through the tier attends to the layer's whole KV, as rung 5's does.
+
+    The answers must match rung 5 fed the same way, and the KV the tier ends up holding (host store
+    plus current block) must be the full cache's, bit for bit.
+    """
+    from lazykv.cache import FullGPUCache
+    from lazykv.generate import prefill
+    from lazykv.multiturn import run_session
+    from lazykv.selection import QuestView
+    from lazykv.tiered import TieredCache
+
+    cfg, model = tiny
+    s = _synthetic_session(cfg.vocab_size, 100, [30, 17, 41])
+    full = FullGPUCache(cfg.num_hidden_layers, 512)
+    pre = prefill(model, full, s.prefix_ids, chunk_size=32)
+    ref = [r.answer_ids for r in run_session(model, QuestView(full, 3, 8, dense_layers=1), pre.last_logits, s, eot=7, max_new=6, start_len=100, turn_chunk=turn_chunk)]
+    n = full.get_seq_length()
+    ref_kv = {i: (full.layers[i].keys[:, :, :n].clone(), full.layers[i].values[:, :, :n].clone()) for i in range(1, cfg.num_hidden_layers)}
+    full.truncate(100)
+    tier = TieredCache(full, 3, 8, capacity_tokens=512, model=model, dense_layers=1, fetch=fetch)
+    got = [r.answer_ids for r in run_session(model, tier, pre.last_logits, s, eot=7, max_new=6, start_len=100, turn_chunk=turn_chunk)]
+    tier.close()
+    assert got == ref
+    assert tier.get_seq_length(1) == n
+    for i, t in tier.tiers.items():
+        b = t.n_sealed
+        host_k = t.host[:b, :, 0].permute(1, 0, 2, 3).reshape(1, t.h, b * t.bs, t.d).cuda()
+        k = torch.cat([host_k, t.pool[t.tail_slot, :, 0, : t.fill].unsqueeze(0)], dim=2)
+        assert torch.equal(k, ref_kv[i][0])
+    c = tier.counters
+    # A one-token remainder (17 = 16 + 1) is an ordinary decode step, for rung 5 as for the tier.
+    dense = sum(min(turn_chunk, f - o) for f in (30, 17, 41) for o in range(0, f, turn_chunk) if f - o > 1)
+    assert c.ingest_tokens == dense * (cfg.num_hidden_layers - 1) and c.ingest_h2d_bytes > 0
+
+
+@cuda
+@pytest.mark.parametrize("pieces", [[1], [5, 3], [8], [13, 8, 1, 20]])
+def test_extend_leaves_the_same_state_as_appending_token_by_token(tiny, pieces: list[int]) -> None:  # noqa: ANN001
+    from lazykv.tiered import TierCounters, TieredLayer
+
+    torch.manual_seed(2)
+    h, d, bs, prompt = 2, 16, 8, 45
+    kv = torch.randn(2, 1, h, prompt + sum(pieces), d, dtype=torch.bfloat16, device="cuda")
+    a = TieredLayer(kv[0, :, :, :prompt], kv[1, :, :, :prompt], 3, bs, 256)
+    b = TieredLayer(kv[0, :, :, :prompt], kv[1, :, :, :prompt], 3, bs, 256)
+    ca, cb = TierCounters(), TierCounters()
+    pos = prompt
+    for m in pieces:
+        a.extend(kv[0, :, :, pos : pos + m], kv[1, :, :, pos : pos + m], ca)
+        for j in range(pos, pos + m):
+            b.append(kv[0, :, :, j : j + 1], kv[1, :, :, j : j + 1], cb)
+        pos += m
+    assert (a.n_sealed, a.fill, a.length) == (b.n_sealed, b.fill, b.length)
+    assert torch.equal(a.host[: a.n_sealed], b.host[: b.n_sealed])
+    assert torch.equal(a.kmin[:, :, : a.n_sealed], b.kmin[:, :, : b.n_sealed]) and torch.equal(a.kmax[:, :, : a.n_sealed], b.kmax[:, :, : b.n_sealed])
+    assert torch.equal(a.pool[a.tail_slot, :, :, : a.fill], b.pool[b.tail_slot, :, :, : b.fill])
+    assert ca.seals == cb.seals

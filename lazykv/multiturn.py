@@ -14,10 +14,9 @@ is: N."), and asks one question, about a doc needle or about a chat needle given
 answers are its own greedy output, so the conversation is the policy's own trajectory.
 
 How the session is fed: every token after the document goes through the decode path one token at a
-time, for every policy. The tier (rungs 6-9) is decode-only, and rung 5 attends densely to a
-multi-token forward, so feeding a user turn as one chunk would give rung 5 a dense attention the
-tier cannot have. One token at a time is the decode-path semantics every policy shares, and it is
-where residency acts. The cost is speed, which this module does not measure.
+time, for every policy, unless `turn_chunk` is set. Phase 19 found that this loses most later turns
+under selection, and that reading each user turn in one dense forward recovers most of them; since
+Phase 21 the tier can ingest a turn densely too, so `turn_chunk` applies to every policy.
 """
 
 from __future__ import annotations
@@ -211,8 +210,8 @@ def run_session(model: PreTrainedModel, cache: Cache, first_logits: torch.Tensor
 
     `turn_chunk` feeds each user turn in forwards of up to that many tokens instead of one at a time.
     Rung 5 attends densely to a multi-token forward, so this processes the user's turn (the question
-    included) with exact attention and only the answer sparsely, as every single-turn test did. The
-    tier cannot do this (it is decode-only); the option exists to measure what that costs.
+    included) with exact attention and only the answer sparsely, as every single-turn test did. Since
+    Phase 21 the tier does the same (dense ingestion, lazykv/tiered.py).
     """
     ids = torch.empty((1, 1), dtype=torch.long, device="cuda")
     extra = cache_model_kwargs(cache)

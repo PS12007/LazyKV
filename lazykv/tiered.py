@@ -42,6 +42,11 @@ Layout decisions, each forced by a Phase 0 measurement (docs/IMPLEMENTATION_PLAN
 Prefill: by default the tier is built from an exact prefill into a full GPU cache, so peak VRAM
 during prefill is the full KV. lazykv/tiered_prefill.py builds the same tiers layer by layer
 instead (`tiers=`), so the selecting layers' full prompt KV is never in VRAM at once.
+
+Later multi-token forwards (a user's turn in a conversation) are ingested densely: each selecting
+layer brings its sealed blocks back from host, attends to the whole layer as rung 5 does, and
+appends the new KV in bulk (`TieredLayer.dense_kv`, `extend`). Phase 19 found that feeding a turn
+token by token through sparse selection loses most of the conversation.
 """
 
 from __future__ import annotations
@@ -89,6 +94,11 @@ class TierCounters:
     prefetch_used_pairs: int = 0  # prefetched and then chosen by the real selection
     seals: int = 0
     seal_bytes: int = 0
+    # Dense ingestion of multi-token forwards, counted per selecting layer (Phase 21).
+    ingest_forwards: int = 0
+    ingest_tokens: int = 0
+    ingest_h2d_bytes: int = 0
+    host_ingest_s: float = 0.0
     # Per decode step, summed over layers: pairs fetched on demand. Separates the cold start after
     # the boundary from steady state.
     fetched_pairs_per_step: list[int] = field(default_factory=list)
@@ -250,6 +260,43 @@ class TieredLayer:
         t[:, 1, self.fill].copy_(value[0, :, 0])
         self.fill += 1
         self.length += 1
+
+    def extend(self, keys: torch.Tensor, values: torch.Tensor, counters: TierCounters) -> None:
+        """Write a multi-token forward's KV [1, h, T, d], exactly as T calls to `append` would.
+
+        Sealing stays lazy (a block that ends full stays the current block until the next token), so
+        a tier that ingested a turn in one forward has the same state as one fed it token by token.
+        """
+        n, i = keys.shape[2], 0
+        while i < n:
+            if self.fill == self.bs:
+                self._seal(counters)
+            m = min(self.bs - self.fill, n - i)
+            t = self.pool[self.tail_slot]
+            t[:, 0, self.fill : self.fill + m].copy_(keys[0, :, i : i + m])
+            t[:, 1, self.fill : self.fill + m].copy_(values[0, :, i : i + m])
+            self.fill += m
+            self.length += m
+            i += m
+
+    def dense_kv(self, keys: torch.Tensor, values: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, int]:
+        """The layer's whole KV, brought back from the host store, followed by `keys`/`values` [1, h, T, d].
+
+        What a multi-token forward attends to: the same keys, in the same order and on the same
+        shapes, as a full cache would hand the attention kernel. Returns (keys, values, bytes moved
+        H2D). Lives only for the layer's attention; the next selecting layer reuses the memory.
+        """
+        if self.quant is not None:
+            # The int8 store would need a chunked unpack here, and its keys are not the exact ones;
+            # rung 8 is not part of any multi-turn comparison, so it is refused rather than guessed.
+            raise NotImplementedError("dense ingestion is implemented for the bf16 tier only")
+        n = self.n_sealed
+        g = self.host[:n].to(keys.device, non_blocking=True)  # [B, h, 2, bs, d]
+        g = g.permute(1, 2, 0, 3, 4).reshape(self.h, 2, n * self.bs, self.d)
+        tail = self.pool[self.tail_slot, :, :, : self.fill]
+        k = torch.cat([g[:, 0], tail[:, 0], keys[0]], dim=1).unsqueeze(0)
+        v = torch.cat([g[:, 1], tail[:, 1], values[0]], dim=1).unsqueeze(0)
+        return k, v, n * self.h * self.pair_bytes
 
     def _seal(self, counters: TierCounters) -> None:
         t0 = time.perf_counter()
@@ -518,7 +565,20 @@ class TieredCache(Cache):
         if tier is None:
             return self.full.layers[layer_idx].update(key_states, value_states)
         if key_states.shape[-2] != 1:
-            raise RuntimeError("the tier is decode-only; prefill into a FullGPUCache first")
+            # Dense ingestion (Phase 21): a multi-token forward, such as a user's turn, attends to
+            # the layer's whole KV, as rung 5 does. Phase 19 found that feeding a turn token by token
+            # through sparse selection loses most later turns, and that reading it densely recovers
+            # most of them. Every sealed block crosses PCIe once per forward and per layer, and only
+            # one layer's KV is on the GPU at a time: cheap per turn, never on the decode path.
+            t0 = time.perf_counter()
+            k, v, moved = tier.dense_kv(key_states, value_states)
+            tier.extend(key_states, value_states, self.counters)
+            c = self.counters
+            c.ingest_forwards += 1
+            c.ingest_tokens += key_states.shape[-2]
+            c.ingest_h2d_bytes += moved
+            c.host_ingest_s += time.perf_counter() - t0
+            return k, v
         tier.append(key_states, value_states, self.counters)
         # Attention never reads this: select() replaces the key set for every tiered layer.
         return tier.pool[tier.tail_slot : tier.tail_slot + 1, :, 0], tier.pool[tier.tail_slot : tier.tail_slot + 1, :, 1]

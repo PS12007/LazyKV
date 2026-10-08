@@ -47,8 +47,8 @@ def main() -> None:
     p.add_argument("--policies", nargs="+", help="override config policies")
     p.add_argument("--budgets", type=float, nargs="+", help="override config budgets")
     p.add_argument("--no-tier-check", action="store_true", help="drop the rung 6 validity condition")
-    # Post hoc (configs/phase19.yaml, amendment): feed each user turn in one dense forward, so only the
-    # answers are decoded sparsely, as in every single-turn test. Rung 5 only; the tier is decode-only.
+    # Feed each user turn in one dense forward, so only the answers are decoded sparsely, as in every
+    # single-turn test. Post hoc in Phase 19 (rung 5 only); every policy since Phase 21's dense ingestion.
     p.add_argument("--turn-chunk", type=int, help="feed user turns in forwards of this many tokens")
     p.add_argument("--out", default="multiturn")
     args = p.parse_args()
@@ -60,8 +60,6 @@ def main() -> None:
         cfg["budgets"] = args.budgets
     if args.no_tier_check:
         cfg["tier_check"] = None
-    if args.turn_chunk and (any(pol != "quest" for pol in cfg["policies"]) or cfg.get("tier_check")):
-        raise SystemExit("--turn-chunk is for rung 5 only (--policies quest --no-tier-check): the tier is decode-only")
     ctx = args.context or cfg["context"]
     n_sessions = args.sessions or cfg["sessions"]
     bs, chunk, max_new = cfg["block_size"], cfg["prefill_chunk"], cfg["max_new_tokens"]
