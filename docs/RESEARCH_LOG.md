@@ -7,6 +7,22 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-09: Phase 22, a faster snapshot restore
+
+Phase 20 named a fix for the half of a restore that was not the disk; this phase built it.
+`TieredLayer.from_store` rebuilds a layer from its already-filled pinned host store, queued without
+a host sync, so `snapshot.restore` now reads each layer straight into that store while the GPU
+derives the previous layer's metadata. Measured against Phase 20's path in the same process, it
+restores 1.56× to
+1.57× faster, spends
+11%–13%
+of its time outside disk reads (was 43%–47%),
+and matched the prefilled state hash on 18 of
+18 restores. The price is that a restore is no longer
+provably a prefill by construction; a test and the hash carry that now. A restore is now about as
+fast as this disk allows. The 3B multi-turn run recommended after Phase 21 did not happen: the 3B
+weights are on the D: drive, which was not mounted.
+
 ## 2026-10-08: Phase 21, dense turn ingestion for the tier
 
 The owner approved Phase 19's recommendation over A5 as planned. A multi-token forward through the

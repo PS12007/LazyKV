@@ -25,7 +25,7 @@ nf4 weights (Phase 15) as the larger stress model. Batch size 1, greedy decoding
 - **Residency unit:** a (layer, KV head, block) pair, not a whole block, because selection is per
   KV head (`lazykv/tiered.py`, module docstring).
 - **Tiers:** two. VRAM holds a slot pool per selecting layer; pinned host RAM holds a master copy of
-  every sealed block (`allocate_host_pools`). There is **no SSD tier** in the decode path; a tier can be saved to disk and resumed without a prefill ([Phase 20](phases/PHASE_20.md), `lazykv/snapshot.py`).
+  every sealed block (`allocate_host_pools`). There is **no SSD tier** in the decode path; a tier can be saved to disk and resumed without a prefill ([Phase 20](phases/PHASE_20.md), `lazykv/snapshot.py`); since [Phase 22](phases/PHASE_22.md) a restore reads straight into the pinned host store and spends {{ phase22.analysis.summary.store.not_read_share_max | pct0 }} or less of its time outside disk reads.
 - **Host store precision:** bf16 (rungs 6, 7) or int8 with per-channel scales for keys and per-token scales for values (rung 8,
   `lazykv/quant.py`). The VRAM slot pool is always the model dtype.
 - **Host store allocation:** preallocated, pinned at its exact size with `cudaHostRegister`

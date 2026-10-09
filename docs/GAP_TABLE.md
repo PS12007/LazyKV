@@ -23,7 +23,7 @@ Effort is a rough estimate in working sessions, not a measurement.
 | B3 | Live observability view | **no** | Counters exist, nothing live | 2 | A terminal view needs no new dependency only if it stays plain text |
 | B4 | Page-sparse attention kernel | **no** | `QuestView.select` and `TieredLayer.gather` gather then call SDPA, the same limitation TierKV states | 4+ | Triton on Windows is a new dependency; the sibling `tritonkv` project must not share this env. A CUDA extension needs the toolchain. Ask first |
 | B5 | Long context + speculative decoding | **no** | No speculative decoding at all | 4+ | Needs a draft model (download) and a verification loop. Lower priority than prefill tiering |
-| C1 | Session snapshots to SSD | **yes ([Phase 20](phases/PHASE_20.md))** | `lazykv/snapshot.py`, `scripts/09_snapshot.py` | 1–2 | Simple given immutable sealed blocks |
+| C1 | Session snapshots to SSD | **yes ([Phase 20](phases/PHASE_20.md); restore near disk speed since [Phase 22](phases/PHASE_22.md))** | `lazykv/snapshot.py`, `scripts/09_snapshot.py` | 1–2 | Simple given immutable sealed blocks |
 | C2 | OpenAI-compatible server + CLI | **no** | — | 2 | Needs an HTTP server; the standard library's is enough for a demo |
 | C3 | Tiny learned page scorer | **no** | Locret cited in RELATED_WORK only | 2 | Only if A3 shows a heuristic-to-oracle gap |
 | C4 | Dynamic host store growth | **no** | `allocate_host_pools` preallocates pinned pools for the full capacity, the same limitation TierKV states | 1 | Pinning is slow (on the order of a second per GiB), so chunked growth trades latency spikes for RAM |
