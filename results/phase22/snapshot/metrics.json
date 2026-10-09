@@ -1,0 +1,371 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-09T15:52:54+00:00",
+    "git_commit": "c5a5a1baf38ff30e3c7018730a4ddca4cf848e36",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\09_snapshot.py",
+      "--config",
+      "configs\\phase22.yaml"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "phase": "phase22",
+    "model": {
+      "repo": "unsloth/Llama-3.2-1B-Instruct",
+      "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+    },
+    "strategy": "cudnn_bucketed",
+    "block_size": 64,
+    "prefill_chunk": 2048,
+    "decode_tokens": 32,
+    "budget": 0.125,
+    "tier": {
+      "fetch": "gather"
+    },
+    "contexts": [
+      32768,
+      65536,
+      130048
+    ],
+    "repeats": 3,
+    "snapshot_dir": null,
+    "prompt": {
+      "book": "moby_dick",
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "seed": 0
+    },
+    "rebuilds": [
+      "store",
+      "boundary"
+    ]
+  },
+  "rows": [
+    {
+      "context": 32768,
+      "capacity_tokens": 33792,
+      "k_blocks": 62,
+      "host_pinned_bytes": 968884224,
+      "kv_bytes": 1073741824,
+      "prefill_s": [
+        7.28604279999854,
+        5.710814099991694,
+        5.7184478000272065
+      ],
+      "restore": [
+        {
+          "rebuild": "store",
+          "repeat": 0,
+          "wall_s": 0.5052221000078134,
+          "read_s": 0.3277102999854833,
+          "rebuild_s": 0.05387130001327023,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 125820416,
+          "held_bytes": 283107328
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 0,
+          "wall_s": 0.597745000035502,
+          "read_s": 0.32601810002233833,
+          "rebuild_s": 0.2576391000766307,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 260300288,
+          "held_bytes": 282845184
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 1,
+          "wall_s": 0.5883898999891244,
+          "read_s": 0.33312539994949475,
+          "rebuild_s": 0.2417164000798948,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 260300288,
+          "held_bytes": 282845184
+        },
+        {
+          "rebuild": "store",
+          "repeat": 1,
+          "wall_s": 0.3622518999618478,
+          "read_s": 0.31129649991635233,
+          "rebuild_s": 0.04575489979470149,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 125820416,
+          "held_bytes": 283107328
+        },
+        {
+          "rebuild": "store",
+          "repeat": 2,
+          "wall_s": 0.3743634999846108,
+          "read_s": 0.3132581998943351,
+          "rebuild_s": 0.05020939983660355,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 125820416,
+          "held_bytes": 283107328
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 2,
+          "wall_s": 0.5887775999726728,
+          "read_s": 0.32760779990348965,
+          "rebuild_s": 0.255551399954129,
+          "bytes_read": 1074254848,
+          "transient_peak_bytes": 260300288,
+          "held_bytes": 282845184
+        }
+      ],
+      "restore_tokens_match": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "state_digest": "2c7c95dd2febc9d5f0213c40f5aee938",
+      "save_s": 0.8925337999826297,
+      "snapshot_bytes": 1074262016,
+      "answer": "6136285.",
+      "score": 1.0,
+      "status": "ok",
+      "prefill_s_median": 5.7184478000272065,
+      "restore_s_median_store": 0.3743634999846108,
+      "read_gbps_median_store": 3.4292952215212753,
+      "speedup_store": 15.275121106257096,
+      "restore_s_median_boundary": 0.5887775999726728,
+      "read_gbps_median_boundary": 3.279088130125308,
+      "speedup_boundary": 9.712407198053425
+    },
+    {
+      "context": 65536,
+      "capacity_tokens": 66560,
+      "k_blocks": 126,
+      "host_pinned_bytes": 1908408320,
+      "kv_bytes": 2147483648,
+      "prefill_s": [
+        18.605785399966408,
+        17.894402499950957,
+        17.90821429999778
+      ],
+      "restore": [
+        {
+          "rebuild": "store",
+          "repeat": 0,
+          "wall_s": 0.9513320000260137,
+          "read_s": 0.6690647001378238,
+          "rebuild_s": 0.091358799894806,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 184532480,
+          "held_bytes": 558698496
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 0,
+          "wall_s": 1.1764772000024095,
+          "read_s": 0.6580492000794038,
+          "rebuild_s": 0.5043154999730177,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 520338944,
+          "held_bytes": 558452736
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 1,
+          "wall_s": 1.1619586999877356,
+          "read_s": 0.6566223000409082,
+          "rebuild_s": 0.4990831996547058,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 520338944,
+          "held_bytes": 558452736
+        },
+        {
+          "rebuild": "store",
+          "repeat": 1,
+          "wall_s": 0.7464786000200547,
+          "read_s": 0.6548012001439929,
+          "rebuild_s": 0.08263910008827224,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 184532480,
+          "held_bytes": 558698496
+        },
+        {
+          "rebuild": "store",
+          "repeat": 2,
+          "wall_s": 0.7531903000199236,
+          "read_s": 0.6637669000192545,
+          "rebuild_s": 0.08357230032561347,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 184532480,
+          "held_bytes": 558698496
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 2,
+          "wall_s": 1.172432099992875,
+          "read_s": 0.655096200061962,
+          "rebuild_s": 0.5111467000679113,
+          "bytes_read": 2147996672,
+          "transient_peak_bytes": 520338944,
+          "held_bytes": 558452736
+        }
+      ],
+      "restore_tokens_match": [
+        true,
+        false,
+        true,
+        true,
+        false,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "state_digest": "541d807fd55c915b52cf850870baf56d",
+      "save_s": 1.847460599965416,
+      "snapshot_bytes": 2148003840,
+      "answer": "61328.",
+      "score": 0.0,
+      "status": "ok",
+      "prefill_s_median": 17.90821429999778,
+      "restore_s_median_store": 0.7531903000199236,
+      "read_gbps_median_store": 3.236070783188633,
+      "speedup_store": 23.776480259403325,
+      "restore_s_median_boundary": 1.172432099992875,
+      "read_gbps_median_boundary": 3.271281940723271,
+      "speedup_boundary": 15.274414868124653
+    },
+    {
+      "context": 130048,
+      "capacity_tokens": 131072,
+      "k_blocks": 252,
+      "host_pinned_bytes": 3758096384,
+      "kv_bytes": 4261412864,
+      "prefill_s": [
+        62.163266099989414,
+        60.47329420002643,
+        60.51087270001881
+      ],
+      "restore": [
+        {
+          "rebuild": "store",
+          "repeat": 0,
+          "wall_s": 1.4707643000292592,
+          "read_s": 1.2180818000924774,
+          "rebuild_s": 0.1467397001106292,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 299909120,
+          "held_bytes": 1099149312
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 0,
+          "wall_s": 2.179136299993843,
+          "read_s": 1.1436614998383448,
+          "rebuild_s": 1.028571899922099,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 1032289792,
+          "held_bytes": 1096265728
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 1,
+          "wall_s": 2.133358400024008,
+          "read_s": 1.1410684999427758,
+          "rebuild_s": 0.9810693000326864,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 1032289792,
+          "held_bytes": 1096265728
+        },
+        {
+          "rebuild": "store",
+          "repeat": 1,
+          "wall_s": 1.367857199977152,
+          "read_s": 1.1820551999262534,
+          "rebuild_s": 0.17098450002958998,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 299909120,
+          "held_bytes": 1099149312
+        },
+        {
+          "rebuild": "store",
+          "repeat": 2,
+          "wall_s": 1.3496800999855623,
+          "read_s": 1.1845980000216514,
+          "rebuild_s": 0.14686429995344952,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 299909120,
+          "held_bytes": 1099149312
+        },
+        {
+          "rebuild": "boundary",
+          "repeat": 2,
+          "wall_s": 2.1379672999610193,
+          "read_s": 1.1354547999217175,
+          "rebuild_s": 0.9963100999011658,
+          "bytes_read": 4261925888,
+          "transient_peak_bytes": 1032289792,
+          "held_bytes": 1096265728
+        }
+      ],
+      "restore_tokens_match": [
+        true,
+        false,
+        true,
+        true,
+        true,
+        true
+      ],
+      "restore_state_match": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "state_digest": "e43d396e4b6099b2da1841d01688bf18",
+      "save_s": 3.8952199000050314,
+      "snapshot_bytes": 4261933056,
+      "answer": "613.",
+      "score": 0.0,
+      "status": "ok",
+      "prefill_s_median": 60.51087270001881,
+      "restore_s_median_store": 1.367857199977152,
+      "read_gbps_median_store": 3.597782444274009,
+      "speedup_store": 44.237711875939645,
+      "restore_s_median_boundary": 2.1379672999610193,
+      "read_gbps_median_boundary": 3.73503070868553,
+      "speedup_boundary": 28.30299261411626
+    }
+  ],
+  "allocator_cap": {
+    "free_bytes_at_cap": 4834983936,
+    "total_bytes": 8546484224,
+    "margin_bytes": 268435456,
+    "fraction": 0.8285317731138189,
+    "limit_bytes": 7081033728
+  },
+  "snapshot_dir": "C:\\Users\\priya\\AppData\\Local\\Temp\\lazykv_snapshots",
+  "host": {
+    "power_throttling": "opted_out"
+  },
+  "wall_s": 413.56858069996815
+}
