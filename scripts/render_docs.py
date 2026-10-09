@@ -56,6 +56,8 @@ OUTPUTS = {
     "PHASE_20.md.tmpl": "docs/phases/PHASE_20.md",
     "PHASE_21.md.tmpl": "docs/phases/PHASE_21.md",
     "PHASE_22.md.tmpl": "docs/phases/PHASE_22.md",
+    "PHASE_23.md.tmpl": "docs/phases/PHASE_23.md",
+    "PHASE_24.md.tmpl": "docs/phases/PHASE_24.md",
 }
 
 GENERATED_BANNER = (
@@ -2498,6 +2500,58 @@ def block_p22_provenance(ctx: Mapping[str, Any]) -> str:
     if not isinstance(src, Mapping):
         return f"_{NOT_MEASURED}_"
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row("Snapshot restore, both paths", src)])
+
+
+def block_p23_speed(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase23.analysis.per_budget")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+
+    def cell(c: Mapping[str, Any] | None) -> str:
+        return NOT_MEASURED if c is None else f"{c['decode_ms']:.1f} ms ({c['decode_ms_min']:.1f}–{c['decode_ms_max']:.1f})"
+
+    def host(c: Mapping[str, Any] | None) -> str:
+        return NOT_MEASURED if c is None else f"{c['manager_host_ms']:.1f} ms"
+
+    rows = []
+    for r in rows_in:
+        vt = r["vs_tier"]
+        rows.append([_pct_budget(r["budget"]), cell(r["quest"]), cell(r["tiered_sync"]), cell(r["tiered_zerocopy"]),
+                     f"{vt['ratio_median']:.2f} ({vt['zc_faster_pairs']} / {vt['pairs']} pairs faster)", f"{r['vs_quest']['ratio_median']:.2f}",
+                     f"{host(r['tiered_sync'])} / {host(r['tiered_zerocopy'])}"])
+    return table(["Budget", "Rung 5", "Rung 6 (gather, spare 1.0)", "Zero-copy tier", "Zero-copy / rung 6, paired", "Zero-copy / rung 5, paired",
+                  "Manager host time, rung 6 / zero-copy"], rows, ["--:", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p23_memory(ctx: Mapping[str, Any]) -> str:
+    rows_in = lookup(ctx, "phase23.analysis.per_budget")
+    if not isinstance(rows_in, list):
+        return f"_{NOT_MEASURED}_"
+
+    def mib(c: Mapping[str, Any] | None) -> str:
+        return NOT_MEASURED if c is None else f"{c['resident_mib']:,.0f} MiB"
+
+    rows = [[_pct_budget(r["budget"]), mib(r["quest"]), mib(r["tiered_sync"]), mib(r["tiered_zerocopy"])] for r in rows_in]
+    return table(["Budget", "Rung 5", "Rung 6", "Zero-copy tier"], rows, ["--:", "--:", "--:", "--:"])
+
+
+def block_p23_validity(ctx: Mapping[str, Any]) -> str:
+    v = lookup(ctx, "phase23.analysis.validity")
+    if not isinstance(v, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[_pct_budget(float(b)), f"{e['answers_same']} / {e['prompts']}", f"{e['kl_same']} / {e['windows']}"] for b, e in v["budgets"].items()]
+    return table(["Budget", "NIAH answers equal to rung 5's", "Teacher-forced KL equal to rung 5's"], rows, ["--:", "--:", "--:"])
+
+
+def block_p23_provenance(ctx: Mapping[str, Any]) -> str:
+    srcs = lookup(ctx, "phase23.analysis.speed_sources")
+    if not isinstance(srcs, list):
+        return f"_{NOT_MEASURED}_"
+    rows = [_provenance_row(f"Decode speed, run {i}", s) for i, s in enumerate(srcs, 1)]
+    q = lookup(ctx, "phase23.analysis.quality_source")
+    if isinstance(q, Mapping):
+        rows.append(_provenance_row("Validity (NIAH, teacher-forced)", q))
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
