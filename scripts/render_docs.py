@@ -2553,6 +2553,52 @@ def block_p23_provenance(ctx: Mapping[str, Any]) -> str:
         rows.append(_provenance_row("Validity (NIAH, teacher-forced)", q))
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
+
+def _p24_cmp(e: Mapping[str, Any]) -> list[str]:
+    return [f"{e['old_accuracy']:.1%}", f"{e['new_accuracy']:.1%}", f"{e['better']} / {e['worse']}", f"{e['sign_p']:.2g}", e["verdict"]]
+
+
+def block_p24_niah(ctx: Mapping[str, Any]) -> str:
+    n = lookup(ctx, "phase24.analysis.niah")
+    if not isinstance(n, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[_pct_budget(float(b)), str(e["n"])] + _p24_cmp(e) + [f"{e['answers_changed']}"] for b, e in n["budgets"].items()]
+    return table(["Budget", "Prompts", "bf16 bound", "float32 bound", "Better / worse", "Sign test p", "Verdict (config rule)", "Answers changed"],
+                 rows, ["--:", "--:", "--:", "--:", "--:", "--:", "---", "--:"])
+
+
+def block_p24_tf(ctx: Mapping[str, Any]) -> str:
+    n = lookup(ctx, "phase24.analysis.niah")
+    if not isinstance(n, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[_pct_budget(float(b)), f"{w['offset']:,}", f"{w['old_kl']:.2e}", f"{w['new_kl']:.2e}", f"{w['old_top1']:.3f}", f"{w['new_top1']:.3f}"]
+            for b, e in n["budgets"].items() for w in e["tf"]]
+    return table(["Budget", "Window offset", "KL, bf16", "KL, float32", "Top-1 agreement, bf16", "Top-1 agreement, float32"], rows, ["--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+_P24_KINDS = {"doc_turn0": "Doc, turn 0", "doc_later": "Doc, later turns", "doc_reask": "Doc, re-asked", "chat": "Chat needles", "after_turn0": "Every turn after turn 0"}
+
+
+def block_p24_multiturn(ctx: Mapping[str, Any]) -> str:
+    m = lookup(ctx, "phase24.analysis.multiturn")
+    if not isinstance(m, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[_pct_budget(float(b)), name, str(e[k]["n"]), f"{e[k]['full_accuracy']:.1%}"] + _p24_cmp(e[k])
+            for b, e in m["budgets"].items() for k, name in _P24_KINDS.items()]
+    return table(["Budget", "Turns", "n", "Full cache", "bf16 bound", "float32 bound", "Better / worse", "Sign test p", "Verdict (config rule)"],
+                 rows, ["--:", "---", "--:", "--:", "--:", "--:", "--:", "--:", "---"])
+
+
+def block_p24_provenance(ctx: Mapping[str, Any]) -> str:
+    rows = []
+    for key, name in (("niah_source", "NIAH and teacher-forced"), ("multiturn_source", "Multi-turn sessions")):
+        src = lookup(ctx, f"phase24.analysis.{key}")
+        if isinstance(src, Mapping):
+            rows.append(_provenance_row(name, src))
+    if not rows:
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
+
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)
 }

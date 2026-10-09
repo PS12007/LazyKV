@@ -1,0 +1,62 @@
+# Phase 24: ranking by a float32 bound (negative result)
+
+What is left of the tier's quality gap belongs to selection: at 6.25%,
+[Phase 21](PHASE_21.md)'s sessions keep {{ phase21.analysis.conditions.quest_6_25.doc_turn0.retention.value | pct }} of the full cache's doc answers even at turn 0, and NIAH
+has lost prompts at small budgets since [Phase 3](PHASE_3.md). [Phase 16](PHASE_16.md) found one
+candidate cause: in most (step, layer, head) cells the K-th and (K+1)-th Quest bounds are equal in
+bf16, the dtype the runtime ranks in, so `topk`'s tie order picks the last blocks, not the bound.
+This phase asks whether computing the bound in float32 keeps more of the document. Questions and a
+decision rule were fixed in `configs/phase24.yaml` before any run.
+
+## What was built
+
+- `top_blocks(..., dtype=torch.float32)` casts the query and the block minima and maxima before the
+  bound. Policy `quest_f32` is rung 5 with it. Nothing else changes: same metadata, same K, same
+  gather order. The tier shares the function, so the result applies to rungs 6 to 8 as well. Tests:
+  a pair of blocks whose bounds tie in bf16 is ordered correctly in float32; the default is unchanged.
+
+## Question 1: NIAH
+
+The ladder's 45 prompts at 32K (Phase 4's), quality kernel, both bounds in one process, paired by
+prompt. The full cache scores {{ phase24.analysis.niah.full_accuracy | pct }}.
+
+{{> p24_niah }}
+
+**No measurable effect at any budget.** The float32 bound changes some answers, but the changes go
+both ways and nearly cancel, and the few that do not lean towards bf16. Teacher-forced windows agree:
+
+{{> p24_tf }}
+
+## Question 2: documents across turns
+
+Phase 21's 20 sessions with dense turns, both bounds in one process, paired by (session, turn). The
+bf16 rows reproduce Phase 21's rung 5 (every turn after turn 0 at 6.25%:
+{{ phase21.analysis.conditions.quest_6_25.after_turn0.mean | pct }} there).
+
+{{> p24_multiturn }}
+
+**No measurable effect on any question type at either budget.** Of
+{{ phase24.analysis.summary.comparisons | int }} comparisons the config's rule calls
+{{ phase24.analysis.summary.better | int }} better and {{ phase24.analysis.summary.worse | int }} worse.
+
+## What this means
+
+- The bf16 ties are real, but they are ties between blocks that matter about equally. Breaking them
+  by a finer bound picks different blocks, not better ones. That agrees with Phase 16's other
+  finding: the bound captures most of the attention mass the oracle does, and the mass it misses
+  does not predict which answers are lost.
+- So the remaining document loss at small budgets is not a precision artifact of the ranking. The
+  candidates left are the bound itself (min/max over 64 tokens is loose; Phase 4's 16-token blocks
+  kept more, at a speed cost) and the selection's per-step, per-head granularity. Neither was
+  tested here.
+- The default stays bf16. Float32 costs a cast of the metadata per step and buys nothing measured.
+
+## What this phase does not show
+
+- One model (1B), one context (32K), 45 prompts and 20 sessions: effects of a few prompts would not
+  resolve. The verdict is "no measurable effect", not "no effect".
+- Speed was not timed (quality kernel).
+
+## Provenance
+
+{{> p24_provenance }}
