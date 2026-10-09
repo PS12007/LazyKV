@@ -1,0 +1,61 @@
+# Phase 24: does ranking by a float32 Quest bound keep more of the document at small budgets?
+#
+# What is left of the tier's quality gap is selection's: at 6.25% rung 5 keeps 70% of the full
+# cache's single-turn doc answers in Phase 21's sessions, and loses NIAH prompts in every phase since
+# Phase 3. Phase 16 found that in 66-86% of (step, layer, head) cells the K-th and (K+1)-th Quest
+# bounds are *equal* in bf16, the dtype rungs 5-8 rank in, so the last places of the selection are
+# decided by `topk`'s tie order, not by the bound; it left the effect of a float32 bound unmeasured.
+# Since this phase's first commit, `top_blocks(dtype=torch.float32)` computes the bound in float32
+# (policy `quest_f32`; the tier shares the function). Nothing else changes: same metadata, same K,
+# same gather.
+#
+# Questions, fixed before any run (including smoke tests, whose output is not reported):
+#   1. NIAH. Rung 5 bf16 against float32, at 25%, 12.5% and 6.25%, on the ladder's 45 prompts at 32K
+#      (Phase 4's), paired by prompt: accuracy, prompts better / worse, two-sided sign test.
+#      Teacher-forced KL against the full cache, per window, beside it.
+#   2. Documents across turns. Phase 21's 20 sessions with dense turns, rung 5 bf16 against float32
+#      at 12.5% and 6.25%: doc-needle accuracy (turn 0, later turns, re-asked) and chat needles,
+#      paired by (session, turn), sign test.
+#   3. Cost. None expected beyond casting the metadata per step; not timed here (quality kernel).
+# Decision rule: float32 is called better at a budget only if more prompts (turns) improve than get
+# worse AND the sign test gives p < 0.05. Otherwise the result is "no measurable effect", reported as
+# such, with the counts. Changing the default rank dtype is for the owner, either way.
+phase: phase24
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+# Question 1 (scripts/02_policy_quality.py, --skip-block-full).
+budgets: [0.25, 0.125, 0.0625]
+policies: [quest, quest_f32]
+tier:
+  fetch: gather
+  spare: 0.0
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+# Question 2 (scripts/08_multiturn.py --budgets 0.125 0.0625): Phase 21's sessions, unchanged.
+sessions: 20
+seed: 0
+book: moby_dick
+passage_book: pride_and_prejudice
+passage_tokens: 192
+max_new_tokens: 16
+tier_check: null
+turn_chunk: 4096
