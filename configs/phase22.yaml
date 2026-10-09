@@ -1,0 +1,46 @@
+# Phase 22: a faster snapshot restore (Phase 20's own open item).
+#
+# Phase 20 found about half of a restore is not the disk: each tiered layer was read into pageable
+# memory, copied to the GPU, and handed to the prefill boundary, which copied it back to the pinned
+# host store and built the metadata, one step after another and after the read. Since this phase's
+# first commit, `snapshot.restore(rebuild="store")` reads the sealed blocks straight into the pinned
+# host store and derives the metadata and seeded slots from it on the GPU with no host sync
+# (`TieredLayer.from_store`), so that work overlaps the next layer's read. A unit test shows the
+# rebuilt layer equals the constructor's in every tensor and table, and restored sessions continue
+# bit-identically under both paths.
+#
+# Questions, fixed before any run (including smoke tests, whose output is not reported):
+#   1. Cost. Restore wall time, "store" against "boundary", at each context, unbuffered reads,
+#      `repeats` of each in one process, interleaved with the order alternating per repeat so
+#      neither path always reads right after the other. Medians with ranges. Also against the
+#      tiered prefill a restore replaces (Phase 20's question 1, re-measured here).
+#   2. What is left. Under "store", how much of the restore is not spent in reads (`rebuild_s`), i.e.
+#      how close a restore comes to the disk's read time. Expected: a small remainder, the last
+#      layer's GPU work and the dense layers.
+#   3. Exactness. The restored tier's full state hash must equal the prefilled tier's on every
+#      restore under both paths; any mismatch is a bug, not a result. Decoded tokens are compared
+#      too, with the cuDNN repeatability caveat (Phase 1).
+#   4. Transient VRAM. Peak allocated during a restore above what the restored tier holds, per path.
+#      Expected: one STORE_CHUNK of blocks under "store", about two copies of a layer under
+#      "boundary".
+# Descriptive: no decision rule. Phase 20's numbers are not reused for the comparison; both paths
+# run here on the same disk, in the same process.
+phase: phase22
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+# Everything below except `rebuilds` is Phase 20's.
+strategy: cudnn_bucketed
+block_size: 64
+prefill_chunk: 2048
+decode_tokens: 32
+budget: 0.125
+tier:
+  fetch: gather
+contexts: [32768, 65536, 130048]
+repeats: 3
+snapshot_dir: null
+prompt: {book: moby_dick, kind: single, depth: 0.5, sample: 0, seed: 0}
+rebuilds: [store, boundary]

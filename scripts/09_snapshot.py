@@ -1,11 +1,12 @@
-"""Phase 20: resuming a long session from a snapshot instead of prefilling it again (gap table C1).
+"""Phases 20 and 22: resuming a long session from a snapshot instead of prefilling it again (gap table C1).
 
 Per context, in one process (configs/phase20.yaml):
   1. Layer-major tiered prefill of one NIAH prompt (Phase 17's path), `repeats` times. The first
      prefill's tier is saved (lazykv/snapshot.py), then decoded: its tokens are the reference.
   2. `repeats` restores from the snapshot with the unbuffered reader, so every read comes from the
      disk and not from the page cache the save just filled. Each restored tier is decoded and must
-     produce the reference tokens exactly.
+     produce the reference tokens exactly. With several `rebuilds` (Phase 22), each repeat restores
+     once per rebuild path, the order alternating between repeats.
 Two checks. The exact one: a hash of the whole tier state (host blocks, Quest metadata, sink and
 tail slots, dense layers' KV) after the prefill and after every restore must be equal. The decoded
 tokens are compared too, but cuDNN's single-query decode is not bit-repeatable (Phase 1), so a token
@@ -113,6 +114,7 @@ def main() -> None:
         row: dict[str, Any] = {"context": ctx, "capacity_tokens": cap, "k_blocks": k,
                                "host_pinned_bytes": sum(t.numel() * t.element_size() for t in pools), "kv_bytes": ctx * lm.kv_bytes_per_token,
                                "prefill_s": [], "restore": [], "restore_tokens_match": [], "restore_state_match": []}
+        rebuilds = cfg.get("rebuilds", ["boundary"])  # Phase 20's configs predate the choice
         ref: list[int] | None = None
         try:
             for r in range(repeats):
@@ -131,17 +133,24 @@ def main() -> None:
                 res.cache.close()
                 del res
             for r in range(repeats):
-                release()
-                torch.cuda.synchronize()
-                t0 = time.perf_counter()
-                cache, logits, rs = snapshot.restore(path, k, cap, lm.num_layers, model=lm.model, host_pools=pools, n_slots=k, fetch=cfg["tier"]["fetch"], unbuffered=True)
-                wall = time.perf_counter() - t0
-                row["restore_state_match"].append(state_digest(cache) == row["state_digest"])
-                dec = greedy_decode(lm.model, cache, logits, n_dec - 1)
-                cache.close()
-                row["restore"].append({"wall_s": wall, "read_s": rs.read_s, "rebuild_s": rs.rebuild_s, "bytes_read": rs.bytes_read})
-                row["restore_tokens_match"].append(dec.tokens == ref)
-                del cache, logits
+                for rebuild in rebuilds if r % 2 == 0 else rebuilds[::-1]:
+                    release()
+                    torch.cuda.synchronize()
+                    base_alloc = torch.cuda.memory_allocated()
+                    torch.cuda.reset_peak_memory_stats()
+                    t0 = time.perf_counter()
+                    cache, logits, rs = snapshot.restore(path, k, cap, lm.num_layers, model=lm.model, host_pools=pools, n_slots=k, fetch=cfg["tier"]["fetch"], unbuffered=True, rebuild=rebuild)
+                    wall = time.perf_counter() - t0
+                    # Above what the restored tier itself holds: the restore's transient VRAM.
+                    transient = torch.cuda.max_memory_allocated() - torch.cuda.memory_allocated()
+                    held = torch.cuda.memory_allocated() - base_alloc
+                    row["restore_state_match"].append(state_digest(cache) == row["state_digest"])
+                    dec = greedy_decode(lm.model, cache, logits, n_dec - 1)
+                    cache.close()
+                    row["restore"].append({"rebuild": rebuild, "repeat": r, "wall_s": wall, "read_s": rs.read_s, "rebuild_s": rs.rebuild_s, "bytes_read": rs.bytes_read,
+                                           "transient_peak_bytes": transient, "held_bytes": held})
+                    row["restore_tokens_match"].append(dec.tokens == ref)
+                    del cache, logits
             row["status"] = "ok"
         except (torch.OutOfMemoryError, RuntimeError, OSError) as exc:
             row["status"], row["error"] = "error", str(exc).splitlines()[0][:300]
@@ -149,11 +158,16 @@ def main() -> None:
             path.unlink(missing_ok=True)
         if row["prefill_s"] and row["restore"]:
             pre = statistics.median(row["prefill_s"])
-            rst = statistics.median(x["wall_s"] for x in row["restore"])
-            row["prefill_s_median"], row["restore_s_median"] = pre, rst
-            row["read_gbps_median"] = statistics.median(x["bytes_read"] / x["read_s"] / 1e9 for x in row["restore"])
-            row["speedup"] = pre / rst
-        log.info("ctx %d (%.0fs): %s", ctx, time.perf_counter() - t_start, {k2: row.get(k2) for k2 in ("status", "prefill_s_median", "restore_s_median", "speedup", "restore_state_match", "restore_tokens_match")})
+            row["prefill_s_median"] = pre
+            for rebuild in rebuilds:
+                xs = [x for x in row["restore"] if x["rebuild"] == rebuild]
+                rst = statistics.median(x["wall_s"] for x in xs)
+                # Phase 20's flat keys hold its only path; with several, each gets a suffix.
+                sfx = "" if len(rebuilds) == 1 else f"_{rebuild}"
+                row[f"restore_s_median{sfx}"] = rst
+                row[f"read_gbps_median{sfx}"] = statistics.median(x["bytes_read"] / x["read_s"] / 1e9 for x in xs)
+                row[f"speedup{sfx}"] = pre / rst
+        log.info("ctx %d (%.0fs): %s", ctx, time.perf_counter() - t_start, {k2: v for k2, v in row.items() if k2 in ("status", "prefill_s_median", "restore_state_match", "restore_tokens_match") or k2.startswith(("restore_s_median", "speedup"))})
         rows.append(row)
         del pools
         release()
