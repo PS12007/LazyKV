@@ -5,6 +5,15 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-09: Phase 24, ranking by a float32 bound (negative)
+
+Phase 16 left open whether the bf16 ties at the K-th place of the selection cost quality. They do
+not, measurably: ranking by a float32 bound changed some answers at every budget, in both
+directions, and under the config's rule none of {{ phase24.analysis.summary.comparisons | int }}
+comparisons (NIAH at three budgets, five question types in multi-turn sessions at two) came out
+better or worse. The document loss at small budgets is not a precision artifact; the bound's
+looseness over 64-token blocks and the per-head selection are what is left to test, and neither was.
+
 ## 2026-10-09: Phase 23, a zero-copy tier
 
 The owner asked for the remaining directions after Phase 22. The tier's slowness has been its host
