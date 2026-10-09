@@ -55,6 +55,7 @@ OUTPUTS = {
     "PHASE_19.md.tmpl": "docs/phases/PHASE_19.md",
     "PHASE_20.md.tmpl": "docs/phases/PHASE_20.md",
     "PHASE_21.md.tmpl": "docs/phases/PHASE_21.md",
+    "PHASE_22.md.tmpl": "docs/phases/PHASE_22.md",
 }
 
 GENERATED_BANNER = (
@@ -2455,6 +2456,48 @@ def block_p21_provenance(ctx: Mapping[str, Any]) -> str:
         rows.append(_provenance_row("Ingestion cost", cs))
     return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], rows)
 
+
+
+_P22_PATH = {"store": "Store (this phase)", "boundary": "Boundary (Phase 20)"}
+
+
+def block_p22_timing(ctx: Mapping[str, Any]) -> str:
+    cs = lookup(ctx, "phase22.analysis.contexts")
+    if not isinstance(cs, Mapping):
+        return f"_{NOT_MEASURED}_"
+
+    def rng(d: Mapping[str, Any]) -> str:
+        return f"{d['median']:.2f} s ({d['min']:.2f}–{d['max']:.2f})"
+
+    rows = []
+    for e in cs.values():
+        if e["status"] != "ok":
+            rows.append([f"{e['context']:,}", f"error: {e['error']}"] + [NOT_MEASURED] * 7)
+            continue
+        for rb, p in e["paths"].items():
+            rows.append([f"{e['context']:,}", _P22_PATH.get(rb, rb), rng(p["restore_s"]), f"{p['read_s']['median']:.2f} s",
+                         f"{p['rebuild_s']['median']:.2f} s ({p['not_read_share']['median']:.0%})", f"{p['effective_gbps']['median']:.2f} GB/s",
+                         f"{p['transient_peak_mib']['max']:,.0f} MiB", f"{p['speedup_over_prefill']:.1f}× ({e['prefill_s']['median']:.2f} s)",
+                         f"{p['state_match']} / {p['restores']}"])
+    return table(["Context", "Rebuild", "Restore (median, range)", "In reads", "Outside reads (share)", "Snapshot bytes / restore time",
+                  "Transient VRAM, max", "Over tiered prefill (its median)", "State hash equal"],
+                 rows, ["--:", "---", "--:", "--:", "--:", "--:", "--:", "--:", "--:"])
+
+
+def block_p22_gain(ctx: Mapping[str, Any]) -> str:
+    cs = lookup(ctx, "phase22.analysis.contexts")
+    if not isinstance(cs, Mapping):
+        return f"_{NOT_MEASURED}_"
+    rows = [[f"{e['context']:,}", f"{e['store_over_boundary']:.2f}×", f"{e['store_over_boundary_worst']:.2f}×"]
+            for e in cs.values() if e["status"] == "ok" and "store_over_boundary" in e]
+    return table(["Context", "Store over boundary (medians)", "Worst pairing (slowest store, fastest boundary)"], rows, ["--:", "--:", "--:"])
+
+
+def block_p22_provenance(ctx: Mapping[str, Any]) -> str:
+    src = lookup(ctx, "phase22.analysis.source")
+    if not isinstance(src, Mapping):
+        return f"_{NOT_MEASURED}_"
+    return table(["Run", "Finished (UTC)", "Commit", "Uncommitted tracked changes"], [_provenance_row("Snapshot restore, both paths", src)])
 
 BLOCKS: dict[str, Callable[[Mapping[str, Any]], str]] = {
     name.removeprefix("block_"): fn for name, fn in globals().items() if name.startswith("block_") and callable(fn)

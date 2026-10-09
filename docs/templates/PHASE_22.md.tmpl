@@ -1,0 +1,87 @@
+# Phase 22: a faster snapshot restore
+
+[Phase 20](PHASE_20.md) found that a session restore was about half disk read and half rebuild,
+the two running one after the other, and named a fix it did not build. This phase builds it and
+measures both paths in one process. Questions were fixed in `configs/phase22.yaml` before any run.
+
+## What was built
+
+- **`TieredLayer.from_store`** (`lazykv/tiered.py`): a layer whose pinned host store already holds
+  its sealed blocks. It brings the store to the GPU in chunks of 256 blocks, derives the Quest
+  metadata and the seeded slots from them, and writes the sink and the unsealed tail, all queued
+  without a host sync. The constructor (the prefill boundary) derives the same things from the same
+  bytes, so the two build equal layers; it is refactored so both share the allocation and the
+  residency table.
+- **`snapshot.restore(rebuild="store")`**, now the default, reads each tiered layer's blocks
+  straight into its pinned host store and calls `from_store`. Because nothing waits for the GPU, a
+  layer's copies and metadata run while the next layer is read from disk; one sync at the end.
+  `rebuild="boundary"` keeps Phase 20's path: read into pageable memory, copy to the GPU, hand the
+  layer to the constructor, which copies it back to the host store.
+- Tests (`tests/test_snapshot.py`): a layer from `from_store` equals the constructor's in every
+  tensor and table, with and without a tail, with spare slots, and across chunk edges; restored
+  tiny-model sessions continue bit-identically under both paths, buffered and unbuffered.
+
+Phase 20 kept the boundary path on purpose, because reusing it made a restore provably a prefill.
+The store path gives that up for a test and a hash: it is checked, not shared.
+
+## The run
+
+Phase 20's setup unchanged: Llama-3.2-1B-Instruct, one NIAH prompt per context, the speed kernel,
+the tier at a {{ phase22.analysis.summary.budget | pct }} budget, the snapshot on the internal NVMe (C:),
+every read unbuffered. Per context, {{ phase22.analysis.summary.repeats | int }} tiered prefills, then
+{{ phase22.analysis.summary.repeats | int }} restores per path, the two paths interleaved and their order
+alternating between repeats.
+
+### Questions 1 and 2: cost, and what is left
+
+{{> p22_timing }}
+
+{{> p22_gain }}
+
+- **The store path restores {{ phase22.analysis.summary.store_over_boundary_min | .2f }}× to
+  {{ phase22.analysis.summary.store_over_boundary_max | .2f }}× faster than the boundary path** at the
+  medians, at every context. Pairing the slowest store restore with the fastest boundary one, it is
+  still {{ phase22.analysis.summary.store_over_boundary_worst_min | .2f }}× faster.
+- **A restore is now mostly the disk.** Under the store path,
+  {{ phase22.analysis.summary.store.not_read_share_min | pct0 }}–{{ phase22.analysis.summary.store.not_read_share_max | pct0 }}
+  of the wall time is spent outside reads, against
+  {{ phase22.analysis.summary.boundary.not_read_share_min | pct0 }}–{{ phase22.analysis.summary.boundary.not_read_share_max | pct0 }}
+  under the boundary path. The read itself costs the same on both paths: it was already reading at
+  the disk's rate, and the store path only changed where the bytes land.
+- **Resuming is now {{ phase22.analysis.summary.store.speedup_over_prefill_min | .1f }}× to
+  {{ phase22.analysis.summary.store.speedup_over_prefill_max | .1f }}× faster than prefilling again**
+  (prefill re-measured in this run; the boundary path gives
+  {{ phase22.analysis.summary.boundary.speedup_over_prefill_min | .1f }}× to
+  {{ phase22.analysis.summary.boundary.speedup_over_prefill_max | .1f }}×).
+- What remains outside reads is the last layer's GPU work, which has no next read to hide behind,
+  and the two dense layers, which are still restored as Phase 20 did. Faster from here means a
+  faster disk or reading while the previous read's bytes are still being copied, not more overlap.
+
+### Question 3: exactness
+
+- **Every restore is exact.** The full tier state hash matched the prefilled tier's on
+  {{ phase22.analysis.summary.state_match | int }} of {{ phase22.analysis.summary.restores | int }} restores,
+  both paths. Decoded tokens matched on {{ phase22.analysis.summary.tokens_match | int }} of
+  {{ phase22.analysis.summary.restores | int }}; with identical state, the mismatches are cuDNN's
+  single-query decode, which is not bit-repeatable (Phase 1), as the config said before the run.
+
+### Question 4: transient VRAM
+
+- **The store path's peak above the restored tier is
+  {{ phase22.analysis.summary.store.transient_peak_mib_max | .0f }} MiB at most, against
+  {{ phase22.analysis.summary.boundary.transient_peak_mib_max | .0f }} MiB for the boundary path.**
+  The config expected one 256-block chunk (32 MiB on this model). It is more, and it grows with
+  context, because the dense layers are still restored by copying a whole layer's KV to the GPU at
+  once; at the longest context the peak is that copy plus one chunk. The tiered layers' part is the
+  chunk, as expected. Restoring the dense layers in chunks too would remove the rest; not built.
+
+## What this phase does not show
+
+- One model, one prompt per context, one disk. A slower disk makes reads a larger share, which
+  favours neither path more; the absolute saving is the boundary path's rebuild.
+- Restores into pools pinned in advance, as in Phase 20. A cold process pays the pinning once.
+- No session was resumed mid-conversation in this run; the unit tests cover splits after decoding.
+
+## Provenance
+
+{{> p22_provenance }}
