@@ -68,6 +68,9 @@ from lazykv.selection import QUEST_DENSE_LAYERS, current_block_mask, top_blocks
 
 NEVER = -(2**40)  # "evicted at" sentinel for pairs that were never evicted
 BOUNDARY_CHUNK = 128  # blocks packed at once at the boundary; the float32 intermediate is the reason
+# Blocks brought to the GPU at once by `TieredLayer.from_store`: 32 MiB on the 1B model, 64 MiB on
+# the 3B. Bounds the transient VRAM of a restore to one chunk instead of one layer.
+STORE_CHUNK = 256
 
 
 @dataclass
@@ -149,34 +152,9 @@ class TieredLayer:
         _, h, length, d = keys.shape
         bs = block_size
         n_blocks, tail = divmod(length, bs)
-        if n_blocks - 1 <= k_blocks:
-            # Rung 5 attends densely when the budget covers every block. The tier has no dense copy
-            # to fall back to, so it refuses budgets that would need one.
-            raise ValueError(f"budget of {k_blocks} blocks covers all {n_blocks - 1} candidate blocks; the tier needs selection")
-        n_slots = k_blocks if n_slots is None else n_slots
-        if n_slots < k_blocks:
-            raise ValueError(f"{n_slots} slots cannot hold a selection of {k_blocks} blocks")
-        if quant not in (None, "int8"):
-            raise ValueError(f"unknown tier precision {quant!r}")
-        self.h, self.d, self.bs, self.k, self.n_slots = h, d, bs, k_blocks, n_slots
-        self.quant = quant
-        self.cap_blocks = -(-capacity_tokens // bs)
         dev, dt = keys.device, keys.dtype
-        self.tail_slot = n_slots + 1
-        # Zeroed: the current block's unfilled region is gathered and masked, and masking cannot
-        # neutralize NaN/inf left in recycled allocator memory (Phase 1).
-        self.pool = torch.zeros((n_slots + 2, h, 2, bs, d), dtype=dt, device=dev)
-        self.kmin = torch.empty((1, h, self.cap_blocks, d), dtype=dt, device=dev)
-        self.kmax = torch.empty_like(self.kmin)
-        self.logical_pair_bytes = 2 * bs * d * self.pool.element_size()  # what one pair would cost in the model's dtype
-        shape = (self.cap_blocks, h, 2, bs, d) if quant is None else (self.cap_blocks, h, packed_pair_bytes(bs, d))
-        want_dtype = dt if quant is None else torch.uint8
-        if host is None:
-            host = pinned_empty(shape, want_dtype)
-        elif host.shape != shape or host.dtype != want_dtype or not host.is_pinned():
-            raise ValueError(f"host pool must be pinned {want_dtype} with shape {shape}, got {want_dtype if host.dtype == want_dtype else host.dtype} {tuple(host.shape)}")
-        self.host = host
-        self.pair_bytes = self.logical_pair_bytes if quant is None else packed_pair_bytes(bs, d)
+        self._allocate(h, d, n_blocks, k_blocks, bs, capacity_tokens, dev, dt, host, n_slots, quant)
+        n_slots = self.n_slots
 
         # Boundary: every full prompt block goes to host once (seal-time D2H, all at once), and the
         # metadata is built on the GPU where the prompt KV still is.
@@ -186,7 +164,6 @@ class TieredLayer:
         # cheapest guess available at the boundary; the first decode step's misses are the cost of
         # it, and fetched_pairs_per_step shows that cold start separately.
         seed = min(n_slots, n_blocks - 1)
-        recent = np.arange(n_blocks - seed, n_blocks)
         torch.cuda.synchronize(dev)
         t0 = time.perf_counter()
         if quant is None:
@@ -224,7 +201,78 @@ class TieredLayer:
         if tail:
             self.pool[self.tail_slot, :, 0, :tail] = keys[0, :, n_blocks * bs : length]
             self.pool[self.tail_slot, :, 1, :tail] = values[0, :, n_blocks * bs : length]
-        self.n_sealed, self.fill, self.length = n_blocks, tail, length
+        self._finish(n_blocks, tail, seed)
+
+    @classmethod
+    def from_store(cls, host: torch.Tensor, n_blocks: int, tail: torch.Tensor, k_blocks: int, block_size: int, capacity_tokens: int, device: torch.device, n_slots: int | None = None) -> TieredLayer:
+        """A layer whose host store already holds its `n_blocks` sealed blocks (a restored snapshot).
+
+        The result equals the constructor's given the same KV: the constructor's boundary copies the
+        blocks to `host` and derives the metadata and seeded slots from the same bytes on the GPU, so
+        this skips the round trip and derives them from `host`. `tail` is the unsealed block's KV
+        [h, 2, fill, d]. Every GPU operation is queued without a host sync, so a caller restoring
+        layer after layer overlaps this layer's copies with whatever it does next (reading the next
+        layer from disk); the caller synchronizes once at the end. Bf16 tier only: an int8 store's
+        bytes are packed and the constructor derives its metadata from dequantized keys.
+        """
+        self = cls.__new__(cls)
+        h, d = host.shape[1], host.shape[-1]
+        bs, fill = block_size, tail.shape[2]
+        self._allocate(h, d, n_blocks, k_blocks, bs, capacity_tokens, device, host.dtype, host, n_slots, None)
+        seed = min(self.n_slots, n_blocks - 1)
+        lo_seed = n_blocks - seed
+        for c0 in range(0, n_blocks, STORE_CHUNK):
+            c1 = min(n_blocks, c0 + STORE_CHUNK)
+            g = host[c0:c1].to(device, non_blocking=True)  # [n, h, 2, bs, d]
+            kb = g[:, :, 0]  # [n, h, bs, d]
+            self.kmin[0, :, c0:c1] = kb.amin(dim=2).transpose(0, 1)
+            self.kmax[0, :, c0:c1] = kb.amax(dim=2).transpose(0, 1)
+            if c0 == 0:
+                self.pool[0] = g[0]
+            lo = max(c0, lo_seed)
+            if lo < c1:
+                self.pool[1 + lo - lo_seed : 1 + c1 - lo_seed] = g[lo - c0 : c1 - c0]
+        if fill:
+            self.pool[self.tail_slot, :, :, :fill] = tail.to(device, non_blocking=True)
+        self.boundary_d2h_s, self.boundary_d2h_bytes = 0.0, 0  # nothing crossed device to host
+        self._finish(n_blocks, fill, seed)
+        return self
+
+    def _allocate(self, h: int, d: int, n_blocks: int, k_blocks: int, bs: int, capacity_tokens: int, dev: torch.device, dt: torch.dtype, host: torch.Tensor | None, n_slots: int | None, quant: str | None) -> None:
+        """Checks, the GPU slot pool, metadata buffers and the host pool: what both constructors share."""
+        if n_blocks - 1 <= k_blocks:
+            # Rung 5 attends densely when the budget covers every block. The tier has no dense copy
+            # to fall back to, so it refuses budgets that would need one.
+            raise ValueError(f"budget of {k_blocks} blocks covers all {n_blocks - 1} candidate blocks; the tier needs selection")
+        n_slots = k_blocks if n_slots is None else n_slots
+        if n_slots < k_blocks:
+            raise ValueError(f"{n_slots} slots cannot hold a selection of {k_blocks} blocks")
+        if quant not in (None, "int8"):
+            raise ValueError(f"unknown tier precision {quant!r}")
+        self.h, self.d, self.bs, self.k, self.n_slots = h, d, bs, k_blocks, n_slots
+        self.quant = quant
+        self.cap_blocks = -(-capacity_tokens // bs)
+        self.tail_slot = n_slots + 1
+        # Zeroed: the current block's unfilled region is gathered and masked, and masking cannot
+        # neutralize NaN/inf left in recycled allocator memory (Phase 1).
+        self.pool = torch.zeros((n_slots + 2, h, 2, bs, d), dtype=dt, device=dev)
+        self.kmin = torch.empty((1, h, self.cap_blocks, d), dtype=dt, device=dev)
+        self.kmax = torch.empty_like(self.kmin)
+        self.logical_pair_bytes = 2 * bs * d * self.pool.element_size()  # what one pair would cost in the model's dtype
+        shape = (self.cap_blocks, h, 2, bs, d) if quant is None else (self.cap_blocks, h, packed_pair_bytes(bs, d))
+        want_dtype = dt if quant is None else torch.uint8
+        if host is None:
+            host = pinned_empty(shape, want_dtype)
+        elif host.shape != shape or host.dtype != want_dtype or not host.is_pinned():
+            raise ValueError(f"host pool must be pinned {want_dtype} with shape {shape}, got {want_dtype if host.dtype == want_dtype else host.dtype} {tuple(host.shape)}")
+        self.host = host
+        self.pair_bytes = self.logical_pair_bytes if quant is None else packed_pair_bytes(bs, d)
+
+    def _finish(self, n_blocks: int, fill: int, seed: int) -> None:
+        """Position, residency table and index buffers, once slots 1..seed hold the most recent blocks."""
+        h, n_slots, dev = self.h, self.n_slots, self.pool.device
+        self.n_sealed, self.fill, self.length = n_blocks, fill, n_blocks * self.bs + fill
+        recent = np.arange(n_blocks - seed, n_blocks)
 
         # Residency table on the host: slot numbers are pool indices 1..n_slots; -1 is empty.
         self.slot_block = np.full((h, n_slots), -1, dtype=np.int64)
@@ -244,7 +292,7 @@ class TieredLayer:
         # the replay ablation exists to remove that sync, and without it the host overwrote indices
         # a queued copy had not yet read, so a step gathered another step's blocks. The event makes
         # the guarantee explicit; when a sync has already happened, waiting on it costs nothing.
-        self.idx_host = torch.empty((h * (k_blocks + 2),), dtype=torch.int64, pin_memory=True)
+        self.idx_host = torch.empty((h * (self.k + 2),), dtype=torch.int64, pin_memory=True)
         self.idx_dev = torch.empty_like(self.idx_host, device=dev)
         self.idx_copied = torch.cuda.Event()
         self.flat_head = torch.arange(h, device=dev)

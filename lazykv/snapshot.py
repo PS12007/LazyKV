@@ -32,6 +32,7 @@ from typing import Any, BinaryIO
 import torch
 
 from lazykv.cache import FullGPUCache
+from lazykv.pinned import pinned_empty
 from lazykv.tiered import TieredCache, TieredLayer
 
 MAGIC = "lazykv-snapshot-1"
@@ -59,7 +60,7 @@ class SaveStats:
 class RestoreStats:
     bytes_read: int
     read_s: float
-    rebuild_s: float  # H2D, the tier boundary (D2H, metadata, seeding) and dense layers
+    rebuild_s: float  # everything outside reads: H2D, metadata, seeding, dense layers, the final sync
     sections: dict[str, float] = field(default_factory=dict)
 
 
@@ -191,13 +192,24 @@ def restore(
     fetch: str = "gather",
     stages: Any = None,
     unbuffered: bool = False,
+    rebuild: str = "store",
 ) -> tuple[TieredCache, torch.Tensor, RestoreStats]:
     """A TieredCache at the snapshot's position, and the logits for its next token.
 
     By default reads go through the OS page cache, so a snapshot read soon after it was written is a
     RAM copy. `unbuffered=True` (Windows only) reads from the disk itself, which is what a resumed
     session pays after the cache has moved on.
+
+    `rebuild` picks how each tiered layer is rebuilt. "store" (Phase 22) reads the sealed blocks
+    straight into the layer's pinned host store and derives the metadata and seeded slots from it
+    on the GPU without a host sync, so that work overlaps the next layer's read
+    (`TieredLayer.from_store`). "boundary" (Phase 20) copies each layer to the GPU and hands it to
+    the constructor, the same boundary as tiered prefill: the KV crosses the link twice and every
+    step runs after the read, one after the other. Both give the same state; `rebuild_s` is the
+    restore's time outside reads, which under "store" is only the part the overlap did not hide.
     """
+    if rebuild not in ("store", "boundary"):
+        raise ValueError(f"unknown rebuild {rebuild!r}")
     if unbuffered and os.name != "nt":
         raise NotImplementedError("the unbuffered reader is implemented for Windows only")
     header, base = read_header(path)
@@ -213,8 +225,8 @@ def restore(
     reader = _UnbufferedReader(path) if unbuffered else None
     with path.open("rb", buffering=0) as f:
 
-        def load(name: str, shape: tuple[int, ...], dtype: torch.dtype) -> torch.Tensor:
-            out = torch.empty(shape, dtype=dtype)
+        def load(name: str, shape: tuple[int, ...], dtype: torch.dtype, into: torch.Tensor | None = None) -> torch.Tensor:
+            out = torch.empty(shape, dtype=dtype) if into is None else into
             t0 = time.perf_counter()
             if reader is not None:
                 reader.read_into(base + sec[name][0], out)
@@ -235,12 +247,23 @@ def restore(
                 dense += 1
                 continue
             n, fill = spec["n_sealed"], spec["fill"]
+            host = None if host_pools is None else host_pools[i - header["dense_layers"]]
+            if rebuild == "store":
+                t0 = time.perf_counter()
+                if host is None:
+                    host = pinned_empty((-(-capacity_tokens // bs), h, 2, bs, d), dt)
+                stats.rebuild_s += time.perf_counter() - t0
+                load(f"L{i}.blocks", (n, h, 2, bs, d), dt, into=host[:n])
+                tail = load(f"L{i}.tail", (h, 2, fill, d), dt)
+                t0 = time.perf_counter()
+                tiers[i] = TieredLayer.from_store(host, n, tail, k_blocks, bs, capacity_tokens, torch.device("cuda"), n_slots)
+                stats.rebuild_s += time.perf_counter() - t0
+                continue
             blocks = load(f"L{i}.blocks", (n, h, 2, bs, d), dt)
             tail = load(f"L{i}.tail", (h, 2, fill, d), dt)
             t0 = time.perf_counter()
             g = blocks.cuda().permute(1, 2, 0, 3, 4).reshape(h, 2, n * bs, d)  # [h, 2, B*bs, d]
             kv = torch.cat([g, tail.cuda()], dim=2)
-            host = None if host_pools is None else host_pools[i - header["dense_layers"]]
             tiers[i] = TieredLayer(kv[None, :, 0], kv[None, :, 1], k_blocks, bs, capacity_tokens, host, n_slots)
             del g, kv
             stats.rebuild_s += time.perf_counter() - t0
