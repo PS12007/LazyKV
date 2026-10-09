@@ -1,0 +1,6928 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-09T18:16:11+00:00",
+    "git_commit": "c51a9665a6276d34313df0e3b039b91a01365179",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\02_policy_quality.py",
+      "--config",
+      "configs\\phase24.yaml",
+      "--skip-block-full"
+    ],
+    "python": "3.12.10"
+  },
+  "config": {
+    "phase": "phase24",
+    "model": {
+      "repo": "unsloth/Llama-3.2-1B-Instruct",
+      "revision": "5a8abab4a5d6f164389b1079fb721cfab8d7126c"
+    },
+    "block_size": 64,
+    "context": 32768,
+    "prefill_chunk": 2048,
+    "budgets": [
+      0.25,
+      0.125,
+      0.0625
+    ],
+    "policies": [
+      "quest",
+      "quest_f32"
+    ],
+    "tier": {
+      "fetch": "gather",
+      "spare": 0.0
+    },
+    "niah": {
+      "book": "moby_dick",
+      "kinds": [
+        "single",
+        "multikey",
+        "multivalue"
+      ],
+      "depths": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "samples": 3,
+      "max_new_tokens": {
+        "single": 16,
+        "multikey": 16,
+        "multivalue": 48
+      },
+      "seed": 0,
+      "sample_start": 0
+    },
+    "teacher_forced": {
+      "book": "pride_and_prejudice",
+      "offsets": [
+        0,
+        60000
+      ],
+      "continuation": 256
+    },
+    "sessions": 20,
+    "seed": 0,
+    "book": "moby_dick",
+    "passage_book": "pride_and_prejudice",
+    "passage_tokens": 192,
+    "max_new_tokens": 16,
+    "tier_check": null,
+    "turn_chunk": 4096
+  },
+  "attention_strategy": "efficient",
+  "conditions": [
+    "full@1",
+    "quest@0.25",
+    "quest@0.125",
+    "quest@0.0625",
+    "quest_f32@0.25",
+    "quest_f32@0.125",
+    "quest_f32@0.0625"
+  ],
+  "kv_bytes_per_token": 32768,
+  "niah": [
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.33498460036935285,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18985279969638214,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18374319997383282,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3510340.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21875530009856448,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "351.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19040510000195354,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "351.",
+      "values": [
+        "3510340"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22512829973129556,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19469729997217655,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1082357.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22236519993748516,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2198512996546924,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22050400008447468,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18894980027107522,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "108.",
+      "values": [
+        "1082357"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17780980071984231,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "937.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21662589989136904,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "937.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18396760016912594,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2114782998105511,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1903305002488196,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1859377007931471,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9374962.",
+      "values": [
+        "9374962"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20943959982832894,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18356589990435168,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1918924005003646,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19003990007331595,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2281660996377468,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2183117000386119,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "7623280.",
+      "values": [
+        "7623280"
+      ],
+      "target_needle_pos": 8204,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2105741998529993,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19307860056869686,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19199340016348287,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21355910022975877,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1910403004148975,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18763379991287366,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "8356251.",
+      "values": [
+        "8356251"
+      ],
+      "target_needle_pos": 8166,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22013109968975186,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23624270013533533,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22690849989885464,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2202567004133016,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "927.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20279790024505928,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2124209002358839,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9278063.",
+      "values": [
+        "9278063"
+      ],
+      "target_needle_pos": 8207,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21614419954130426,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18803199974354357,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "613.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20561980007914826,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22799909970490262,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21752109931549057,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6136285.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2257257002638653,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "613.",
+      "values": [
+        "6136285"
+      ],
+      "target_needle_pos": 16379,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2000053998781368,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2534054004936479,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21757940005045384,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21484210016205907,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21913269947981462,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17957410018425435,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2450704001239501,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6482796.",
+      "values": [
+        "6482796"
+      ],
+      "target_needle_pos": 16362,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.24719159968663007,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20513979956740513,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21333629958098754,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2162813994800672,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22073749994160607,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "8484092.",
+      "values": [
+        "8484092"
+      ],
+      "target_needle_pos": 16381,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.25429079978493974,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1773589999647811,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "509.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2063855999149382,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21548769960645586,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "509.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22195830009877682,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21423759998288006,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5094918.",
+      "values": [
+        "5094918"
+      ],
+      "target_needle_pos": 24485,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18045930046355352,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21732199989492074,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19519930065143853,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22350890008965507,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "353,4847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19350519962608814,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19824780034832656,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "353,4847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22632910090032965,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3534847.",
+      "values": [
+        "3534847"
+      ],
+      "target_needle_pos": 24550,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20095000066794455,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22459310019621626,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2180061002727598,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22767499968176708,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20245250052539632,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5765165.",
+      "values": [
+        "5765165"
+      ],
+      "target_needle_pos": 24530,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23503600049298257,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19645750051131472,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.200844400387723,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17020740115549415,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23503239965066314,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20127450017025694,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9402331.",
+      "values": [
+        "9402331"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22674149979138747,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22196910018101335,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.24482320062816143,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20160349976504222,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19652219989802688,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20710759988287464,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9193824.",
+      "values": [
+        "9193824"
+      ],
+      "target_needle_pos": 32715,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18758250016253442,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.09935940033756196,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20912499981932342,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21588579996023327,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17869270005030558,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2173561998642981,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "single",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5989562.",
+      "values": [
+        "5989562"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17555580020416528,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "6821.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19021029979921877,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "68214.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18993599963141605,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "6821.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.216117600153666,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21686190034961328,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": "68214.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19788219995098189,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "6821.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23262250004336238,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6826142.",
+      "values": [
+        "6826142"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6330131.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19375960039906204,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6330131.oms.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "633.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2314291003276594,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "633.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2130019007017836,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "633.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1946153005119413,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6330131.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20624590036459267,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "633.",
+      "values": [
+        "6330131"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23710460017900914,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5780624.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21333939983742312,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18253310024738312,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "600.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18381570058409125,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20467359980102628,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": "6005158.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17893009987892583,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "600.",
+      "values": [
+        "5780624"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22018540051067248,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20314349979162216,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2103169005131349,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18820060067810118,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "5890094.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17629520024638623,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "5893004.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2143638995476067,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "5893004.",
+      "values": [
+        "5890094"
+      ],
+      "target_needle_pos": 8210,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19559880014276132,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 5064.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20611179998377338,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 4771824.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21269180008675903,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18967640068149194,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 4771824.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1872490998939611,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ": 4779874.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21993689972441643,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 5064.",
+      "values": [
+        "4779874"
+      ],
+      "target_needle_pos": 8195,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17682299995794892,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20361879986012354,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22735700011253357,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18390970025211573,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17204559984384105,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1784455997403711,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3402742.",
+      "values": [
+        "3402742"
+      ],
+      "target_needle_pos": 8171,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22440119978273287,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2026225000154227,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20668980001937598,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2107594000408426,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21130320051452145,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19559409969951957,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "3388775.",
+      "values": [
+        "3388775"
+      ],
+      "target_needle_pos": 16349,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18401860020821914,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18405690061626956,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18866079987492412,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "4056449.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.16721529967617244,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "4056449.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2101873000501655,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2045518993982114,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21052580035757273,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1916012.",
+      "values": [
+        "1916012"
+      ],
+      "target_needle_pos": 16334,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": ": 6902605",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19939249969320372,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 163.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18567800027085468,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 163.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2125163001473993,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2164646995952353,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ": 6902605.",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19244539982173592,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": ": 6902605",
+      "values": [
+        "6902605"
+      ],
+      "target_needle_pos": 16363,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17609229974914342,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20256480074021965,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 763.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2176869998802431,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 763.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18948199972510338,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22207129967864603,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 351.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21510680025676265,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 3514248.",
+      "values": [
+        "7637053"
+      ],
+      "target_needle_pos": 24532,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19661569950403646,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21393969998462126,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "6154924.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21645950025413185,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "6158916.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18324399972334504,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17098580027231947,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": "6154924.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1916051998268813,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "6154954.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": "6158916.",
+      "values": [
+        "6154954"
+      ],
+      "target_needle_pos": 24544,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2131729003158398,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ": 147.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.12159420043462887,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 4367478",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.219184699235484,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 4117473.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18496149958809838,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ": 4367478",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19718600035412237,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ": 147.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2190148990484886,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ": 1472714.",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ": 4117473",
+      "values": [
+        "1472714"
+      ],
+      "target_needle_pos": 24567,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.21671629982301965,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19545359985204414,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1728191997972317,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2118553000036627,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2202458998071961,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1816478005493991,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "4798586.",
+      "values": [
+        "4798586"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2149227003683336,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20756520022405311,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20345319953048602,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.2111560000339523,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.17315289989346638,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1960086000035517,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "9276576.",
+      "values": [
+        "9276576"
+      ],
+      "target_needle_pos": 32721,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.19278919958742335,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.1955034998827614,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.18122080026660115,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.23385200049960986,
+      "selections": 210,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20833700022194535,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.22026549995644018,
+      "selections": 210,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344,
+      "host_select_s": 0.20285170030547306,
+      "selections": 210,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multikey",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": "1260085.",
+      "values": [
+        "1260085"
+      ],
+      "target_needle_pos": 32718,
+      "gpu_resident_kv_bytes": 1074233344
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4620748\n3. 4425229\n4. 4425229\n5. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6795282997773029,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4425229\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 752\n2. 752\n3. 752\n4. 752\n5. 752\n6. 752\n7. 752\n8. 752\n9. 752\n10.",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6625798011082225,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 7529401\n2. 4620748\n3. 4425229\n4. 4425229\n5. 4620748\n6. 7529401",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5733481992501765,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 752\n2. 752\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5500714994268492,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 752\n2. 4620748\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7310321013792418,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 752\n2. 4620748\n3. 4620748",
+      "values": [
+        "7529401",
+        "3428697",
+        "4425229",
+        "4620748"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6441773002152331,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 2235723\n2. 6461968",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7923546994570643,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 2235723\n2. 2235724\n3. 2235725\n4. 2235726\n5. 2235727\n6. 2235728\n7. 223572",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6153760007000528,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.5,
+      "answer": ":\n\n1. 2235723\n2. 6461968",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6517157006310299,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 2235723\n2. 6461968\n3. 6368150",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7165023994748481,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 2235723\n2. 6461968\n3. 6368150",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6298393999459222,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 7064276\n2. 2235723\n3. 400000\n4. 60,000\n5. 150,000\n6. 550,000\n7. 72,000",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.5,
+      "answer": ":\n\n1. 6461968\n2. 2235723",
+      "values": [
+        "7064276",
+        "6461968",
+        "6368150",
+        "2235723"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.736036900721956,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 9668821\n3. 5206252\n4. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6096824003034271,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 4183608\n2. 9662821\n3. 9668821\n4. 9668822\n5. 9668823\n6. 9668824\n7. 966882",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.8150820002774708,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 4180000\n2. 4180001\n3. 4180002\n4. 4180003\n5. 4180004\n6. 4180005\n7. 418000",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.690962899941951,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6689359006122686,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 4180000\n2. 4080000\n3. 4060000\n4. 4050000\n5. 4040000\n6. 4030000\n7. 402000",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6551781001617201,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7249077992746606,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 4183608\n2. 5206252\n3. 9668821",
+      "values": [
+        "4183608",
+        "9668821",
+        "4085572",
+        "5206252"
+      ],
+      "target_needle_pos": 57,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 9554914\n4. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.25,
+      "answer": ":\n\n1. 6995312\n2. 6995312\n3. 6995312\n4. 6995312\n5. 6995312\n6. 6995312\n7. 699531",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6008032002719119,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 699\n2. 699\n3. 699\n4. 699\n5. 699\n6. 699\n7. 699\n8. 699\n9. 699\n10.",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7120610006386414,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 6995312\n2. 8913207\n3. 5073709",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5914239007979631,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.25,
+      "answer": ":\n\n1. 6995312\n2. 6995313\n3. 6995314\n4. 6995315\n5. 6995316\n6. 6995317\n7. 699531",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6935086991288699,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 699\n2. 699\n3. 699\n4. 699\n5. 699\n6. 699\n7. 699\n8. 699\n9. 699\n10.",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6418922998709604,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 6995312\n2. 6995313\n3. 6995314\n4. 6995315\n5. 6995316\n6. 6995317\n7. 699531",
+      "values": [
+        "6995312",
+        "9554914",
+        "5073709",
+        "8913207"
+      ],
+      "target_needle_pos": 8203,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6771278999513015,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7344181000371464,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7344185984693468,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6627747004386038,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 2721775\n2. 2874903\n3. 9992690",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6517275998485275,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903\n3. 9999999",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7452766005881131,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.5,
+      "answer": ":\n\n1. 2721775\n2. 2874903",
+      "values": [
+        "2721775",
+        "9992690",
+        "7768618",
+        "2874903"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6123015006887726,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6407926994143054,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.713060699403286,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 3162799\n2. 3162793\n3. 3162791\n4. 3162797\n5. 3162795\n6. 3162793\n7. 316279",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6922260009450838,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 3162799\n2. 3162793\n3. 3162791\n4. 3162797\n5. 3162795\n6. 3162793\n7. 316279",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6135795992449857,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 3162799\n2. 6934005",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.25,
+      "answer": ":\n\n1. 3162799\n2. 3162793\n3. 3162791\n4. 3162797\n5. 3162795\n6. 3162793\n7. 316279",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6757912993780337,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.25,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 3162799\n2. 3162793\n3. 3162791\n4. 3162797\n5. 3162795\n6. 3162793\n7. 316279",
+      "values": [
+        "3162799",
+        "6934005",
+        "1034363",
+        "6753893"
+      ],
+      "target_needle_pos": 8146,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5727793998667039,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7690801\n4. 7096956",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7096956\n4. 5293128 (again)\n5. 9175989 (again)\n6. 7096956 (again",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6455727000720799,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 5293128\n2. 5293129\n3. 5293130\n4. 5293131\n5. 5293132\n6. 5293133\n7. 529313",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5759197997394949,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 5293128\n2. 5293129\n3. 5293130\n4. 5293131\n5. 5293132\n6. 5293133\n7. 529313",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6541641997173429,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7096956\n4. 5293128 (again)\n5. 9175989 (again)\n6. 7096956 (again",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6025956004741602,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7096956\n4. 5293128 (again)\n5. 9175989 (again)\n6. 5293128 (third",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6071655992418528,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 5293128\n2. 9175989\n3. 7096956\n4. 5293128 (again)\n5. 9175989 (again)\n6. 7096956 (again",
+      "values": [
+        "7690801",
+        "5293128",
+        "7096956",
+        "9175989"
+      ],
+      "target_needle_pos": 16311,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6734741006512195,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8770218\n2. 1976000\n3. 9187448",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 4485878\n2. 4485879\n3. 4485880\n4. 4485881\n5. 4485882\n6. 4485883\n7. 448588",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5815657994826324,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 4485871\n2. 4485872\n3. 4485873\n4. 4485874\n5. 4485875\n6. 4485876\n7. 448587",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6623570996453054,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ":\n\n1. 197\n2. 1970\n3. 1971\n4. 1972\n5. 1973\n6. 1974\n7. 1975\n8. 1976",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5403635003603995,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 197\n2. 1970\n3. 1971\n4. 1972\n5. 1973\n6. 1974\n7. 1975\n8. 1976",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6588817007141188,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 197\n2. 1970\n3. 1971\n4. 1972\n5. 1973\n6. 1974\n7. 1975\n8. 1976",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5724752994719893,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ":\n\n1. 197\n2. 1970\n3. 1971\n4. 1972\n5. 1973\n6. 1974\n7. 1975\n8. 1976",
+      "values": [
+        "1976000",
+        "8770218",
+        "9187448",
+        "4485875"
+      ],
+      "target_needle_pos": 16299,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7087577005149797,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5552222999976948,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 3556506\n2. 488\n3. 9343739\n4. 3556506 (again, referring to the same whale)\n5. 488 (again, referring to the same wha",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5670391999301501,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6720358003512956,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 3556506\n2. 4880329\n3. 7969963\n4. 9343739",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 355\n2. 355\n3. 355\n4. 355\n5. 355\n6. 355\n7. 355\n8. 355\n9. 355\n10.",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6486575006856583,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 3556506\n2. 488\n3. 9343739\n4. 3556506 (again, referring to the same whale)\n5. 488 (again, referring to the same wha",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.627464700373821,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.5,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 355\n2. 355\n3. 355\n4. 355\n5. 355\n6. 355\n7. 355\n8. 355\n9. 355\n10.",
+      "values": [
+        "7969963",
+        "3556506",
+        "4880329",
+        "9343739"
+      ],
+      "target_needle_pos": 16320,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5688092992058955,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.75,
+      "answer": ":\n\n1. 4570461\n2. 2034916\n3. 1409787",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6806560996337794,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.75,
+      "answer": ":\n\n1. 4570461\n2. 2034916\n3. 1409787",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5776185007416643,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 4570461\n2. 2034916",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6930463009048253,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 4570461\n2. 2034916\n3. 1409787",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6344978003180586,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 4570461\n2. 2034916\n3. 1409787",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5918656997382641,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.75,
+      "answer": ":\n\n1. 4570461\n2. 2034916\n3. 1409787",
+      "values": [
+        "7220547",
+        "2034916",
+        "1409787",
+        "4570461"
+      ],
+      "target_needle_pos": 24519,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.673944499634672,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 3115256\n2. 4186888\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6009975995402783,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6273870000150055,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 3115256\n2. 3115257\n3. 3115258\n4. 3115259\n5. 3115260\n6. 3115261\n7. 311526",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.662974200793542,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.75,
+      "answer": ":\n\n1. 3115256\n2. 4188838\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7031425990280695,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 3115256\n2. 4186886\n3. 5475654",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6785928999888711,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 3115256\n2. 3115257\n3. 3115258\n4. 3115259\n5. 3115260\n6. 3115261\n7. 311526",
+      "values": [
+        "4188838",
+        "3115256",
+        "5475654",
+        "9886886"
+      ],
+      "target_needle_pos": 24531,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.591963799786754,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 5978033\n4. 5978034\n5. 5978035\n6. 5978036\n7. 597803",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5809171996079385,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 8623953\n2. 5978036\n3. 7513369\n4. 9183625",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5849866010248661,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 8623957\n2. 5978301\n3. 7537369\n4. 8623957",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5972078003687784,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.5,
+      "answer": ":\n\n1. 8623953\n2. 5978030\n3. 5978030",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.70766959968023,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.5,
+      "answer": ":\n\n1. 8623953\n2. 5978036\n3. 7517369\n4. 8623953",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6779694999568164,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 0.75,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 8623957\n2. 5978231\n3. 7539632\n4. 7539633\n5. 7539634\n6. 7539635\n7. 753963",
+      "values": [
+        "7517369",
+        "5978030",
+        "9183625",
+        "8623953"
+      ],
+      "target_needle_pos": 24513,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6767928989138454,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000\n2. 8001\n3. 8002\n4. 8003\n5. 8004\n6. 8005\n7. 8006\n8. 8007",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6629786995472386,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000000\n2. 8000001\n3. 8000002\n4. 8000003\n5. 8000004\n6. 8000005\n7. 800000",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.660641199501697,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000000\n2. 8000001\n3. 8000002\n4. 8000003\n5. 8000004\n6. 8000005\n7. 800000",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6546224999474362,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000000\n2. 8000001\n3. 8000002\n4. 8000003\n5. 8000004\n6. 8000005\n7. 800000",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5930007004062645,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 1.0,
+      "answer": ":\n\n1. 8000593\n2. 4698795\n3. 7034908\n4. 5809031",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000\n2. 8001\n3. 8002\n4. 8003\n5. 8004\n6. 8005\n7. 8006\n8. 8007",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.635364800284151,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 0,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.0,
+      "answer": ":\n\n1. 8000000\n2. 8000001\n3. 8000002\n4. 8000003\n5. 8000004\n6. 8000005\n7. 800000",
+      "values": [
+        "5809031",
+        "4698795",
+        "7034908",
+        "8000593"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.5461220003198832,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 8571329\n2. 8571333\n3. 8571335\n4. 8571337\n5. 8571339\n6. 8571341\n7. 857134",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6199996998184361,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 0.25,
+      "answer": ":\n\n1. 8579353\n2. 8579354\n3. 8579353\n4. 8579353\n5. 8579353\n6. 8579353\n7. 857935",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6276535008801147,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 0.0,
+      "answer": ":\n\n1. 8571329\n2. 8571333\n3. 8571335\n4. 8571337\n5. 8571339\n6. 8571341\n7. 857134",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6850135999266058,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.75,
+      "answer": ":\n\n1. 1381329\n2. 400000\n3. 8579353\n4. 2713574",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 1381329\n2. 1381329\n3. 1381329\n4. 1381329\n5. 1381329\n6. 1381329\n7. 138132",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6421830001054332,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.25,
+      "answer": ":\n\n1. 8579352\n2. 8579353\n3. 8579354\n4. 8579355\n5. 8579356\n6. 8579357\n7. 857935",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6477871991228312,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 1,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 1381329\n2. 1381329\n3. 1381329\n4. 1381329\n5. 1381329\n6. 1381329\n7. 138132",
+      "values": [
+        "2713574",
+        "1381329",
+        "6764434",
+        "8579353"
+      ],
+      "target_needle_pos": 32717,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6066991992411204,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 8559832\n4. 3571180",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7871233000187203,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "score": 0.25,
+      "answer": ":\n\n1. 6759960\n2. 6759960\n3. 6759960\n4. 6759960\n5. 6759960\n6. 6759960\n7. 675996",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6738697999971919,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 8559832\n4. 3571180",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6373158985516056,
+      "selections": 658,
+      "k_blocks": 126,
+      "attended_tokens_selecting_layers": 8192,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "score": 0.5,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 6759960 (again)\n4. 6759960 (third time)\n5. 6759960 (fourth time)\n6.",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 6759960\n2. 6759961\n3. 6759962\n4. 6759963\n5. 6759964\n6. 6759965\n7. 675996",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6708792001591064,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "score": 0.25,
+      "answer": ":\n\n1. 6759960\n2. 6759961\n3. 6759962\n4. 6759963\n5. 6759964\n6. 6759965\n7. 675996",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.7488961996277794,
+      "selections": 658,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "kind": "multivalue",
+      "depth": 1.0,
+      "sample": 2,
+      "prompt_len": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "score": 1.0,
+      "answer": ":\n\n1. 6759960\n2. 5619538\n3. 8559832\n4. 3571180",
+      "values": [
+        "3571180",
+        "6759960",
+        "5619538",
+        "8559832"
+      ],
+      "target_needle_pos": 32720,
+      "gpu_resident_kv_bytes": 1075281920,
+      "host_select_s": 0.6599008998600766,
+      "selections": 658,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    }
+  ],
+  "teacher_forced": [
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest",
+      "budget": 0.125,
+      "positions": 256,
+      "top1_agreement": 0.86328125,
+      "mean_kl": 0.06919233622302495,
+      "max_kl": 0.8548233123645201,
+      "kl_ci95": [
+        0.05921063246394971,
+        0.08050331918403751
+      ],
+      "top1_ci95": [
+        0.8203125,
+        0.90234375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.901729306531422,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.2971205033827573,
+      "selections": 3570,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "positions": 256,
+      "top1_agreement": 0.8046875,
+      "mean_kl": 0.1265892752380354,
+      "max_kl": 1.1427966051340732,
+      "kl_ci95": [
+        0.1082544516829928,
+        0.14542196162863616
+      ],
+      "top1_ci95": [
+        0.75390625,
+        0.8515625
+      ],
+      "exact_match": false,
+      "mean_nll": 2.927453999672423,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.369251202326268,
+      "selections": 3570,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "positions": 256,
+      "top1_agreement": 0.82421875,
+      "mean_kl": 0.1265260962819891,
+      "max_kl": 1.2647056812150126,
+      "kl_ci95": [
+        0.10769312128471419,
+        0.14660375627950453
+      ],
+      "top1_ci95": [
+        0.77734375,
+        0.8671875
+      ],
+      "exact_match": false,
+      "mean_nll": 2.9261689272103126,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.96963989851065,
+      "selections": 3570,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest",
+      "budget": 0.25,
+      "positions": 256,
+      "top1_agreement": 0.90234375,
+      "mean_kl": 0.0346803273864675,
+      "max_kl": 0.7331699577253672,
+      "kl_ci95": [
+        0.028477884757458872,
+        0.04261387121989744
+      ],
+      "top1_ci95": [
+        0.86328125,
+        0.9375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.9158579024743574,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.446033502870705,
+      "selections": 3570,
+      "k_blocks": 127,
+      "attended_tokens_selecting_layers": 8256,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "mean_nll": 2.9561379301900956,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "positions": 256,
+      "top1_agreement": 0.859375,
+      "mean_kl": 0.06967068317215949,
+      "max_kl": 0.839778849631271,
+      "kl_ci95": [
+        0.05950951010722062,
+        0.08110189019090715
+      ],
+      "top1_ci95": [
+        0.81640625,
+        0.8984375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.9092094521848537,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.774314899230376,
+      "selections": 3570,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 0,
+      "target": 32768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "positions": 256,
+      "top1_agreement": 0.90625,
+      "mean_kl": 0.03551582977738459,
+      "max_kl": 0.7861771628132742,
+      "kl_ci95": [
+        0.028929221101517483,
+        0.04411908517648237
+      ],
+      "top1_ci95": [
+        0.8671875,
+        0.9375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.919308208857501,
+      "ref_mean_nll": 2.9561379301900956,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.7418370015220717,
+      "selections": 3570,
+      "k_blocks": 127,
+      "attended_tokens_selecting_layers": 8256,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest",
+      "budget": 0.25,
+      "positions": 256,
+      "top1_agreement": 0.9140625,
+      "mean_kl": 0.03675960158192254,
+      "max_kl": 0.5395454698173625,
+      "kl_ci95": [
+        0.030367456264918807,
+        0.04420319660109907
+      ],
+      "top1_ci95": [
+        0.87890625,
+        0.9453125
+      ],
+      "exact_match": false,
+      "mean_nll": 2.966791959415218,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.197828999138437,
+      "selections": 3570,
+      "k_blocks": 127,
+      "attended_tokens_selecting_layers": 8256,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest_f32",
+      "budget": 0.25,
+      "positions": 256,
+      "top1_agreement": 0.921875,
+      "mean_kl": 0.03689611203429135,
+      "max_kl": 0.6348098677694088,
+      "kl_ci95": [
+        0.029793611954489964,
+        0.04531519918797801
+      ],
+      "top1_ci95": [
+        0.88671875,
+        0.953125
+      ],
+      "exact_match": false,
+      "mean_nll": 2.9651181533720674,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.6407570000737906,
+      "selections": 3570,
+      "k_blocks": 127,
+      "attended_tokens_selecting_layers": 8256,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest_f32",
+      "budget": 0.0625,
+      "positions": 256,
+      "top1_agreement": 0.765625,
+      "mean_kl": 0.12915845019824618,
+      "max_kl": 1.7520191751119498,
+      "kl_ci95": [
+        0.10825693112602072,
+        0.15402313291064637
+      ],
+      "top1_ci95": [
+        0.7109375,
+        0.81640625
+      ],
+      "exact_match": false,
+      "mean_nll": 3.015014611049537,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.668705899384804,
+      "selections": 3570,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "full",
+      "budget": 1.0,
+      "positions": 256,
+      "top1_agreement": 1.0,
+      "mean_kl": 0.0,
+      "max_kl": 0.0,
+      "kl_ci95": [
+        0.0,
+        0.0
+      ],
+      "top1_ci95": [
+        1.0,
+        1.0
+      ],
+      "exact_match": true,
+      "mean_nll": 2.9565353141835473,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest",
+      "budget": 0.125,
+      "positions": 256,
+      "top1_agreement": 0.86328125,
+      "mean_kl": 0.0792121898161029,
+      "max_kl": 1.3033947197212945,
+      "kl_ci95": [
+        0.06459898106549468,
+        0.09718754248249463
+      ],
+      "top1_ci95": [
+        0.81640625,
+        0.90234375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.975342885587871,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.2835488980053924,
+      "selections": 3570,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest",
+      "budget": 0.0625,
+      "positions": 256,
+      "top1_agreement": 0.78125,
+      "mean_kl": 0.13018566234772694,
+      "max_kl": 1.7890224202355383,
+      "kl_ci95": [
+        0.10836168363982338,
+        0.15573814567788874
+      ],
+      "top1_ci95": [
+        0.7265625,
+        0.83203125
+      ],
+      "exact_match": false,
+      "mean_nll": 3.0104194929574533,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.201669502654113,
+      "selections": 3570,
+      "k_blocks": 30,
+      "attended_tokens_selecting_layers": 2048,
+      "dense_layers": 2
+    },
+    {
+      "book": "pride_and_prejudice",
+      "offset": 60000,
+      "target": 92768,
+      "policy": "quest_f32",
+      "budget": 0.125,
+      "positions": 256,
+      "top1_agreement": 0.85546875,
+      "mean_kl": 0.07747692092183192,
+      "max_kl": 1.241778484941509,
+      "kl_ci95": [
+        0.06334488541636302,
+        0.09468222358442226
+      ],
+      "top1_ci95": [
+        0.80859375,
+        0.8984375
+      ],
+      "exact_match": false,
+      "mean_nll": 2.981957606307411,
+      "ref_mean_nll": 2.9565353141835473,
+      "gpu_resident_kv_bytes": 1082097664,
+      "host_select_s": 3.6760787024977617,
+      "selections": 3570,
+      "k_blocks": 62,
+      "attended_tokens_selecting_layers": 4096,
+      "dense_layers": 2
+    }
+  ],
+  "teacher_forced_pending": false,
+  "wall_s": 1107.2028520000167,
+  "prefill_wall_s": [
+    7.576294300029986,
+    7.338477100012824,
+    7.362381000013556,
+    7.360731299966574,
+    7.361356500012334,
+    7.363891699991655,
+    7.355633100029081,
+    7.3613777999999,
+    7.358104799990542,
+    7.358544000016991,
+    7.3621752000181,
+    7.354371900029946,
+    7.360183700046036,
+    7.366467400046531,
+    7.354520099994261,
+    7.362966599990614,
+    7.354716399975587,
+    7.356212600017898,
+    7.362289999960922,
+    7.363746399991214,
+    7.358076700009406,
+    7.358834599959664,
+    7.361209299997427,
+    7.354644800012466,
+    7.361564600025304,
+    7.362092300027143,
+    7.358826000010595,
+    7.3643958999891765,
+    7.357037200010382,
+    7.365312799985986,
+    7.355215099989437,
+    7.3576042000204325,
+    7.363073499989696,
+    7.3493311000056565,
+    7.352373500005342,
+    7.345490300038364,
+    7.354267399990931,
+    7.352779200009536,
+    7.3537909999722615,
+    7.359154999954626,
+    7.355443999986164,
+    7.358659600024112,
+    7.357638700050302,
+    7.356194199994206,
+    7.365029799984768,
+    7.345345399982762,
+    7.356218400003854
+  ],
+  "prefill_scorer": null,
+  "memory_guard": {
+    "allocator_cap": {
+      "free_bytes_at_cap": 4834983936,
+      "total_bytes": 8546484224,
+      "margin_bytes": 268435456,
+      "fraction": 0.8285317731138189,
+      "limit_bytes": 7081033728
+    },
+    "shared_baseline_bytes": 81788928,
+    "shared_after_bytes": 81788928
+  }
+}
