@@ -7,6 +7,19 @@ Dated, append-only notes on what was learned and what changed. Numbers are rende
 
 ---
 
+## 2026-10-09: Phase 23, a zero-copy tier
+
+The owner asked for the remaining directions after Phase 22. The tier's slowness has been its host
+work since Phase 4, so this phase took the top-K ids off the host entirely: pinned host memory is
+mapped into the GPU's address space, and the gather kernel reads the selected blocks from the host
+pool in place. No slots, no residency, no sync. At 32K it decodes at rung 5's speed at 6.25%
+(1.82× rung 6) and still beats rung 6 at 25%, but at
+50% it is 0.39× rung 6's speed, because it reads every
+selected block every step. It holds less VRAM than rung 6 at every budget, and its answers equal
+rung 5's on 90 of 90
+prompts. The note that removing the host round trip buys at most 1.25× (Phase 11) was about rung 6's
+data path; dropping the residency table along with the sync is what recovers the rest.
+
 ## 2026-10-09: Phase 22, a faster snapshot restore
 
 Phase 20 named a fix for the half of a restore that was not the disk; this phase built it.

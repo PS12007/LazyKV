@@ -109,4 +109,6 @@ before it changes the research direction.
    points away from A5 as planned and toward dense turn ingestion, which the owner approved and
    [Phase 21](phases/PHASE_21.md) built: the tier now matches rung 5 on every turn and recovers most of
    the conversation. What remains is the document's loss under selection at small budgets.*
-5. **Device-side ranking** as the honest successor to A4, if the owner wants a speed result.
+5. **Device-side ranking** as the honest successor to A4, if the owner wants a speed result. *Done
+   in one form: [Phase 23](phases/PHASE_23.md)'s zero-copy tier ranks on the GPU and reads the
+   selection from host memory in place; it reaches rung 5's speed at 6.25% and loses to rung 6 at 50%.*

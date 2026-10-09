@@ -81,6 +81,12 @@ fixed: least recently selected slot outside the current selection (`TieredLayer.
   per token, and a replay ablation that removes it decodes
   1.10–1.25×
   faster and is still slower than the full cache (Phases 6 and 11).
+- A third fetch mode, `zerocopy` ([Phase 23](phases/PHASE_23.md)), removes that round trip: the GPU
+  ranks and then reads the selected blocks from the pinned pool in place through a device mapping of
+  host memory, with no slots and no host sync. At 32K it decodes
+  1.82× faster than rung 6 at 6.25% (rung 5's
+  speed) and 1.18× at 25%, but every step reads every
+  selected block over PCIe, so at 50% it is slower than rung 6.
 
 ## Instrumentation and benchmarks
 
