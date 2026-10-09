@@ -28,7 +28,9 @@ from lazykv.tiered import TieredCache, allocate_host_pools, allocate_stages
 # Policies whose decode cache is a view over the full cache rather than a block pool.
 SELECTORS = ("quest",)
 # Rungs 6-9: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
-TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8", "tiered_exact")
+TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8", "tiered_exact", "tiered_zerocopy")
+# Phase 23: rung 6's tier with no VRAM slots; the GPU reads selected blocks from the pinned pool in place.
+ZEROCOPY = "tiered_zerocopy"
 # Rung 9 keeps rung 6's tier and adds an exact CPU pass over the blocks VRAM does not hold, so it
 # needs a float32 mirror of the sealed KV in pageable host RAM on top of the pinned pools.
 EXACT = "tiered_exact"
@@ -105,7 +107,7 @@ def make_host_memory(conds: list[Condition], model: Any, block_size: int, max_le
     for quant in dict.fromkeys(TIER_QUANT.get(cond.policy) for cond in tiered):
         pools[quant] = allocate_host_pools(c.num_hidden_layers - QUEST_DENSE_LAYERS, c.num_key_value_heads, head_dim, block_size, max_len, model.dtype, quant)
         if gather or quant is not None:
-            slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered if TIER_QUANT.get(cond.policy) == quant)
+            slots = max(n_slots_for(cond, total_tokens, block_size, tier) for cond in tiered if TIER_QUANT.get(cond.policy) == quant)  # zero-copy uses none; harmless
             stages[quant] = allocate_stages(slots * c.num_key_value_heads, c.num_key_value_heads, head_dim, block_size, model.dtype, quant)
     # Allocated once per process for the same reason the pinned pools are: at 32K each mirror is
     # about 135 MiB, and building them per condition would time the allocation, not the policy.
@@ -170,7 +172,7 @@ def build_cache(
     t0 = time.perf_counter()
     if cond.policy in TIERED:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
-        n_slots = n_slots_for(cond, total_tokens, block_size, tier)
+        n_slots = 0 if cond.policy == ZEROCOPY else n_slots_for(cond, total_tokens, block_size, tier)
         quant = TIER_QUANT.get(cond.policy)
         kind = ExactTieredCache if cond.policy == EXACT else TieredCache
         extra = {"mirrors": None if host is None else host.mirrors, "threads": (tier or {}).get("cpu_threads", 8)} if cond.policy == EXACT else {}
@@ -178,7 +180,7 @@ def build_cache(
             full, k, block_size, full.max_len, model=model, prefetch=cond.policy == "tiered_prefetch",
             host_pools=None if host is None else host.pools[quant], instrument=instrument, n_slots=n_slots,
             # Rung 8 has nowhere to dequantize in "runs" mode, so it always gathers.
-            fetch="gather" if quant else (tier or {}).get("fetch", "runs"),
+            fetch="zerocopy" if cond.policy == ZEROCOPY else ("gather" if quant else (tier or {}).get("fetch", "runs")),
             stages=None if host is None else host.stages.get(quant), quant=quant, **extra,
         )
         torch.cuda.synchronize()

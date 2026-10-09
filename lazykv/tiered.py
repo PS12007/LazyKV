@@ -62,7 +62,7 @@ from transformers.cache_utils import Cache
 from transformers.models.llama.modeling_llama import rotate_half
 
 from lazykv.cache import CacheStats, FullGPUCache
-from lazykv.pinned import pinned_empty
+from lazykv.pinned import device_view, pinned_empty
 from lazykv.quant import pack, packed_pair_bytes, unpack
 from lazykv.selection import QUEST_DENSE_LAYERS, current_block_mask, top_blocks
 
@@ -102,6 +102,8 @@ class TierCounters:
     ingest_tokens: int = 0
     ingest_h2d_bytes: int = 0
     host_ingest_s: float = 0.0
+    # Zero-copy fetch (Phase 23): bytes the GPU read from the host pool in place, every selected pair every step.
+    zerocopy_bytes: int = 0
     # Per decode step, summed over layers: pairs fetched on demand. Separates the cold start after
     # the boundary from steady state.
     fetched_pairs_per_step: list[int] = field(default_factory=list)
@@ -245,7 +247,8 @@ class TieredLayer:
             # to fall back to, so it refuses budgets that would need one.
             raise ValueError(f"budget of {k_blocks} blocks covers all {n_blocks - 1} candidate blocks; the tier needs selection")
         n_slots = k_blocks if n_slots is None else n_slots
-        if n_slots < k_blocks:
+        # 0 slots: nothing but the sink and the current block in VRAM, for the zero-copy fetch.
+        if 0 < n_slots < k_blocks:
             raise ValueError(f"{n_slots} slots cannot hold a selection of {k_blocks} blocks")
         if quant not in (None, "int8"):
             raise ValueError(f"unknown tier precision {quant!r}")
@@ -296,6 +299,7 @@ class TieredLayer:
         self.idx_dev = torch.empty_like(self.idx_host, device=dev)
         self.idx_copied = torch.cuda.Event()
         self.flat_head = torch.arange(h, device=dev)
+        self.host_dev: torch.Tensor | None = None  # the host pool as the GPU sees it (zero-copy fetch)
 
     # -- writes -----------------------------------------------------------------------------
 
@@ -482,6 +486,30 @@ class TieredLayer:
             mask_cache["fill"], mask_cache["total"] = fill, k2 * self.bs
         return k_sel, v_sel, mask_cache["mask"]
 
+    def gather_zerocopy(self, query: torch.Tensor, mask_cache: dict[str, Any]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Attention inputs read by the GPU straight from the pinned host pool: no slots, no host sync.
+
+        Rank on the device, then index the host pool through its device view (`pinned.device_view`):
+        the gather kernel's loads cross PCIe, so the top-K indices never come back to the host and
+        there is no residency to keep. Same blocks in the same order as `gather` and rung 5. Every
+        step reads every selected pair over the link, hit or not, which is the price.
+        """
+        if self.host_dev is None:
+            self.host_dev = device_view(self.host).flatten(0, 1)  # [blocks*h, 2, bs, d]
+        n_full, fill = self.candidates()
+        top = top_blocks(query, self.kmin[:, :, 1:n_full], self.kmax[:, :, 1:n_full], self.k) + 1  # [1, h, K]
+        flat = (top[0] * self.h + self.flat_head[:, None]).reshape(-1)
+        sel = self.host_dev.index_select(0, flat).view(self.h, self.k, 2, self.bs, self.d)
+        sink, cur = self.pool[0][:, None], self.pool[self.tail_slot][:, None]  # [h, 1, 2, bs, d]
+        k2 = self.k + 2
+        shape = (1, self.h, k2 * self.bs, self.d)
+        k_sel = torch.cat([sink[:, :, 0], sel[:, :, 0], cur[:, :, 0]], dim=1).view(shape)
+        v_sel = torch.cat([sink[:, :, 1], sel[:, :, 1], cur[:, :, 1]], dim=1).view(shape)
+        if mask_cache.get("fill") != fill or mask_cache.get("total") != k2 * self.bs:
+            mask_cache["mask"] = current_block_mask(k2 * self.bs, self.bs, fill, query.dtype, query.device)
+            mask_cache["fill"], mask_cache["total"] = fill, k2 * self.bs
+        return k_sel, v_sel, mask_cache["mask"]
+
     def gpu_bytes(self) -> int:
         return self.pool.numel() * self.pool.element_size()
 
@@ -538,17 +566,23 @@ class TieredCache(Cache):
         super().__init__(layers=full.layers)
         if prefetch and model is None:
             raise ValueError("prefetch needs the model, to speculate the next layer's query")
-        if fetch not in ("runs", "gather"):
+        if fetch not in ("runs", "gather", "zerocopy"):
             raise ValueError(f"unknown fetch mode {fetch!r}")
         if quant is not None and fetch != "gather":
             raise ValueError(f"the int8 tier needs fetch='gather', got {fetch!r}")
+        if fetch == "zerocopy":
+            # The GPU reads the host pool in place, so there is nothing to prefetch, no residency to
+            # record or replay, and no slots: VRAM holds the sink and the current block per layer.
+            if prefetch or record_selection or replay_selection is not None:
+                raise ValueError("the zero-copy fetch has no residency to prefetch, record or replay")
+            n_slots = 0 if n_slots is None else n_slots
         self.full, self.k_blocks, self.block_size, self.dense_layers = full, k_blocks, block_size, dense_layers
         self.prefetch, self.thrash_window, self.instrument = prefetch, thrash_window, instrument
         self.quant = quant
         # The ladder writes rung 8 as "rung 7 + mixed precision", but Phase 4 measured rung 7 slower
         # than rung 6, so rung 8 is built on rung 6's synchronous fetch. Stated here and in the
         # phase report rather than silently substituted.
-        self.policy_name = "tiered_int8" if quant else ("tiered_prefetch" if prefetch else "tiered_sync")
+        self.policy_name = "tiered_int8" if quant else ("tiered_prefetch" if prefetch else ("tiered_zerocopy" if fetch == "zerocopy" else "tiered_sync"))
         self.fetch = fetch
         self.counters = TierCounters()
         if tiers is None:
@@ -670,6 +704,13 @@ class TieredCache(Cache):
         if ev is not None:
             # The gather below reads slots the copy stream may still be writing.
             torch.cuda.current_stream().wait_event(ev)
+        if self.fetch == "zerocopy":
+            out = tier.gather_zerocopy(query, self._mask_cache)
+            c.selections += 1
+            c.selected_pairs += tier.h * tier.k
+            c.zerocopy_bytes += tier.h * tier.k * tier.pair_bytes
+            c.host_select_s += time.perf_counter() - t0
+            return out
         tr = time.perf_counter()
         if self._replay is None:
             chosen = tier.rank(query)

@@ -183,3 +183,49 @@ def test_spare_slots_evict_least_recently_used_and_fill_empty_slots_first(tiny) 
     assert (tier.block_slot[:, 4] == 4).all()
     _check_residency(cache)
     cache.close()
+
+
+@cuda
+@pytest.mark.parametrize("strategy", ["cudnn_bucketed", "efficient"])
+def test_zerocopy_tier_is_bit_identical_to_rung5(tiny, strategy: str) -> None:  # noqa: ANN001
+    """The GPU reads the selected blocks from the pinned pool in place: same keys, same order, same logits."""
+    from lazykv.attention import set_strategy_for_test
+    from lazykv.generate import teacher_forced_decode
+    from lazykv.selection import QuestView
+    from lazykv.tiered import TieredCache
+
+    cfg, model = tiny
+    restore = set_strategy_for_test(strategy)
+    try:
+        ids, full, pre = _prefilled(model, cfg)
+        cont = ids[:, PROMPT : PROMPT + 40]  # crosses several seals: freshly sealed blocks are read in place too
+        quest = QuestView(full, k_blocks=K, block_size=BS, dense_layers=1)
+        ref = torch.stack(list(teacher_forced_decode(model, quest, pre.last_logits, cont)))
+        full.truncate(PROMPT)
+        tier = TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="zerocopy")
+        got = torch.stack(list(teacher_forced_decode(model, tier, pre.last_logits, cont)))
+        tier.close()
+        assert torch.equal(got, ref)
+        c = tier.counters
+        assert c.selections == quest.counters.selections
+        assert c.fetched_pairs == 0 and c.hit_pairs == 0  # no residency at all
+        assert c.zerocopy_bytes == c.selected_pairs * next(iter(tier.tiers.values())).pair_bytes > 0
+        for t in tier.tiers.values():
+            assert t.n_slots == 0 and t.pool.shape[0] == 2  # VRAM: the sink and the current block
+    finally:
+        restore()
+
+
+@cuda
+def test_zerocopy_refuses_what_it_has_no_residency_for(tiny) -> None:  # noqa: ANN001
+    from lazykv.exact import ExactTieredCache
+    from lazykv.tiered import TieredCache
+
+    cfg, model = tiny
+    _, full, _ = _prefilled(model, cfg)
+    with pytest.raises(ValueError, match="zero-copy"):
+        TieredCache(full, K, BS, capacity_tokens=512, model=model, dense_layers=1, fetch="zerocopy", prefetch=True)
+    with pytest.raises(ValueError, match="zero-copy"):
+        TieredCache(full, K, BS, capacity_tokens=512, dense_layers=1, fetch="zerocopy", record_selection=True)
+    with pytest.raises(ValueError, match="zero-copy"):
+        ExactTieredCache(full, K, BS, capacity_tokens=512, dense_layers=1, fetch="zerocopy")

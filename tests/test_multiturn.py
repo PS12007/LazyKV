@@ -142,7 +142,7 @@ def test_tier_answers_every_turn_exactly_as_rung5(tiny) -> None:  # noqa: ANN001
 
 @cuda
 @pytest.mark.parametrize("turn_chunk", [16, 4096])  # 16: a turn spans several forwards and seals blocks mid-turn
-@pytest.mark.parametrize("fetch", ["gather", "runs"])
+@pytest.mark.parametrize("fetch", ["gather", "runs", "zerocopy"])
 def test_tier_ingests_turns_densely_exactly_as_rung5(tiny, turn_chunk: int, fetch: str) -> None:  # noqa: ANN001
     """Phase 21: a multi-token forward through the tier attends to the layer's whole KV, as rung 5's does.
 

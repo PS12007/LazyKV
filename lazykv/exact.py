@@ -166,6 +166,10 @@ class ExactTieredCache(TieredCache):
             # Rung 9 exists to remove an approximation; a quantized warm tier would reintroduce one
             # and the exactness test could not be written.
             raise ValueError("rung 9 is exact; it cannot be built on a quantized host pool")
+        if kwargs.get("fetch") == "zerocopy":
+            # Rung 9 needs the chosen block ids on the host to know what the CPU must not attend to;
+            # the zero-copy fetch exists to keep them on the device.
+            raise ValueError("rung 9 needs the selection on the host; it cannot use the zero-copy fetch")
         if kwargs.get("prefetch"):
             # A prefetch changes which blocks are resident when the layer runs, not which are
             # attended: rung 9 attends to all of them either way. It would only add a variable.
