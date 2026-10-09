@@ -1,0 +1,272 @@
+{
+  "provenance": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-09T18:26:13+00:00",
+    "git_commit": "f64a61f3ea7e850a359ec4c63b15cdbb4fe17fbb",
+    "git_dirty": true,
+    "git_dirty_files": [
+      "scripts/render_docs.py"
+    ],
+    "argv": [
+      "scripts/analyze_phase24.py"
+    ],
+    "python": "3.12.10"
+  },
+  "niah_source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-09T18:16:11+00:00",
+    "git_commit": "c51a9665a6276d34313df0e3b039b91a01365179",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\02_policy_quality.py",
+      "--config",
+      "configs\\phase24.yaml",
+      "--skip-block-full"
+    ],
+    "python": "3.12.10"
+  },
+  "niah": {
+    "full_accuracy": 0.8888888888888888,
+    "prompts": 45,
+    "budgets": {
+      "0.25": {
+        "n": 45,
+        "old_accuracy": 0.7444444444444445,
+        "new_accuracy": 0.7444444444444445,
+        "better": 1,
+        "worse": 2,
+        "sign_p": 1.0,
+        "verdict": "no measurable effect",
+        "answers_changed": 7,
+        "old_retention": 0.8375,
+        "new_retention": 0.8375,
+        "tf": [
+          {
+            "offset": 0,
+            "old_kl": 0.0346803273864675,
+            "new_kl": 0.03551582977738459,
+            "old_top1": 0.90234375,
+            "new_top1": 0.90625
+          },
+          {
+            "offset": 60000,
+            "old_kl": 0.03675960158192254,
+            "new_kl": 0.03689611203429135,
+            "old_top1": 0.9140625,
+            "new_top1": 0.921875
+          }
+        ]
+      },
+      "0.125": {
+        "n": 45,
+        "old_accuracy": 0.6444444444444445,
+        "new_accuracy": 0.6277777777777778,
+        "better": 1,
+        "worse": 3,
+        "sign_p": 0.625,
+        "verdict": "no measurable effect",
+        "answers_changed": 10,
+        "old_retention": 0.7250000000000001,
+        "new_retention": 0.70625,
+        "tf": [
+          {
+            "offset": 0,
+            "old_kl": 0.06919233622302495,
+            "new_kl": 0.06967068317215949,
+            "old_top1": 0.86328125,
+            "new_top1": 0.859375
+          },
+          {
+            "offset": 60000,
+            "old_kl": 0.0792121898161029,
+            "new_kl": 0.07747692092183192,
+            "old_top1": 0.86328125,
+            "new_top1": 0.85546875
+          }
+        ]
+      },
+      "0.0625": {
+        "n": 45,
+        "old_accuracy": 0.38333333333333336,
+        "new_accuracy": 0.3611111111111111,
+        "better": 1,
+        "worse": 2,
+        "sign_p": 1.0,
+        "verdict": "no measurable effect",
+        "answers_changed": 6,
+        "old_retention": 0.4312500000000001,
+        "new_retention": 0.40625,
+        "tf": [
+          {
+            "offset": 0,
+            "old_kl": 0.1265892752380354,
+            "new_kl": 0.1265260962819891,
+            "old_top1": 0.8046875,
+            "new_top1": 0.82421875
+          },
+          {
+            "offset": 60000,
+            "old_kl": 0.13018566234772694,
+            "new_kl": 0.12915845019824618,
+            "old_top1": 0.78125,
+            "new_top1": 0.765625
+          }
+        ]
+      }
+    }
+  },
+  "multiturn_source": {
+    "schema_version": 1,
+    "generated_at_utc": "2026-10-09T18:26:04+00:00",
+    "git_commit": "c51a9665a6276d34313df0e3b039b91a01365179",
+    "git_dirty": false,
+    "git_dirty_files": [],
+    "argv": [
+      "scripts\\08_multiturn.py",
+      "--config",
+      "configs\\phase24.yaml",
+      "--budgets",
+      "0.125",
+      "0.0625"
+    ],
+    "python": "3.12.10"
+  },
+  "multiturn": {
+    "sessions": 20,
+    "budgets": {
+      "0.125": {
+        "chat": {
+          "n": 60,
+          "old_accuracy": 0.9833333333333333,
+          "new_accuracy": 0.9833333333333333,
+          "better": 0,
+          "worse": 0,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "doc_turn0": {
+          "n": 20,
+          "old_accuracy": 0.95,
+          "new_accuracy": 0.95,
+          "better": 0,
+          "worse": 0,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "doc_later": {
+          "n": 60,
+          "old_accuracy": 0.7666666666666667,
+          "new_accuracy": 0.7333333333333333,
+          "better": 0,
+          "worse": 2,
+          "sign_p": 0.5,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.8666666666666667
+        },
+        "doc_reask": {
+          "n": 20,
+          "old_accuracy": 0.85,
+          "new_accuracy": 0.9,
+          "better": 1,
+          "worse": 0,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "after_turn0": {
+          "n": 140,
+          "old_accuracy": 0.8714285714285714,
+          "new_accuracy": 0.8642857142857143,
+          "better": 1,
+          "worse": 2,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.9428571428571428
+        },
+        "all": {
+          "n": 160,
+          "old_accuracy": 0.88125,
+          "new_accuracy": 0.875,
+          "better": 1,
+          "worse": 2,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.95
+        },
+        "answers_changed": 3
+      },
+      "0.0625": {
+        "chat": {
+          "n": 60,
+          "old_accuracy": 0.95,
+          "new_accuracy": 0.9166666666666666,
+          "better": 1,
+          "worse": 3,
+          "sign_p": 0.625,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "doc_turn0": {
+          "n": 20,
+          "old_accuracy": 0.7,
+          "new_accuracy": 0.7,
+          "better": 0,
+          "worse": 0,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "doc_later": {
+          "n": 60,
+          "old_accuracy": 0.55,
+          "new_accuracy": 0.55,
+          "better": 2,
+          "worse": 2,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.8666666666666667
+        },
+        "doc_reask": {
+          "n": 20,
+          "old_accuracy": 0.6,
+          "new_accuracy": 0.55,
+          "better": 0,
+          "worse": 1,
+          "sign_p": 1.0,
+          "verdict": "no measurable effect",
+          "full_accuracy": 1.0
+        },
+        "after_turn0": {
+          "n": 140,
+          "old_accuracy": 0.7285714285714285,
+          "new_accuracy": 0.7071428571428572,
+          "better": 3,
+          "worse": 6,
+          "sign_p": 0.5078125,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.9428571428571428
+        },
+        "all": {
+          "n": 160,
+          "old_accuracy": 0.725,
+          "new_accuracy": 0.70625,
+          "better": 3,
+          "worse": 6,
+          "sign_p": 0.5078125,
+          "verdict": "no measurable effect",
+          "full_accuracy": 0.95
+        },
+        "answers_changed": 26
+      }
+    }
+  },
+  "summary": {
+    "comparisons": 13,
+    "better": 0,
+    "worse": 0,
+    "no_effect": 13
+  }
+}
