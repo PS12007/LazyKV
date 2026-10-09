@@ -1,0 +1,64 @@
+# Phase 23: device-side selection for the tier, by reading the host pool in place (zero-copy).
+#
+# Gap table note 2 and recommended item 5. Phase 4 measured the tier (rung 6) at about half rung 5's
+# decode speed and Phase 11 traced it to the host: every selecting layer brings its top-K indices
+# back to the CPU, updates a residency table in numpy, and launches copies. Prefetch (rung 7) hid
+# the copies and gained nothing. The gap table named a device-side residency decision as the valid
+# successor and left it unbuilt.
+#
+# Built since this phase's first commit: `fetch="zerocopy"` (`TieredLayer.gather_zerocopy`). Pinned
+# host memory is mapped into the GPU's address space, so the gather kernel indexes the host pool
+# directly (`pinned.device_view`): rank on the GPU, gather over PCIe, no host sync, no slots, no
+# residency table. VRAM holds only the sink and the current block per layer. Every step reads every
+# selected pair over the link, hit or not; a 2026-10-09 probe read random pairs at about 9 GB/s.
+# Unit tests: bit-identical to rung 5, including across seals and with dense turn ingestion.
+#
+# Questions, fixed before any run (including smoke tests, whose output is not reported):
+#   1. Speed. Decode latency per token of the zero-copy tier against rung 6 (gather, the ladder's
+#      spare 1.0) and rung 5, per budget, at 32K: three independent runs (run ids 1-3), each with its
+#      own process, medians with ranges. Expected: the zero-copy tier's time grows with the budget
+#      (bytes read = K per step) while rung 6's is host-bound, so there is a crossover budget above
+#      which rung 6 is faster; where it falls is the result, whichever way.
+#   2. Memory. Resident VRAM per condition (the tier's slots and staging against none).
+#   3. Validity at scale. On the NIAH prompts and teacher-forced continuations of the ladder, the
+#      zero-copy tier must give rung 5's answer on every prompt and its logits bit for bit, at the
+#      two smallest budgets (`quality` below). Any difference is a bug, not a result: stop.
+# Run the speed half on an idle machine; the quality half does not need one.
+phase: phase23
+
+model:
+  repo: unsloth/Llama-3.2-1B-Instruct
+  revision: 5a8abab4a5d6f164389b1079fb721cfab8d7126c
+
+block_size: 64
+context: 32768
+prefill_chunk: 2048
+
+budgets: [0.5, 0.25, 0.125, 0.0625]
+policies: [quest, tiered_sync, tiered_zerocopy]
+
+tier:
+  fetch: gather
+  spare: 1.0
+
+# Question 3 runs scripts/02_policy_quality.py with `--budgets 0.125 0.0625`.
+quality_budgets: [0.125, 0.0625]
+
+niah:
+  book: moby_dick
+  kinds: [single, multikey, multivalue]
+  depths: [0.0, 0.25, 0.5, 0.75, 1.0]
+  samples: 3
+  max_new_tokens: {single: 16, multikey: 16, multivalue: 48}
+  seed: 0
+
+teacher_forced:
+  book: pride_and_prejudice
+  offsets: [0, 60000]
+  continuation: 256
+
+speed:
+  book: moby_dick
+  repeats: 3
+  warmup_steps: 5
+  decode_tokens: 128
