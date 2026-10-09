@@ -32,6 +32,11 @@ ZC, TIER, QUEST = "tiered_zerocopy", "tiered_sync", "quest"
 MIB = 2**20
 
 
+def bkey(b: float) -> str:
+    """b25, b12_5, b6_25: a budget as a key the docs' dotted lookups can address."""
+    return f"b{100 * b:g}".replace(".", "_")
+
+
 def repeat_medians(runs: list[dict[str, Any]], pol: str, b: float) -> dict[tuple[int, int], float]:
     return {(i, r["repeat"]): r["decode_wall_s"]["median"] for i, run in enumerate(runs) for r in run["results"] if r["policy"] == pol and r["budget"] == b}
 
@@ -109,8 +114,8 @@ def main() -> None:
         "repeats": cfg["speed"]["repeats"],
         "full_decode_ms": None if full is None else 1e3 * full["decode_wall_median_s"]["median"],
         "full_resident_mib": None if full is None else full["gpu_resident_kv_bytes"]["median"] / MIB,
-        "speedup_vs_tier": {f"{r['budget']:g}": 1 / r["vs_tier"]["ratio_median"] for r in per_budget if r["vs_tier"]["ratio_median"]},
-        "ratio_vs_quest": {f"{r['budget']:g}": r["vs_quest"]["ratio_median"] for r in per_budget if r["vs_quest"]["ratio_median"]},
+        "speedup_vs_tier": {bkey(r["budget"]): 1 / r["vs_tier"]["ratio_median"] for r in per_budget if r["vs_tier"]["ratio_median"]},
+        "ratio_vs_quest": {bkey(r["budget"]): r["vs_quest"]["ratio_median"] for r in per_budget if r["vs_quest"]["ratio_median"]},
         # Budgets where the median pair has the zero-copy tier slower than rung 6.
         "slower_than_tier_at": [r["budget"] for r in per_budget if r["vs_tier"]["ratio_median"] and r["vs_tier"]["ratio_median"] > 1],
         "any_spill": any(s["any_spill"] for s in speed),
