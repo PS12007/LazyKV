@@ -26,7 +26,9 @@ from lazykv.exact import ExactTieredCache, allocate_mirrors
 from lazykv.tiered import TieredCache, allocate_host_pools, allocate_stages
 
 # Policies whose decode cache is a view over the full cache rather than a block pool.
-SELECTORS = ("quest",)
+SELECTORS = ("quest", "quest_f32")
+# Phase 24: rung 5 ranking by a float32 Quest bound instead of bf16 (the model's dtype).
+BOUND_DTYPE: dict[str, torch.dtype] = {"quest_f32": torch.float32}
 # Rungs 6-9: rung 5's selection over a CPU tier. Same K per budget as quest, so attended = resident.
 TIERED = ("tiered_sync", "tiered_prefetch", "tiered_int8", "tiered_exact", "tiered_zerocopy")
 # Phase 23: rung 6's tier with no VRAM slots; the GPU reads selected blocks from the pinned pool in place.
@@ -187,7 +189,7 @@ def build_cache(
         return Built(cache, time.perf_counter() - t0, n_slots, k)
     if cond.policy in SELECTORS:
         k = blocks_for_budget(cond.budget, total_tokens, block_size)
-        view = QuestView(full, k, block_size)
+        view = QuestView(full, k, block_size, bound_dtype=BOUND_DTYPE.get(cond.policy))
         torch.cuda.synchronize()
         return Built(view, time.perf_counter() - t0, None, k)
     n_slots = slots_for_budget(cond.budget, total_tokens, block_size)

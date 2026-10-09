@@ -116,3 +116,23 @@ def test_selected_decode_matches_masked_reference_attention(tiny, strategy: str)
     live = 4 * BS + 5
     ref = _reference(query, k_sel[:, :, :live], v_sel[:, :, :live], cfg.head_dim**-0.5)
     assert ((got - ref).abs().max() / ref.abs().max()).item() < 1e-2
+
+
+def test_float32_bound_breaks_a_bf16_tie_in_favour_of_the_larger_bound() -> None:
+    """Phase 24: two blocks whose bounds are equal once rounded to bf16 but not in float32."""
+    from lazykv.selection import quest_bound, top_blocks
+
+    q = torch.ones((1, 1, 1, 2), dtype=torch.bfloat16)
+    # Bounds 256 + 1 and 256 + 0.5 in float32 (q . kmax); bf16 holds 8 bits of mantissa, so both round to 256.
+    kmax = torch.tensor([[[[256.0, 0.5], [256.0, 1.0]]]], dtype=torch.bfloat16)
+    kmin = kmax.clone()
+    assert torch.equal(quest_bound(q, kmin, kmax)[0, 0, 0], quest_bound(q, kmin, kmax)[0, 0, 1])  # the tie
+    b32 = quest_bound(q, kmin, kmax, torch.float32)[0, 0]
+    assert b32[1] > b32[0]
+    assert top_blocks(q, kmin, kmax, 1, torch.float32)[0, 0, 0].item() == 1
+
+
+def test_quest_f32_policy_ranks_in_float32() -> None:
+    from lazykv.sweep import BOUND_DTYPE, SELECTORS
+
+    assert "quest_f32" in SELECTORS and BOUND_DTYPE["quest_f32"] is torch.float32 and "quest" not in BOUND_DTYPE

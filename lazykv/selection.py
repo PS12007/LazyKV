@@ -35,12 +35,16 @@ from lazykv.cache import CacheStats, FullGPUCache
 QUEST_DENSE_LAYERS = 2  # Quest: "we only apply Quest and all baselines on later layers"
 
 
-def quest_bound(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor) -> torch.Tensor:
+def quest_bound(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, dtype: torch.dtype | None = None) -> torch.Tensor:
     """Quest's upper bound [1, kv, n] on each candidate block's score, per KV head.
 
     `query` is [1, n_q, 1, d]; `kmin`/`kmax` are [1, kv, n, d] over the candidate blocks. Each
-    block is scored by the maximum bound over the head's query group.
+    block is scored by the maximum bound over the head's query group. `dtype` computes the bound in
+    another precision (Phase 24): in bf16 the K-th and (K+1)-th bounds are equal in most cells
+    (Phase 16), so `topk`'s tie order, not the bound, picks the last blocks.
     """
+    if dtype is not None:
+        query, kmin, kmax = query.to(dtype), kmin.to(dtype), kmax.to(dtype)
     n_q, n_kv, d = query.shape[1], kmin.shape[1], query.shape[-1]
     q = query.view(1, n_kv, n_q // n_kv, d)
     qp = q.clamp_min(0)
@@ -49,13 +53,13 @@ def quest_bound(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor) -> 
     return bound.amax(dim=2)
 
 
-def top_blocks(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, k: int) -> torch.Tensor:
+def top_blocks(query: torch.Tensor, kmin: torch.Tensor, kmax: torch.Tensor, k: int, dtype: torch.dtype | None = None) -> torch.Tensor:
     """Indices [1, kv, k] of the k candidate blocks with the highest Quest bound, per KV head.
 
     `topk` returns the blocks in descending bound order: callers gather in that order, so two
     runtimes that share this function attend to identical key sequences.
     """
-    return quest_bound(query, kmin, kmax).topk(k, dim=-1).indices
+    return quest_bound(query, kmin, kmax, dtype).topk(k, dim=-1).indices
 
 
 def current_block_mask(total: int, block_size: int, fill: int, dtype: torch.dtype, device: torch.device, reuse: torch.Tensor | None = None) -> torch.Tensor:
@@ -90,11 +94,12 @@ class QuestView(Cache):
     cache afterwards. Nothing is copied at the boundary except block metadata.
     """
 
-    def __init__(self, full: FullGPUCache, k_blocks: int, block_size: int, dense_layers: int = QUEST_DENSE_LAYERS) -> None:
+    def __init__(self, full: FullGPUCache, k_blocks: int, block_size: int, dense_layers: int = QUEST_DENSE_LAYERS, bound_dtype: torch.dtype | None = None) -> None:
         super().__init__(layers=full.layers)
         self.full, self.k_blocks, self.block_size, self.dense_layers = full, k_blocks, block_size, dense_layers
+        self.bound_dtype = bound_dtype
         self.counters = SelectorCounters()
-        self.policy_name = "quest"
+        self.policy_name = "quest" if bound_dtype is None else f"quest_{str(bound_dtype).removeprefix('torch.')}"
         self._state = [_LayerState() for _ in full.layers]
         # Every selecting layer in a step shares one mask (it depends only on the current block's fill).
         self._mask: torch.Tensor | None = None
@@ -156,7 +161,7 @@ class QuestView(Cache):
         self._refresh_metadata(layer_idx, self.full.layers[layer_idx].keys, n_full * bs)
         assert st.kmin is not None and st.kmax is not None
         n_kv, d = key.shape[1], query.shape[-1]
-        top = top_blocks(query, st.kmin[:, :, 1:n_full], st.kmax[:, :, 1:n_full], self.k_blocks) + 1  # [1, kv, K], block ids
+        top = top_blocks(query, st.kmin[:, :, 1:n_full], st.kmax[:, :, 1:n_full], self.k_blocks, self.bound_dtype) + 1  # [1, kv, K], block ids
         if self._offsets is None:
             self._offsets = torch.arange(bs, device=key.device)
         sink = torch.zeros((1, n_kv, 1), dtype=top.dtype, device=top.device)
