@@ -1,11 +1,12 @@
 {
   "provenance": {
     "schema_version": 1,
-    "generated_at_utc": "2026-10-09T18:26:13+00:00",
-    "git_commit": "f64a61f3ea7e850a359ec4c63b15cdbb4fe17fbb",
+    "generated_at_utc": "2026-10-10T20:43:12+00:00",
+    "git_commit": "a749386a6c82584b89d1bb858bd26400bce03bba",
     "git_dirty": true,
     "git_dirty_files": [
-      "scripts/render_docs.py"
+      "docs/phases/PHASE_24.md",
+      "results/phase24/analysis/metrics.json"
     ],
     "argv": [
       "scripts/analyze_phase24.py"
@@ -37,6 +38,12 @@
         "better": 1,
         "worse": 2,
         "sign_p": 1.0,
+        "diff": 0.0,
+        "diff_ci95": [
+          -0.05555555555555555,
+          0.06111111111111111
+        ],
+        "rule_of_three": null,
         "verdict": "no measurable effect",
         "answers_changed": 7,
         "old_retention": 0.8375,
@@ -65,6 +72,12 @@
         "better": 1,
         "worse": 3,
         "sign_p": 0.625,
+        "diff": -0.016666666666666666,
+        "diff_ci95": [
+          -0.05,
+          0.005555555555555556
+        ],
+        "rule_of_three": null,
         "verdict": "no measurable effect",
         "answers_changed": 10,
         "old_retention": 0.7250000000000001,
@@ -93,6 +106,12 @@
         "better": 1,
         "worse": 2,
         "sign_p": 1.0,
+        "diff": -0.022222222222222223,
+        "diff_ci95": [
+          -0.07222222222222222,
+          0.011111111111111112
+        ],
+        "rule_of_three": null,
         "verdict": "no measurable effect",
         "answers_changed": 6,
         "old_retention": 0.4312500000000001,
@@ -114,6 +133,17 @@
           }
         ]
       }
+    },
+    "pooled": {
+      "unit": "prompt",
+      "clusters": 45,
+      "rows": 135,
+      "diff": -0.012962962962962963,
+      "diff_ci95": [
+        -0.03888888888888889,
+        0.012962962962962963
+      ],
+      "max_abs_effect": 0.03888888888888889
     }
   },
   "multiturn_source": {
@@ -143,6 +173,12 @@
           "better": 0,
           "worse": 0,
           "sign_p": 1.0,
+          "diff": 0.0,
+          "diff_ci95": [
+            0.0,
+            0.0
+          ],
+          "rule_of_three": 0.05,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -153,6 +189,12 @@
           "better": 0,
           "worse": 0,
           "sign_p": 1.0,
+          "diff": 0.0,
+          "diff_ci95": [
+            0.0,
+            0.0
+          ],
+          "rule_of_three": 0.15,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -163,6 +205,12 @@
           "better": 0,
           "worse": 2,
           "sign_p": 0.5,
+          "diff": -0.03333333333333333,
+          "diff_ci95": [
+            -0.08333333333333333,
+            0.0
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.8666666666666667
         },
@@ -173,6 +221,12 @@
           "better": 1,
           "worse": 0,
           "sign_p": 1.0,
+          "diff": 0.05,
+          "diff_ci95": [
+            0.0,
+            0.15
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -183,6 +237,12 @@
           "better": 1,
           "worse": 2,
           "sign_p": 1.0,
+          "diff": -0.007142857142857143,
+          "diff_ci95": [
+            -0.03571428571428571,
+            0.014285714285714285
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.9428571428571428
         },
@@ -193,6 +253,12 @@
           "better": 1,
           "worse": 2,
           "sign_p": 1.0,
+          "diff": -0.00625,
+          "diff_ci95": [
+            -0.03125,
+            0.0125
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.95
         },
@@ -206,6 +272,12 @@
           "better": 1,
           "worse": 3,
           "sign_p": 0.625,
+          "diff": -0.03333333333333333,
+          "diff_ci95": [
+            -0.1,
+            0.03333333333333333
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -216,6 +288,12 @@
           "better": 0,
           "worse": 0,
           "sign_p": 1.0,
+          "diff": 0.0,
+          "diff_ci95": [
+            0.0,
+            0.0
+          ],
+          "rule_of_three": 0.15,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -226,6 +304,12 @@
           "better": 2,
           "worse": 2,
           "sign_p": 1.0,
+          "diff": 0.0,
+          "diff_ci95": [
+            -0.06666666666666667,
+            0.06666666666666667
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.8666666666666667
         },
@@ -236,6 +320,12 @@
           "better": 0,
           "worse": 1,
           "sign_p": 1.0,
+          "diff": -0.05,
+          "diff_ci95": [
+            -0.15,
+            0.0
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 1.0
         },
@@ -246,6 +336,12 @@
           "better": 3,
           "worse": 6,
           "sign_p": 0.5078125,
+          "diff": -0.02142857142857143,
+          "diff_ci95": [
+            -0.06428571428571428,
+            0.02142857142857143
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.9428571428571428
         },
@@ -256,11 +352,28 @@
           "better": 3,
           "worse": 6,
           "sign_p": 0.5078125,
+          "diff": -0.01875,
+          "diff_ci95": [
+            -0.05625,
+            0.01875
+          ],
+          "rule_of_three": null,
           "verdict": "no measurable effect",
           "full_accuracy": 0.95
         },
         "answers_changed": 26
       }
+    },
+    "pooled": {
+      "unit": "session",
+      "clusters": 20,
+      "rows": 320,
+      "diff": -0.0125,
+      "diff_ci95": [
+        -0.0375,
+        0.009375
+      ],
+      "max_abs_effect": 0.0375
     }
   },
   "summary": {

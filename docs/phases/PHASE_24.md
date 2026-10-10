@@ -63,6 +63,45 @@ bf16 rows reproduce Phase 21's rung 5 (every turn after turn 0 at 6.25%:
 13 comparisons the config's rule calls
 0 better and 0 worse.
 
+## How large an effect could this miss?
+
+Added after the gate from the same rows (no new runs). "No measurable effect" says nothing about
+size, so each comparison above also gets the paired accuracy difference, float32 minus bf16, with a
+95% bootstrap CI over its prompts (turns):
+
+| Set | Budget | Turns | n | float32 - bf16 | 95% CI (paired bootstrap) |
+| --- | --: | --- | --: | --: | --- |
+| NIAH | 25% | all prompts | 45 | +0.0 pp | -5.6 pp to +6.1 pp |
+| NIAH | 12.5% | all prompts | 45 | -1.7 pp | -5.0 pp to +0.6 pp |
+| NIAH | 6.25% | all prompts | 45 | -2.2 pp | -7.2 pp to +1.1 pp |
+| Multi-turn | 12.5% | Doc, turn 0 | 20 | +0.0 pp | no score changed (rate below 15%, rule of three) |
+| Multi-turn | 12.5% | Doc, later turns | 60 | -3.3 pp | -8.3 pp to +0.0 pp |
+| Multi-turn | 12.5% | Doc, re-asked | 20 | +5.0 pp | +0.0 pp to +15.0 pp |
+| Multi-turn | 12.5% | Chat needles | 60 | +0.0 pp | no score changed (rate below 5%, rule of three) |
+| Multi-turn | 12.5% | Every turn after turn 0 | 140 | -0.7 pp | -3.6 pp to +1.4 pp |
+| Multi-turn | 6.25% | Doc, turn 0 | 20 | +0.0 pp | no score changed (rate below 15%, rule of three) |
+| Multi-turn | 6.25% | Doc, later turns | 60 | +0.0 pp | -6.7 pp to +6.7 pp |
+| Multi-turn | 6.25% | Doc, re-asked | 20 | -5.0 pp | -15.0 pp to +0.0 pp |
+| Multi-turn | 6.25% | Chat needles | 60 | -3.3 pp | -10.0 pp to +3.3 pp |
+| Multi-turn | 6.25% | Every turn after turn 0 | 140 | -2.1 pp | -6.4 pp to +2.1 pp |
+
+One budget at a time, the intervals span several points either way. Pooling all budgets narrows
+them; each prompt (session) appears at every budget, so the pooled CI resamples whole prompts
+(sessions), not rows:
+
+- NIAH, 45 prompts × 3 budgets: float32 − bf16 =
+  -1.3 pp, 95% CI -3.9 pp to
+  +1.3 pp.
+- Multi-turn, 20 sessions × 2 budgets, every turn:
+  -1.2 pp, 95% CI -3.8 pp to
+  +0.9 pp.
+
+**Both pooled intervals sit mostly below zero, and their upper ends are close to it.** At 95%, the data rule out
+float32 helping by more than each upper end. They do not rule out a small cost. So the
+negative result is a bound, not just a failure to resolve: if the bf16 ties cost answers, they cost at
+most that much. Caveats: bootstrap intervals over 45 prompts and 20 sessions are approximate, and
+these are the same rows the verdict was drawn from, not a fresh test.
+
 ## What this means
 
 - The bf16 ties are real, but they are ties between blocks that matter about equally. Breaking them
@@ -78,7 +117,8 @@ bf16 rows reproduce Phase 21's rung 5 (every turn after turn 0 at 6.25%:
 ## What this phase does not show
 
 - One model (1B), one context (32K), 45 prompts and 20 sessions: effects of a few prompts would not
-  resolve. The verdict is "no measurable effect", not "no effect".
+  resolve per budget. The verdict is "no measurable effect", not "no effect"; the pooled intervals
+  above give its size.
 - Speed was not timed (quality kernel).
 
 ## Provenance
