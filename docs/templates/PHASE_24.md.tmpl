@@ -39,6 +39,31 @@ bf16 rows reproduce Phase 21's rung 5 (every turn after turn 0 at 6.25%:
 {{ phase24.analysis.summary.comparisons | int }} comparisons the config's rule calls
 {{ phase24.analysis.summary.better | int }} better and {{ phase24.analysis.summary.worse | int }} worse.
 
+## How large an effect could this miss?
+
+Added after the gate from the same rows (no new runs). "No measurable effect" says nothing about
+size, so each comparison above also gets the paired accuracy difference, float32 minus bf16, with a
+95% bootstrap CI over its prompts (turns):
+
+{{> p24_effect_size }}
+
+One budget at a time, the intervals span several points either way. Pooling all budgets narrows
+them; each prompt (session) appears at every budget, so the pooled CI resamples whole prompts
+(sessions), not rows:
+
+- NIAH, {{ phase24.analysis.niah.pooled.clusters | int }} prompts × 3 budgets: float32 − bf16 =
+  {{ phase24.analysis.niah.pooled.diff | pp }}, 95% CI {{ phase24.analysis.niah.pooled.diff_ci95.0 | pp }} to
+  {{ phase24.analysis.niah.pooled.diff_ci95.1 | pp }}.
+- Multi-turn, {{ phase24.analysis.multiturn.pooled.clusters | int }} sessions × 2 budgets, every turn:
+  {{ phase24.analysis.multiturn.pooled.diff | pp }}, 95% CI {{ phase24.analysis.multiturn.pooled.diff_ci95.0 | pp }} to
+  {{ phase24.analysis.multiturn.pooled.diff_ci95.1 | pp }}.
+
+**Both pooled intervals sit mostly below zero, and their upper ends are close to it.** At 95%, the data rule out
+float32 helping by more than each upper end. They do not rule out a small cost. So the
+negative result is a bound, not just a failure to resolve: if the bf16 ties cost answers, they cost at
+most that much. Caveats: bootstrap intervals over 45 prompts and 20 sessions are approximate, and
+these are the same rows the verdict was drawn from, not a fresh test.
+
 ## What this means
 
 - The bf16 ties are real, but they are ties between blocks that matter about equally. Breaking them
@@ -54,7 +79,8 @@ bf16 rows reproduce Phase 21's rung 5 (every turn after turn 0 at 6.25%:
 ## What this phase does not show
 
 - One model (1B), one context (32K), 45 prompts and 20 sessions: effects of a few prompts would not
-  resolve. The verdict is "no measurable effect", not "no effect".
+  resolve per budget. The verdict is "no measurable effect", not "no effect"; the pooled intervals
+  above give its size.
 - Speed was not timed (quality kernel).
 
 ## Provenance

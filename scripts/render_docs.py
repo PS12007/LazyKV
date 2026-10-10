@@ -2589,6 +2589,27 @@ def block_p24_multiturn(ctx: Mapping[str, Any]) -> str:
                  rows, ["--:", "---", "--:", "--:", "--:", "--:", "--:", "--:", "---"])
 
 
+def _p24_diff(e: Mapping[str, Any]) -> list[str]:
+    pp = lambda v: f"{100 * v:+.1f} pp"  # noqa: E731
+    if e.get("rule_of_three") is not None:
+        return [pp(e["diff"]), f"no score changed (rate below {e['rule_of_three']:.0%}, rule of three)"]
+    lo, hi = e["diff_ci95"]
+    return [pp(e["diff"]), f"{pp(lo)} to {pp(hi)}"]
+
+
+def block_p24_effect_size(ctx: Mapping[str, Any]) -> str:
+    n, m = lookup(ctx, "phase24.analysis.niah"), lookup(ctx, "phase24.analysis.multiturn")
+    rows = []
+    if isinstance(n, Mapping):
+        rows += [["NIAH", _pct_budget(float(b)), "all prompts", str(e["n"])] + _p24_diff(e) for b, e in n["budgets"].items()]
+    if isinstance(m, Mapping):
+        rows += [["Multi-turn", _pct_budget(float(b)), name, str(e[k]["n"])] + _p24_diff(e[k])
+                 for b, e in m["budgets"].items() for k, name in _P24_KINDS.items()]
+    if not rows:
+        return f"_{NOT_MEASURED}_"
+    return table(["Set", "Budget", "Turns", "n", "float32 - bf16", "95% CI (paired bootstrap)"], rows, ["---", "--:", "---", "--:", "--:", "---"])
+
+
 def block_p24_provenance(ctx: Mapping[str, Any]) -> str:
     rows = []
     for key, name in (("niah_source", "NIAH and teacher-forced"), ("multiturn_source", "Multi-turn sessions")):
