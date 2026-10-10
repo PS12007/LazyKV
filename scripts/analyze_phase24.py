@@ -7,12 +7,18 @@ Writes  results/phase24/analysis/metrics.json
 Every comparison is float32 against bf16 on the same prompt (or session and turn) in the same run,
 with prompts better / worse and a two-sided sign test. The config's decision rule: float32 is
 "better" at a budget only if more improve than get worse and p < 0.05.
+
+Added after the gate (no new runs): a null verdict says nothing about size, so every comparison also
+carries the paired accuracy difference (float32 - bf16) with a 95% bootstrap CI, and `pooled` bounds
+the effect over all budgets at once. Pooling reuses each prompt (session) at every budget, so the
+pooled CI resamples whole prompts (sessions), not rows; otherwise it would be too narrow.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import random
 import statistics
 import sys
 from pathlib import Path
@@ -21,12 +27,38 @@ from typing import Any
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from harness.results import RESULTS_DIR, write_metrics  # noqa: E402
-from harness.stats import sign_test_p  # noqa: E402
+from harness.stats import bootstrap_mean_ci, sign_test_p  # noqa: E402
 from scripts.analyze_phase4 import prompt_key  # noqa: E402
 from scripts.analyze_phase21 import KINDS, keyed  # noqa: E402
 
 OLD, NEW = "quest", "quest_f32"
 ALPHA = 0.05
+BOOT_ITERS = 10000
+
+
+def cluster_diff_ci(diffs: dict[Any, list[float]], iters: int = BOOT_ITERS, seed: int = 0) -> tuple[float, float]:
+    """95% percentile CI of the mean per-row difference, resampling whole clusters.
+
+    A cluster is one prompt (or session) with its rows at every budget. Its rows share a haystack and
+    a needle, so they are not independent draws; resampling rows would understate the width.
+    """
+    groups = list(diffs.values())
+    if not groups:
+        return (float("nan"), float("nan"))
+    rng = random.Random(seed)
+    means = []
+    for _ in range(iters):
+        pick = [groups[rng.randrange(len(groups))] for _ in groups]
+        means.append(sum(sum(g) for g in pick) / sum(len(g) for g in pick))
+    means.sort()
+    return means[int(0.025 * iters)], means[int(0.975 * iters) - 1]
+
+
+def pooled(diffs: dict[Any, list[float]], unit: str) -> dict[str, Any]:
+    rows = [d for g in diffs.values() for d in g]
+    lo, hi = cluster_diff_ci(diffs)
+    return {"unit": unit, "clusters": len(diffs), "rows": len(rows), "diff": statistics.mean(rows),
+            "diff_ci95": [lo, hi], "max_abs_effect": max(abs(lo), abs(hi))}
 
 
 def compare(new: dict[Any, float], old: dict[Any, float], keys: list[Any]) -> dict[str, Any]:
@@ -34,11 +66,17 @@ def compare(new: dict[Any, float], old: dict[Any, float], keys: list[Any]) -> di
     better = sum(1 for k in keys if new[k] > old[k])
     worse = sum(1 for k in keys if new[k] < old[k])
     p = sign_test_p(worse, better)
+    diffs = [new[k] - old[k] for k in keys]
     return {
         "n": len(keys),
         "old_accuracy": statistics.mean(old[k] for k in keys) if keys else None,
         "new_accuracy": statistics.mean(new[k] for k in keys) if keys else None,
         "better": better, "worse": worse, "sign_p": p,
+        "diff": statistics.mean(diffs) if diffs else None,
+        "diff_ci95": list(bootstrap_mean_ci(diffs, iters=BOOT_ITERS)) if diffs else None,
+        # With no changed scores every resample is zero, so the bootstrap CI collapses to [0, 0]. That
+        # is not certainty: the rule of three bounds the rate of changed scores at 3/n (95%) instead.
+        "rule_of_three": 3 / len(keys) if keys and not any(diffs) else None,
         "verdict": "better" if better > worse and p < ALPHA else ("worse" if worse > better and p < ALPHA else "no measurable effect"),
     }
 
@@ -60,6 +98,11 @@ def niah(q: dict[str, Any]) -> dict[str, Any]:
         e["tf"] = [{"offset": o, "old_kl": tf[(OLD, b, o)]["mean_kl"], "new_kl": tf[(NEW, b, o)]["mean_kl"],
                     "old_top1": tf[(OLD, b, o)]["top1_agreement"], "new_top1": tf[(NEW, b, o)]["top1_agreement"]} for o in offs if (OLD, b, o) in tf]
         out["budgets"][f"{b:g}"] = e
+    by_prompt: dict[Any, list[float]] = {}
+    for (pol, b, *k), v in score.items():
+        if pol == NEW and (OLD, b, *k) in score:
+            by_prompt.setdefault(tuple(k), []).append(v - score[(OLD, b, *k)])
+    out["pooled"] = pooled(by_prompt, "prompt")
     return out
 
 
@@ -77,6 +120,12 @@ def multiturn(src: dict[str, Any]) -> dict[str, Any]:
             e[kind] = c
         e["answers_changed"] = sum(1 for k, v in keyed(rows, NEW, b, "answer").items() if keyed(rows, OLD, b, "answer").get(k) != v)
         out["budgets"][f"{b:g}"] = e
+    by_session: dict[Any, list[float]] = {}
+    for b in out["budgets"]:
+        old, new = keyed(rows, OLD, float(b)), keyed(rows, NEW, float(b))
+        for k in sorted(set(old) & set(new)):
+            by_session.setdefault(k[0], []).append(new[k] - old[k])
+    out["pooled"] = pooled(by_session, "session")
     return out
 
 
