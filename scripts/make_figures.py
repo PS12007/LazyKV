@@ -1,4 +1,4 @@
-"""Phase 0-8 figures, rendered in light and dark variants for the README's <picture> tags.
+"""Figures for the README and phase reports, rendered in light and dark variants for <picture> tags.
 
 Reads results/phase0/analysis/metrics.json, run_1 telemetry, results/phase1/analysis/metrics.json,
 results/phase1/latency_regimes/metrics.json, and results/phase{2,3,4,5,7}/analysis/metrics.json.
@@ -1208,6 +1208,155 @@ def fig_p12_ruler(a: dict[str, Any], t: Theme) -> None:
     fig.subplots_adjust(left=0.06, right=0.985, top=0.81, bottom=0.27, wspace=0.08)
     save(fig, "p12_ruler", t)
 
+def _legend(ax: plt.Axes, t: Theme, **kw: Any) -> None:
+    leg = ax.legend(frameon=False, fontsize=9, **kw)
+    for text in leg.get_texts():
+        text.set_color(t.ink2)
+
+
+P23_POLICIES = (("quest", "Rung 5: selection, all KV in VRAM"), ("tiered_sync", "Rung 6: CPU tier, host-driven fetch"),
+                ("tiered_zerocopy", "Zero-copy tier (Phase 23)"))
+
+
+def fig_p23_zerocopy(a: dict[str, Any], t: Theme) -> None:
+    """Decode speed and GPU-resident KV against budget for the two tiers and the selection they implement.
+
+    Two panels rather than a dual axis. Whiskers are the min-max over independent runs. The full
+    cache is a reference line, not a series, because it has no budget.
+    """
+    rows = a["speed"]
+    full = next(r for r in rows if r["policy"] == "full")
+    fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.6), dpi=160)
+    fig.patch.set_facecolor(t.surface)
+    budgets = sorted({r["budget"] for r in rows if r["policy"] == "quest"})
+    for ax in axes:
+        style_axes(ax, t)
+        _budget_axis(ax, budgets)
+        ax.set_xlim(min(budgets) / 1.4, max(budgets) * 1.4)
+        ax.set_xlabel("KV budget (share of blocks attended)")
+    axes[0].axhline(full["tokens_per_s"]["median"], color=t.muted, linewidth=1.2, linestyle=(0, (4, 3)))
+    axes[0].text(min(budgets) / 1.33, full["tokens_per_s"]["median"] + 1.2, "full GPU cache", color=t.ink2, fontsize=9)
+    axes[1].axhline(full["gpu_resident_kv_bytes"]["median"] / 2**20, color=t.muted, linewidth=1.2, linestyle=(0, (4, 3)))
+    for i, (pol, name) in enumerate(P23_POLICIES):
+        r = sorted((x for x in rows if x["policy"] == pol), key=lambda x: x["budget"])
+        b = [x["budget"] for x in r]
+        tps = [x["tokens_per_s"] for x in r]
+        med = [v["median"] for v in tps]
+        err = [[m - v["min"] for m, v in zip(med, tps)], [v["max"] - m for m, v in zip(med, tps)]]
+        kw = dict(color=t.series[i], linewidth=2, marker="o", markersize=6, markeredgecolor=t.surface, markeredgewidth=1.2)
+        axes[0].errorbar(b, med, yerr=err, capsize=0, elinewidth=1.2, label=name, **kw)
+        axes[1].plot(b, [x["gpu_resident_kv_bytes"]["median"] / 2**20 for x in r], **kw)
+    axes[0].set_ylabel("Decode tokens/s (median of runs)")
+    axes[0].set_ylim(0, None)
+    axes[1].set_ylabel("GPU-resident KV, MiB")
+    axes[1].set_ylim(0, None)
+    _legend(axes[0], t, loc="upper center", bbox_to_anchor=(1.1, -0.17), ncol=3)
+    ctx = a.get("summary", {}).get("context")
+    title(fig, t, "Taking the host out of the fetch: the zero-copy tier",
+          f"Llama-3.2-1B{f' at {int(ctx):,} tokens' if ctx else ''}; whiskers are min-max over {full['tokens_per_s']['n_runs']} independent runs")
+    fig.subplots_adjust(left=0.07, right=0.985, top=0.82, bottom=0.27, wspace=0.22)
+    save(fig, "p23_zerocopy", t)
+
+
+def fig_p17_capacity(a: dict[str, Any], t: Theme) -> None:
+    """Every context each model was tried at, full cache against tiered prefill: ran, OOM, or skipped.
+
+    A dot grid rather than a bar of 'max context', because the tier never failed: its largest
+    context is where the sweep stopped, not a limit, and a bar would read as one.
+    """
+    rows = a["capacity"]["rows"]
+    lanes = [("1b", "full"), ("1b", "tiered"), ("3b", "full"), ("3b", "tiered")]
+    pretty = {"1b": "Llama-3.2-1B", "3b": "Llama-3.2-3B (nf4)", "full": "full GPU cache", "tiered": "tiered prefill"}
+    fig, ax = new_fig(t, 9.6, 3.9)
+    ctxs = sorted({r["context"] for r in rows})
+    for y, (model, method) in enumerate(reversed(lanes)):
+        color = t.series[0] if method == "tiered" else t.series[1]
+        for r in (r for r in rows if r["model"] == model and r["method"] == method):
+            x = ctxs.index(r["context"])
+            if r["status"] == "ok":
+                ax.scatter(x, y, s=120, color=color, edgecolors=t.surface, linewidths=1.5, zorder=3)
+            elif r["status"] == "gpu_oom":
+                ax.scatter(x, y, s=110, marker="X", color=t.ink2, zorder=3)
+                ax.annotate("out of memory", (x, y), xytext=(10, 0), textcoords="offset points", va="center", color=t.ink2, fontsize=8.5)
+        ok = [ctxs.index(r["context"]) for r in rows if r["model"] == model and r["method"] == method and r["status"] == "ok"]
+        if ok:
+            ax.plot([min(ok), max(ok)], [y, y], color=color, linewidth=2, zorder=2)
+    ax.set_yticks(range(len(lanes)))
+    ax.set_yticklabels([f"{pretty[m]} · {pretty[k]}" for m, k in reversed(lanes)])
+    ax.set_xticks(range(len(ctxs)))
+    ax.set_xticklabels([f"{c // 1024}K" if c % 1024 == 0 else f"{c / 1024:.0f}K" for c in ctxs])
+    ax.set_xlabel("Context length (tokens)")
+    ax.set_ylim(-0.6, len(lanes) - 0.4)
+    ax.set_xlim(-0.4, len(ctxs) - 0.6 + 1.0)
+    ax.grid(axis="y", visible=False)
+    title(fig, t, "Tiered prefill lifts the context limit", "Each dot is a context that prefilled and decoded; the tier was never the limit in this sweep")
+    fig.subplots_adjust(left=0.3, right=0.97, top=0.8, bottom=0.17)
+    save(fig, "p17_capacity", t)
+
+
+def fig_p22_snapshot(a: dict[str, Any], t: Theme) -> None:
+    """Time to resume a session: prefill again, or restore a snapshot by either path. Log seconds."""
+    ctxs = sorted(a["contexts"], key=int)
+    fig, ax = new_fig(t, 9.0, 4.4)
+    series = (("Prefill again", lambda c: c["prefill_s"]), ("Restore (Phase 20 path)", lambda c: c["paths"]["boundary"]["restore_s"]),
+              ("Restore (Phase 22 path)", lambda c: c["paths"]["store"]["restore_s"]))
+    w = 0.26
+    for i, (name, get) in enumerate(series):
+        xs, ys = [], []
+        for j, c in enumerate(ctxs):
+            cell = a["contexts"][c]
+            if cell.get("status") != "ok":
+                continue
+            xs.append(j + (i - 1) * (w + 0.02))
+            ys.append(get(cell)["median"])
+        ax.bar(xs, ys, width=w, color=(t.muted, t.series[0], t.series[2])[i], label=name, zorder=3)
+        for x, y in zip(xs, ys):
+            ax.text(x, y * 1.12, f"{y:.1f} s" if y >= 1 else f"{y:.2f} s", ha="center", va="bottom", color=t.ink2, fontsize=8)
+    ax.set_yscale("log")
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g} s"))
+    ax.set_xticks(range(len(ctxs)))
+    ax.set_xticklabels([f"{int(c):,} tokens" for c in ctxs])
+    ax.grid(axis="x", visible=False)
+    ax.set_ylabel("Time to resume (median, log scale)")
+    _legend(ax, t, loc="upper left")
+    title(fig, t, "Session snapshots: resuming from NVMe instead of prefilling again",
+          "Llama-3.2-1B; all three measured in the same process; restored state hash matched the prefilled one")
+    fig.subplots_adjust(left=0.1, right=0.98, top=0.82, bottom=0.12)
+    save(fig, "p22_snapshot", t)
+
+
+def fig_p15_models(a: dict[str, Any], t: Theme) -> None:
+    """Retention against budget on the 1B and the 3B, same prompts. Colour follows the model."""
+    conds = a["conditions"]
+    fig, axes = plt.subplots(1, 2, figsize=(10.0, 4.4), dpi=160, sharey=True)
+    fig.patch.set_facecolor(t.surface)
+    for ax, (pol, name) in zip(axes, (("window_sink", "Sliding window + sink"), ("quest", "Quest-style selection"))):
+        style_axes(ax, t)
+        rows = sorted((c for c in conds.values() if c["policy"] == pol), key=lambda c: c["budget"])
+        b = [c["budget"] for c in rows]
+        for i, m in enumerate(("1b", "3b")):
+            if any(c.get(f"retention_{m}") is None for c in rows):
+                continue
+            ys = [100 * c[f"retention_{m}"] for c in rows]
+            lo = [100 * c[f"retention_{m}_ci95"][0] for c in rows]
+            hi = [100 * min(c[f"retention_{m}_ci95"][1], 1.0) for c in rows]
+            ax.fill_between(b, lo, hi, color=t.series[i], alpha=0.14, linewidth=0)
+            ax.plot(b, ys, color=t.series[i], linewidth=2, marker="o", markersize=6, markeredgecolor=t.surface, markeredgewidth=1.2,
+                    label=f"Llama-3.2-{m.upper()}")
+        _budget_axis(ax, b)
+        ax.set_xlim(min(b) / 1.4, max(b) * 1.4)
+        ax.set_title(name, color=t.ink, fontsize=10, loc="left")
+        ax.set_xlabel("KV budget")
+        ax.set_ylim(0, 105)
+    axes[0].set_ylabel("NIAH retention, % of full cache")
+    _legend(axes[1], t, loc="lower right")
+    ctx = a.get("summary", {}).get("context")
+    title(fig, t, "A larger model loses less under selection",
+          f"Same {next(iter(conds.values()))['prompts']} NIAH prompts{f' at {int(ctx):,} tokens' if ctx else ''}; bands are 95% CIs")
+    fig.subplots_adjust(left=0.08, right=0.985, top=0.8, bottom=0.14, wspace=0.08)
+    save(fig, "p15_models", t)
+
+
 def main() -> None:
     a = json.loads((RESULTS_DIR / "phase0" / "analysis" / "metrics.json").read_text(encoding="utf-8"))
     p1_path = RESULTS_DIR / "phase1" / "analysis" / "metrics.json"
@@ -1268,6 +1417,10 @@ def main() -> None:
             fig_p12_ruler(p12, t)
         if ladder is not None:
             fig_ladder_pareto(ladder, t)
+        for name, fn in (("phase15", fig_p15_models), ("phase17", fig_p17_capacity), ("phase22", fig_p22_snapshot), ("phase23", fig_p23_zerocopy)):
+            path = RESULTS_DIR / name / "analysis" / "metrics.json"
+            if path.exists():
+                fn(json.loads(path.read_text(encoding="utf-8")), t)
     print("figures written to", FIG_DIR)
 
 
