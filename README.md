@@ -6,178 +6,87 @@
 
 **A tiered KV-cache runtime and residency-policy study for long-context LLM inference on one 8 GB laptop GPU.**
 
-*Under a fixed GPU KV budget, how much context and quality can block residency, migration, compression, and prefetching retain?*
-
 ![python](https://img.shields.io/badge/python-3.12-3776ab)
 ![torch](https://img.shields.io/badge/torch-2.12%20cu130-ee4c2c)
 ![gpu](https://img.shields.io/badge/GPU-RTX%205060%20Laptop%20·%20Blackwell-76b900)
 ![numbers](https://img.shields.io/badge/numbers-generated%20from%20metrics.json-555)
 [![tests](https://github.com/PS12007/LazyKV/actions/workflows/tests.yml/badge.svg)](https://github.com/PS12007/LazyKV/actions/workflows/tests.yml)
 
+[Findings](docs/FINDINGS.md) · [Paper draft](docs/PAPER.md) · [Research log](docs/RESEARCH_LOG.md) · [Related work](docs/RELATED_WORK.md)
+
 </div>
 
 ---
 
-LazyKV treats GPU VRAM as a cache over a larger logical KV cache held in pinned host RAM,
-and compares residency policies on equal terms: the same model, the same budget sweep, the
-same prompts, and the same quality metrics. **It is not a new mechanism.** Query-aware block
-selection, CPU backup and recall, and layer-ahead prefetch all exist already (Quest,
-ArkVale, InfiniGen, and others; see [related work](docs/RELATED_WORK.md)). The contribution
-is a careful, reproducible study of those ideas on constrained consumer hardware, with
-negative results included.
+LazyKV treats VRAM as a cache over a KV cache held in pinned host RAM, then asks one question:
+**under a fixed GPU KV budget, how much context and quality can block residency, migration,
+compression and prefetching keep?**
 
-> **Start here: [Findings](docs/FINDINGS.md)** — the whole study on one frontier, with the headline
-> number, the negative results and the limitations. The same study as a paper draft: [Paper](docs/PAPER.md).
-> Gate reports: [Phase 0](docs/phases/PHASE_0.md) · [Phase 1](docs/phases/PHASE_1.md) ·
-> [Phase 2](docs/phases/PHASE_2.md) · [Phase 3](docs/phases/PHASE_3.md) ·
-> [Phase 4](docs/phases/PHASE_4.md) · [Phase 5](docs/phases/PHASE_5.md) ·
-> [Phase 6](docs/phases/PHASE_6.md) · [Phase 7](docs/phases/PHASE_7.md) ·
-> [Phase 8](docs/phases/PHASE_8.md) · [Phase 9](docs/phases/PHASE_9.md) · [Phase 10](docs/phases/PHASE_10.md) · [Phase 11](docs/phases/PHASE_11.md) ·
-> [Phase 12](docs/phases/PHASE_12.md) · [Phase 13](docs/phases/PHASE_13.md) · [Phase 14](docs/phases/PHASE_14.md) · [Phase 15](docs/phases/PHASE_15.md) · [Phase 16](docs/phases/PHASE_16.md) · [Phase 17](docs/phases/PHASE_17.md) · [Phase 18](docs/phases/PHASE_18.md) · [Phase 19](docs/phases/PHASE_19.md) · [Phase 20](docs/phases/PHASE_20.md) · [Phase 21](docs/phases/PHASE_21.md) · [Phase 22](docs/phases/PHASE_22.md) · [Phase 23](docs/phases/PHASE_23.md) · [Phase 24](docs/phases/PHASE_24.md).
-> Upgrade plan audit: [Status](docs/STATUS.md) · [Gap table and validity review](docs/GAP_TABLE.md).
+It is not a new mechanism. Query-aware selection, CPU offload and layer-ahead prefetch already
+exist (Quest, ArkVale, InfiniGen; see [related work](docs/RELATED_WORK.md)). What this repo adds is
+a controlled comparison of those ideas on consumer hardware: one model, one budget sweep, the same
+prompts and metrics for every policy, and the negative results kept in.
 
-## Where the ladder stands
+## Results
 
-Needle-in-a-haystack accuracy at 32,768 tokens, as a share of what the full
-cache answers (88.9% over
-45 prompts), at the budget each policy does best on:
+Needle-in-a-haystack (NIAH) accuracy at 32,768 tokens on Llama-3.2-1B,
+as a share of the full cache's (88.9% over
+45 prompts), at each policy's best budget:
 
-| Rung | Policy | Best retention measured | GPU KV it frees |
+| Rung | Policy | Best retention | VRAM freed |
 |---|---|---|---|
-| 2 | Sliding window + attention sink | 62.5% at a 75% budget | yes, the budget |
-| 3 | Block LRU | 29.4% at a 75% budget (Phase 2) | yes, the budget |
-| 4 | H2O-style attention-score eviction | 92.5% at a 75% budget | yes, the budget |
-| 5 | Quest-style query-aware selection | 98.8% at a 75% attended budget | none: it attends to less, and frees nothing |
-| 6 | + pinned CPU tier, synchronous fetch | 98.8% at a 75% budget — **rung 5's answers, bit for bit** | yes: 415 MiB resident at a 25% budget, against 1,028 MiB |
-| 7 | + layer-ahead speculative prefetch | same answers again | same, and **slower** than rung 6 |
-| 8 | + int8 warm/cold tier | same answers, within noise (sign test p = 0.39) | the same blocks off-GPU at 0.531× the host bytes |
-| 9 | + exact partial attention on the CPU | **100.0%–101.3%: the full cache's answers, at every budget** | same as rung 6, and 1,848 MiB of extra host RAM, at 6.1–6.5× the full cache's decode time |
-
-**No rung that skips KV meets the brief's headline target** of ≥ 99% retention below a 100% budget;
-query-aware selection comes closest. On 300 paired prompts
-([Phase 9](docs/phases/PHASE_9.md)) it **fails** the bar at a 50% budget (paired 95% CI
-94.7%–98.9%)
-and sits exactly on it at 75% (CI
-97.6%–100.2%),
-which is as far as NIAH can place it. Rung 9 meets it by not skipping: it computes the
-missing attention on the CPU and merges it back exactly, which is the study's answer that the last
-percent of accuracy is available and the currency for it is compute rather than memory.
+| 2 | Sliding window + attention sink | 62.5% at 75% | the budget |
+| 3 | Block LRU | 29.4% at 75% | the budget |
+| 4 | H2O-style eviction | 92.5% at 75% | the budget |
+| 5 | Quest-style query-aware selection | 98.8% at 75% | none (attends to less, keeps everything) |
+| 6 | + pinned CPU tier | rung 5's answers, bit for bit | 415 MiB resident at 25%, vs 1,028 MiB |
+| 7 | + layer-ahead prefetch | same answers | same, but slower than rung 6 |
+| 8 | + int8 warm/cold tier | same within noise (p = 0.39) | same, at 0.531× the host bytes |
+| 9 | + exact CPU attention merge | **100.0%–101.3% at every budget** | same, plus 1,848 MiB host RAM; 6.1–6.5× slower than full |
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p4_tradeoff-dark.png">
-  <img alt="Decode tokens per second against GPU-resident KV for rungs 5 to 7, and a breakdown of the tier's host time per token" src="docs/figures/p4_tradeoff-light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/ladder_pareto-dark.png">
+  <img alt="NIAH accuracy and decode tokens per second against GPU-resident KV, one curve per rung" src="docs/figures/ladder_pareto-light.png">
 </picture>
 
-The tier's cost is latency, and the reason is not the link. At a 25% budget rung 6 moves
-4.6 MiB per token in
-14 transfers — well under a
-millisecond of PCIe time — while bringing each layer's top-K indices back to the host costs
+**1. No policy that skips KV holds 99% of full-cache accuracy below a 100% budget.** Query-aware
+selection comes closest. On 300 paired prompts it fails the
+bar at 50% (95% CI 94.7%–98.9%)
+and sits on it at 75% (CI 97.6%–100.2%).
+Rung 9 clears it by computing the missing attention on the CPU and merging it exactly: the last
+percent of accuracy is available, but it costs compute, not memory.
+
+**2. Moving fewer bytes never made decode faster.** At 25% the tier moves
+4.6 MiB per token, well under a
+millisecond of PCIe time, while bringing each layer's top-K indices back to the host costs
 5.0–6.8 ms.
-Layer-ahead prefetch hides its copies completely
-(100% of each copy inside the window it
-was launched into) and still loses, because on a host-bound decode the transfer was never what cost
-the time.
+Fewer fetches, fully hidden prefetch (100%
+overlap) and an int8 tier that halves traffic were all no faster. Decode is bound by the host
+deciding what to move.
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_pareto-dark.png">
-  <img alt="NIAH accuracy against attended or resident budget, against GPU-resident KV bytes, and decode tokens per second, for window plus sink, H2O-style eviction and Quest-style selection" src="docs/figures/p3_pareto-light.png">
-</picture>
+**3. Taking the host out of the loop fixes it at small budgets.** A zero-copy tier ([Phase 23](docs/phases/PHASE_23.md))
+maps pinned memory into the GPU's address space and gathers selected blocks in place, with no
+residency table and no sync. At 6.25% it decodes at rung 5's speed
+(1.82× rung 6); at 50% it is
+0.39× rung 6, because it rereads every selected
+block every step.
 
-The three policies fail in different places, and needle depth is what separates them: a window keeps
-the end of the prompt, accumulated attention mass keeps the beginning and the end, and query-aware
-selection keeps whatever the current query points at.
+### Beyond the ladder
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p3_depth-dark.png">
-  <img alt="NIAH accuracy by needle depth for each policy, one line per budget" src="docs/figures/p3_depth-light.png">
-</picture>
-
-Other measured facts from these two phases:
-
-| | |
+| | Result |
 |---|---|
-| Dropping the attention sink (Phase 2) | top-1 agreement with the full cache falls to 12.5%–17.2%, against 80.9%–93.6% with it |
-| Block LRU vs the same window without a sink (Phase 2) | identical on **225 of 225** scored prompts: a block LRU evicts before it can observe a use |
-| H2O and the sink | it has no sink rule, yet block 0 stayed resident in all 16 layers at every budget |
-| Host cost per decode token | window 1.0–1.0 ms, H2O 4.7–5.9 ms, Quest 5.6–6.6 ms; scoring the prompt for H2O adds 1.19× to prefill |
-| Repeatability across phases | of 315 prompt × condition pairs measured in both Phase 2 and Phase 3, 0 scored differently |
-| The CPU tier against the selection it implements (Phase 4) | 0 of 225 answers differ from rung 5, and the largest teacher-forced KL difference is 0.0e+00 nats |
-| Selection churn with VRAM holding exactly the attended set (Phase 4) | up to 3,692 (head, block) pairs re-fetched per token, 93% of them evicted within the previous 16 steps; doubling the slots cuts that to 59% |
-| Five attacks on bytes moved, none of them faster (Phases 4-5, 7) | tenfold fewer fetches, fully hidden prefetch copies, and an int8 tier that halves the traffic all decode no faster than the plain synchronous tier; rung 8 is 1.14× its time at a 25% budget |
-| int8 warm/cold tier against the exact tier (Phase 5) | 26 NIAH answers changed across all budgets, 4 worse against 8 better (exact sign test, p = 0.39): quality-neutral, and the apparent gain at the tightest budget is noise |
-| Ceiling on taking the residency decision off the host (Phases 6, 11) | a replay ablation that removes the per-layer bound and its host sync, while fetching identical pairs, decodes 1.10–1.25× faster over 3 runs; its fastest, 23.8 ms/token, is still slower than the full cache's 18.8 ms. Re-measured after Phase 9 found Phase 6's replay raced; the ceiling shrank at every shared condition |
-| What travels across context (Phase 8) | over 4 contexts, grouping retention by budget fraction leaves 8.7 pp of spread against 23.6 pp by blocks attended; the reference's decode is flat over a 16× span of context, and rung 9's cost is the only one proportional to it (145–160 µs per block) |
-| Perplexity as a proxy for retrieval (Phase 10) | at 32,768 tokens, 9 of 20 conditions lose at least a tenth of NIAH retrieval while their perplexity CI includes no change; the window with a sink at 25% keeps 24.4% of retrieval at 1.024× the perplexity. A fixed fraction's perplexity cost also falls with context, in all 13 conditions resolved at 4,096 tokens |
-| Multi-hop retrieval (Phase 12) | on RULER variable tracking at a 6.25% budget, Quest-style selection retains 15%–37% against 50%–63% on the single needle, across four contexts, and its lead over the cheap baselines disappears; down to 25% it is still the best rung on both |
-| Real long-document QA (Phase 14) | on four LongBench subsets, no multi-hop shortfall was detected: at 6.25% Quest-style selection keeps 77.2% of multi-hop F1 and 78.6% of single-document F1, with intervals too wide to exclude the RULER gap |
-| A larger model (Phase 15) | on Llama-3.2-3B (nf4 weights) at 16,384 tokens, Quest-style selection at 6.25% keeps 76.7% of the full cache's NIAH accuracy against 42.9% on the 1B, on the same prompts; the window shows no model difference on the prompts both full caches answer, and the tier answers exactly as rung 5 |
-| The price of exactness (Phase 7) | rung 9 holds the full cache's retrieval accuracy at every budget, for 2.28–4.23× rung 6's decode time; the CPU pass costs 61–69 ms per token and only 113.8 KiB per token comes back |
+| Perplexity as a proxy ([10](docs/phases/PHASE_10.md)) | 9 of 20 conditions lose ≥ 10% of NIAH retrieval with no detectable perplexity change; the window at 25% keeps 24.4% of retrieval at 1.024× perplexity |
+| Multi-hop retrieval ([12](docs/phases/PHASE_12.md), [13](docs/phases/PHASE_13.md)) | at 6.25%, query-aware selection keeps 41.5% on RULER variable tracking vs 61.3% on the single needle |
+| LongBench QA ([14](docs/phases/PHASE_14.md)) | no multi-hop shortfall detected: 77.2% of multi-hop F1 vs 78.6% single-doc at 6.25%, wide intervals |
+| A 3B model ([15](docs/phases/PHASE_15.md)) | at 6.25%, selection keeps 76.7% of Llama-3.2-3B's accuracy vs 42.9% of the 1B's |
+| Tiered prefill ([17](docs/phases/PHASE_17.md)) | runs 130,048 tokens on the 1B (full cache: 98,304) and 65,536 on the 3B (full cache: 32,768), bit-identical to the full-cache path; neither limit was reached |
+| Multi-turn sessions ([19](docs/phases/PHASE_19.md), [21](docs/phases/PHASE_21.md)) | reading each turn densely lifts later-turn accuracy at 6.25% from 24.3% to 72.9% |
+| Session snapshots ([20](docs/phases/PHASE_20.md), [22](docs/phases/PHASE_22.md)) | resuming from NVMe is 8.9–25.9× faster than re-prefilling; a later restore path is another 1.56–1.57× quicker |
+| float32 ranking bound ([24](docs/phases/PHASE_24.md)) | negative: no measurable effect on quality, default stays bf16 |
 
-## Phase 1 in brief
+The full argument, with confidence intervals and limitations, is in [FINDINGS.md](docs/FINDINGS.md).
 
-| | |
-|---|---|
-| Decode, full cache, 4,096 → 65,536 tokens | **49.7 → 52.0 tokens/s** (median of 3 runs) |
-| Time to first token at 65,536 tokens | **18.3 s** |
-| Per-layer window a layer-ahead prefetch can overlap | **1.33 ms–1.54 ms**, 3–13× Phase 0's lower bound |
-| One layer's KV fetchable inside that window at 65,536 tokens | **27%** of the context |
-| Attention kernel share of a decode layer, 4,096 → 65,536 tokens | 13% → 38% |
-| cuDNN decode calls not bit-repeatable on identical inputs | **11 of 1,024** → quality is scored on a repeatable kernel |
-| Latency cost of Windows moving the process to E-cores | **2.08×** median → benchmarks opt out of power throttling |
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/p1_latency_regimes-dark.png">
-  <img alt="Per-token decode latency over time: tokens on E-cores take about twice as long, and only occur when power throttling is left to the OS" src="docs/figures/p1_latency_regimes-light.png">
-</picture>
-
-Both negative results were caught by validating the instruments before any policy used them.
-Either one would have shown up in Phase 2 as a policy effect that was not there.
-
-## Phase 0 in one picture
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/design_costs-dark.png">
-  <img alt="Per-layer cost of fetching non-resident KV over PCIe vs attending to it on GPU or CPU" src="docs/figures/design_costs-light.png">
-</picture>
-
-Every line is composed from measured components. **Fetching a layer's offloaded KV costs
-about an order of magnitude more than attending to it on the GPU.** Dense offload is
-therefore out, and a small, query-selected set fetched inside the compute window is in.
-Exact CPU-side attention lands in between, and whether it wins depends on memory layout.
-
-## What we measured
-
-All values are medians of 3 independent runs. [Full method and ranges →](SYSTEM_INFO.md)
-
-| | |
-|---|---|
-| Pinned PCIe host→device | **26.52 GB/s** (Gen5 x8 under load) |
-| VRAM device-to-device copy | **130.90 GB/s** |
-| VRAM ÷ PCIe | **4.9×**: *not* the 20–40× the original brief assumed |
-| Pinned H2D reaches 80% of its bandwidth at | **386 KiB** per transfer |
-| KV fetch ÷ GPU attention, 65,536 tokens in one layer | **11.5×** |
-| Share of those tokens fetchable while the layer computes | **≈9%** (lower bound) |
-| GPU copy engines | **1**: H2D and D2H never overlap |
-| Default SDPA dispatch vs cuDNN attention at 65,536 tokens | **33.1× slower** (no FlashAttention on Windows) |
-| NVMe sequential read | 2.67 GB/s: an SSD tier adds capacity, not speed |
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/figures/bandwidth_ladder-dark.png">
-  <img alt="Bandwidth of every data path on this laptop, log scale" src="docs/figures/bandwidth_ladder-light.png">
-</picture>
-
-## The design decision
-
-The original brief offered three ways to handle a KV block that is not in VRAM when a
-layer runs. Phase 0 settled which ones hold up ([arithmetic](docs/IMPLEMENTATION_PLAN.md#3-which-design-the-measurements-support)):
-
-| | Design | Verdict |
-|---|---|---|
-| (a) | Fetch all non-resident KV before the layer runs | ❌ ~11× the attention it feeds; overlap cannot hide it |
-| (b) | Skip blocks; select the ones that matter with a cheap query-aware bound; prefetch only those | ✅ **Primary design.** The fetch cost scales with the selected set |
-| (c) | Attend to non-resident blocks on the CPU and merge exactly | ⚠️ Exactness fallback for small sets only. It is layout-dependent: slower than a contiguous fetch, faster than gather-then-fetch |
-
-## Architecture
+## How it works
 
 ```mermaid
 flowchart LR
@@ -187,36 +96,30 @@ flowchart LR
     SD[Fetched-block scratch]
   end
   subgraph HOST["Host RAM · pinned"]
-    CP[CPU master copy<br/>written once per block]
+    CP[Master copy<br/>written once per block]
   end
-  Q[Query, layer L+1] --> SEL{Top-k blocks<br/>by q·k bound}
+  Q[Query, layer L] --> SEL{Top-k blocks<br/>by q·k bound}
   MD --> SEL
   SEL -->|resident| HP
   SEL -->|offloaded| CP
-  CP -->|H2D on copy stream,<br/>overlapping layer compute| SD
-  HP --> ATT[Attention<br/>pinned kernel]
+  CP -->|H2D on copy stream| SD
+  HP --> ATT[Attention]
   SD --> ATT
 ```
 
-It integrates with Hugging Face Transformers through one `Cache` subclass and one attention
-override for one model class. Nothing else in Transformers is patched.
+KV is split into 64-token blocks. Each block keeps a per-channel key min/max on the GPU, so a query
+can bound its attention score to every block without touching the block itself. The top-k blocks
+are attended; any not resident in VRAM are fetched from a pinned host copy. Everything plugs into
+Hugging Face Transformers through one `Cache` subclass and one attention override.
 
-## Policy ladder
+Why selection rather than dense offload: on this laptop, fetching a layer's KV over PCIe costs
+about 11× the attention it feeds
+at 64K tokens, and VRAM is only 4.9×
+faster than pinned PCIe. Hardware measurements are in [SYSTEM_INFO.md](SYSTEM_INFO.md).
 
-1. Full GPU KV (reference) ✅ → 2. Sliding window + attention sink ✅ → 3. LRU blocks ✅ →
-4. H2O-style attention-score eviction ✅ → 5. Quest-style query-aware selection ✅ → 6. + CPU tier,
-synchronous fetch ✅ → 7. + layer-ahead async prefetch ✅ → 8. + int8 warm/cold tiers ✅ →
-9. + exact CPU merge ✅. All nine rungs are measured.
+## Quickstart
 
-Every rung gets the same budget sweep (100% down to 6.25% of the KV at 32K) and the same
-quality metrics: teacher-forced KL, top-1 agreement, and depth-swept needle-in-a-haystack,
-all with confidence intervals.
-
-## Install and use
-
-LazyKV installs as a package, `lazykv`, containing the runtime only: the caches, the residency
-policies, the CPU tier and the quality metrics. The benchmark tooling (`harness/`, `scripts/`,
-`configs/`) runs from a clone.
+Windows 11, Python 3.12, an NVIDIA driver with CUDA 13 support.
 
 ```powershell
 git clone https://github.com/PS12007/LazyKV; cd LazyKV
@@ -228,193 +131,68 @@ uv pip install --python .venv\Scripts\python.exe --no-deps -e .
 .venv\Scripts\python.exe examples\tiered_decode.py --context 16384 --budget 0.25
 ```
 
-[`examples/tiered_decode.py`](examples/tiered_decode.py) prefills one long prompt, then decodes
-it from the full GPU cache and from the CPU tier (rung 6), and prints the KV each holds in VRAM,
-the decode speed and the answer. Every cache is a `transformers.Cache`, so the same objects work
-with a model's own forward pass.
+The example prefills one long prompt, decodes it from the full GPU cache and from the CPU tier,
+and prints VRAM held, decode speed and the answer for each.
 
-**What installing it gets you, honestly:** a research runtime for comparing KV residency policies
-on equal terms, not a faster or longer-context inference engine. The tier frees VRAM during
-decode only (prefill still holds the full KV), it decodes slower than the full cache, and it has
-only been run on Llama-3.2 models, on one pinned Transformers version, because it plugs into
-Transformers' attention and cache internals. Use it to reproduce these results, to measure a new policy against
-the ladder, or to read a working implementation of Quest-style selection over a CPU tier.
+The `lazykv` package is the runtime (caches, policies, CPU tier, quality metrics). The benchmark
+tooling in `harness/`, `scripts/` and `configs/` runs from a clone. It is a research runtime, not an
+inference engine: the CPU tier decodes slower than the full cache, and it has only been run on
+Llama-3.2 with one pinned Transformers version.
 
-## Repository map
+## Reproducing
 
-| Path | What |
+Every result records the command, commit and flags that produced it, so reproduction reads from the
+data rather than from this file:
+
+```powershell
+.venv\Scripts\python.exe scripts\reproduce.py plan --phase 4                  # print the exact driver commands
+.venv\Scripts\python.exe scripts\reproduce.py chain --phase 4 --out run.cmd   # write them as a detachable chain
+.venv\Scripts\python.exe scripts\reproduce.py analyze                         # rerun analyses, figures and docs
+```
+
+Drivers take minutes to hours, so run them detached with output to `logs/`. Weights (about 2.5 GB
+for the 1B model) download on first use. Pass `--quick` for a smoke test; its output is never
+reported.
+
+No number in any markdown file is typed by hand. Prose lives in `docs/templates/*.md.tmpl`;
+`scripts/render_docs.py` fills placeholders from `results/**/metrics.json`, missing values render as
+*not measured*, and a test fails if a committed doc drifts from its data.
+
+### Measurement discipline
+
+A laptop throttles, downclocks within seconds of idling and retrains its PCIe link on demand, so
+every benchmark:
+
+- reports **median and IQR** after warmup, repeated as **independent processes**;
+- **interleaves and randomizes** conditions so thermal drift can't line up with one;
+- times GPU work with **CUDA events** and logs temperature, clocks and link state throughout;
+- scores quality on a **bit-repeatable** kernel (cuDNN decode is not), checked against a reference;
+- opts out of **Windows power throttling**, which otherwise moves a detached run onto E-cores.
+
+## Repository
+
+| Path | |
 |---|---|
-| [`CLAUDE.md`](CLAUDE.md) | Project rules: no fabricated numbers or citations, phase gates, dependency policy |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute: reproductions on other GPUs, new policies, measurement bugs |
-| [`docs/BRIEF.md`](docs/BRIEF.md) | Full research brief |
-| [`SYSTEM_INFO.md`](SYSTEM_INFO.md) | Machine inventory and all Phase 0 microbenchmarks |
-| [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) | Design decision, architecture, phases, risks |
-| [`docs/KV_MEMORY_MODEL.md`](docs/KV_MEMORY_MODEL.md) | KV geometry of candidate models, from real `config.json` |
-| [`docs/RELATED_WORK.md`](docs/RELATED_WORK.md) | Verified survey of 36 systems and papers, and LazyKV's honest delta |
-| [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | Dated findings, including measurement mistakes caught |
-| `scripts/` | Benchmarks, analysis, figures, doc rendering |
-| `examples/` | A runnable example of the installed package |
-| `lazykv/` | Runtime: preallocated full-GPU cache, block pool and residency policies, verified attention kernels, chunked prefill, profiling, quality metrics |
-| `configs/` | One YAML per phase: model revision, block size, context, budget sweep, prompts |
+| `lazykv/` | Runtime: caches, block pool, residency policies, CPU tier, kernels, quality metrics |
 | `harness/` | Stats, telemetry, GPU memory guard, host scheduling, metrics I/O, template renderer |
-| [`docs/phases/`](docs/phases) | Gate report per phase |
+| `scripts/` · `configs/` | Benchmark drivers, analyses, figures; one YAML per phase |
 | `results/` | Raw `metrics.json` and telemetry for every reported run |
+| [`docs/phases/`](docs/phases) | One report per phase (0–24), with method and provenance |
+| [`docs/FINDINGS.md`](docs/FINDINGS.md) | The study in one document |
+| [`docs/RESEARCH_LOG.md`](docs/RESEARCH_LOG.md) | Dated notes, including mistakes caught |
+| [`SYSTEM_INFO.md`](SYSTEM_INFO.md) | Machine inventory and hardware microbenchmarks |
+| [`AGENTS.md`](AGENTS.md) | Project rules: no hand-typed numbers, verified citations, phase gates |
 
-## How numbers get into the docs
+## Scope
 
-No benchmark value in any markdown file is typed by hand. Prose lives in
-`docs/templates/*.md.tmpl` with placeholders such as
-<code>&#123;&#123; phase0.analysis.vram.ratio_d2d_over_pinned_h2d.median | x &#125;&#125;</code>. `scripts/render_docs.py`
-resolves them from `results/**/metrics.json`, and a missing value renders as *not measured*.
-A test fails if a committed doc drifts from its data.
-
-## Reproduce Phase 0
-
-Windows 11, Python 3.12, NVIDIA driver with CUDA 13 support.
-
-```powershell
-uv venv --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe -r requirements.lock `
-  --index-url https://download.pytorch.org/whl/cu130 `
-  --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
-
-# ~2 min per run; launch detached and poll the log
-.venv\Scripts\python.exe scripts\00_feasibility.py --run-id 1 > logs\feasibility_run_1.log 2>&1
-.venv\Scripts\python.exe scripts\kv_memory_model.py
-.venv\Scripts\python.exe scripts\analyze_phase0.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-.venv\Scripts\python.exe -m pytest
-```
-
-Use `--quick` for a smoke test. Its output is kept out of the repo and never reported.
-
-## Reproduce Phase 1
-
-Weights download from the Hugging Face mirror on first use (about 2.5 GB). Each command is a
-few minutes; launch detached and poll the log.
-
-```powershell
-.venv\Scripts\python.exe scripts\01_baseline.py --run-id 1 > logs\baseline_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\01_quality.py > logs\quality.log 2>&1
-.venv\Scripts\python.exe scripts\01_kernel_repeatability.py > logs\kernel_repeatability.log 2>&1
-.venv\Scripts\python.exe scripts\01_latency_regimes.py > logs\latency_regimes.log 2>&1
-.venv\Scripts\python.exe scripts\01_affinity.py > logs\affinity.log 2>&1
-.venv\Scripts\python.exe scripts\analyze_phase1.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-```
-
-## Reproduce Phase 2
-
-```powershell
-# quality (NIAH + teacher-forced) then three independent speed runs; each is long, so detach
-.venv\Scripts\python.exe scripts\02_policy_quality.py > logs\policy_quality.log 2>&1
-.venv\Scripts\python.exe scripts\02_budget_speed.py --run-id 1 > logs\budget_speed_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\analyze_phase2.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-```
-
-## Reproduce Phase 3
-
-Same scripts as Phase 2, with the Phase 3 config (adds H2O-style eviction and Quest-style selection):
-
-```powershell
-.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase3.yaml > logs\p3_policy_quality.log 2>&1
-.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase3.yaml --run-id 1 > logs\p3_budget_speed_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\analyze_phase3.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-```
-
-## Reproduce Phase 4
-
-Same scripts again with the Phase 4 config (adds the CPU tier; `--spare 0` gives VRAM exactly the
-attended set instead of twice it):
-
-```powershell
-.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase4.yaml > logs\p4_policy_quality.log 2>&1
-.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --run-id 1 > logs\p4_budget_speed_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase4.yaml --spare 0 --out budget_speed_spare0 --run-id 1 > logs\p4_spare0_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\analyze_phase4.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-```
-
-## Reproduce Phase 5
-
-Same scripts with the Phase 5 config (adds the int8 warm/cold tier and measures it against the exact
-tier in one process):
-
-```powershell
-.venv\Scripts\python.exe scripts\02_policy_quality.py --config configs\phase5.yaml > logs\p5_policy_quality.log 2>&1
-.venv\Scripts\python.exe scripts\02_budget_speed.py --config configs\phase5.yaml --run-id 1 > logs\p5_budget_speed_run_1.log 2>&1   # also 2, 3
-.venv\Scripts\python.exe scripts\analyze_phase5.py
-.venv\Scripts\python.exe scripts\make_figures.py
-.venv\Scripts\python.exe scripts\render_docs.py
-```
-
-## Reproduce Phases 6–18
-
-Each gate report records the exact command, commit and flags behind its numbers; this table is the
-short version. Every driver is long, so launch it detached with output to `logs/`, and run it from a
-git worktree pinned at the commit under test if you want to keep editing the main tree.
-
-| Phase | Drivers | Then analyze | Notes |
-|---|---|---|---|
-| [6](docs/phases/PHASE_6.md) | `03_host_ceiling.py` | `analyze_ceiling.py`, `analyze_ladder.py` | Superseded by Phase 11's re-measurement |
-| [7](docs/phases/PHASE_7.md) | `02_policy_quality.py` and `02_budget_speed.py`, `--config configs\phase7.yaml` | `analyze_phase7.py`, `analyze_ladder.py` | |
-| [8](docs/phases/PHASE_8.md) | same two drivers, `--config configs\phase8.yaml --context <c>` per context | `analyze_phase8.py` | 64K needs `--skip-block-full` |
-| [9](docs/phases/PHASE_9.md) | `02_policy_quality.py --config configs\phase9.yaml`, in chunks via `--sample-start` | `analyze_phase9.py` | |
-| [10](docs/phases/PHASE_10.md) | `02_policy_quality.py --config configs\phase10.yaml`, per context | `analyze_phase10.py`, `analyze_kl.py` | Corpus from `fetch_corpus.py` |
-| [11](docs/phases/PHASE_11.md) | `03_host_ceiling.py --config configs\phase11.yaml --run-id 1..3` | `analyze_ceiling.py --phase phase11 --compare-to phase5` | Idle machine |
-| [12](docs/phases/PHASE_12.md) | `02_policy_quality.py`, `configs\phase12_pilot.yaml` then `configs\phase12.yaml` | `analyze_phase12.py` | |
-| [13](docs/phases/PHASE_13.md) | `02_policy_quality.py --config configs\phase13.yaml --sample-start 5` | `analyze_phase13.py` | |
-| [14](docs/phases/PHASE_14.md) | `05_longbench.py --config configs\phase14.yaml` | `analyze_phase14.py` | Needs the LongBench data |
-| [15](docs/phases/PHASE_15.md) | `02_policy_quality.py --config configs\phase15.yaml --skip-block-full --skip-teacher-forced` | `analyze_phase15.py` | Needs the `quant` extra |
-| [16](docs/phases/PHASE_16.md) | `06_record_traces.py --config configs\phase16.yaml` | `analyze_phase16.py` | Traces go to the config's `trace_dir` |
-| [17](docs/phases/PHASE_17.md) | `07_prefill_capacity.py`, then `07_tiered_prefill_quality.py --context N` for 16384, 24576 (`--methods full tiered`) and 65536 | `analyze_phase17.py` | One process per capacity cell |
-| [18](docs/phases/PHASE_18.md) | none (no GPU work) | `reproduce.py audit` | Needs a clean tree |
-| [19](docs/phases/PHASE_19.md) | `08_multiturn.py`, then `08_multiturn.py --policies quest --no-tier-check --turn-chunk 4096 --out multiturn_dense_turns` | `analyze_phase19.py` | The second run is the post hoc dense-turn follow-up |
-| [20](docs/phases/PHASE_20.md) | `09_snapshot.py` | `analyze_phase20.py` | Windows only (unbuffered reader); needs ~4 GB free disk in the temp dir |
-| [21](docs/phases/PHASE_21.md) | `08_multiturn.py --config configs\phase21.yaml`, then `10_ingest_cost.py` | `analyze_phase21.py` | Needs Phase 19's results for questions 2 and 3 |
-| [24](docs/phases/PHASE_24.md) | `02_policy_quality.py --config configs\phase24.yaml --skip-block-full`, then `08_multiturn.py --config configs\phase24.yaml --budgets 0.125 0.0625` | `analyze_phase24.py` | Question 2 reuses Phase 21's sessions; needs the corpus |
-| [23](docs/phases/PHASE_23.md) | `02_budget_speed.py --config configs\phase23.yaml --run-id N` (N = 1..3, idle machine), then `02_policy_quality.py --config configs\phase23.yaml --budgets 0.125 0.0625 --policies quest tiered_zerocopy --skip-block-full` | `analyze_phase23.py` | Needs CUDA's device mapping of pinned memory (unified addressing) |
-| [22](docs/phases/PHASE_22.md) | `09_snapshot.py --config configs\phase22.yaml` | `analyze_phase22.py` | Windows only (unbuffered reader); needs ~4 GB free disk in the temp dir |
-
-Finish every phase with `make_figures.py`, `render_docs.py` and `pytest`.
-
-`scripts/reproduce.py` does all of this from the commands each result recorded: `reproduce.py plan --phase N`
-prints the exact driver commands behind a phase, `reproduce.py chain --phase N --out run.cmd` writes them as a
-detachable chain, and `reproduce.py analyze` reruns every analysis, the figures and the docs.
-
-## Measurement discipline
-
-This is a laptop: it throttles, downclocks within seconds of idling, and retrains its PCIe
-link on demand. Every benchmark therefore:
-
-- Discards warmup iterations and reports **median and IQR**, then repeats the whole run as **independent processes** and reports the range across runs.
-- **Interleaves and randomizes** conditions so thermal drift cannot line up with a condition.
-- **Spins up the GPU** before timed GPU regions, and logs temperature, power, clock, and PCIe link state throughout.
-- Times GPU work with **CUDA events** and deliberate synchronization.
-- Checks that every fast kernel is also **correct**, compared against a reference implementation, and checks the quality path is **bit-repeatable**.
-- Opts timing processes out of **Windows power throttling**, which otherwise moves a detached benchmark onto E-cores.
-
-## Limitations and scope (v1)
-
-Out of scope: multi-request or continuous batching, cross-request prefix caching, multi-GPU,
-training any predictor, custom CUDA/Triton kernels, and beating vLLM on throughput. **No SSD
-tier in the latency path:** it is at most a capacity-only demonstration, because NVMe is
-9.9× slower than the PCIe path
-sequentially and 41.0× slower for
-block-sized random reads.
-
-All results are specific to one machine (see [`SYSTEM_INFO.md`](SYSTEM_INFO.md)). The
-primary model's full 64K KV cache fits in this GPU's free VRAM, so the KV budget in LazyKV
-experiments is an **imposed** constraint that makes policies comparable. It is not a
-physical necessity for that model.
+One machine (an RTX 5060 Laptop, see [SYSTEM_INFO.md](SYSTEM_INFO.md)), single request, single GPU.
+Out of scope: batching, cross-request prefix caching, custom CUDA kernels, and competing with vLLM
+on throughput. There is no SSD tier on the latency path: NVMe is
+9.9× slower than pinned PCIe sequentially.
+The 1B model's full 64K cache fits in VRAM, so the budget is an imposed constraint that makes
+policies comparable, not a physical limit.
 
 ## License
 
-[MIT](LICENSE).
+[MIT](LICENSE). Contributions, especially reproductions on other GPUs, are welcome; see
+[CONTRIBUTING.md](CONTRIBUTING.md).
