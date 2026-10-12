@@ -4,7 +4,7 @@
 
 **Status: complete. Stopped at the gate, and Phase 1 has not started.**
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest` covers the stats and knee/fit math, the renderer (including `not measured` handling), and a freshness check that fails if any rendered doc drifts from `results/**/metrics.json`.
 - [x] **Real experiment run.** `scripts/00_feasibility.py`, runs [1, 2, 3], launched detached, each from a clean tree. Provenance is in `SYSTEM_INFO.md`.
@@ -42,7 +42,7 @@
 | Single run per benchmark | Three independent runs | The first smoke test and later runs disagreed substantially on pinned H2D bandwidth |
 | Test `expandable_segments:True` (B6) | Probed: unsupported on Windows | Platform limitation, recorded |
 
-## Open decisions for the owner
+## Open decisions
 
 1. Confirm the corrected §B1 justification. The research direction itself is unchanged.
 2. Llama 3.2 weights: HF token, or approve the mirror.

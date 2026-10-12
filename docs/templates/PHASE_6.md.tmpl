@@ -11,7 +11,7 @@ possibly be worth, before any of it was built.
 The consolidated study is [`docs/FINDINGS.md`](../FINDINGS.md). This report is the gate for the work
 that produced it.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: the replay ablation's guards (identical fetched pairs, agreement
   reported and not asserted, the arithmetic bound kept above the measured one), the combined
@@ -26,8 +26,8 @@ that produced it.
 
 ## 1. The question this phase had to answer
 
-Phase 5 closed with two candidate directions and a rule-8 note that choosing between them was the
-owner's call. One of them — taking the residency decision off the host critical path — is a redesign
+Phase 5 closed with two candidate directions and a rule-8 note that choosing between them was a
+separate decision. One of them — taking the residency decision off the host critical path — is a redesign
 rather than a rung: it means keeping the top-K on the device and driving the gather from device
 memory, so no layer has to synchronize to decide what it needs.
 
@@ -121,7 +121,7 @@ The headline, in the brief's own terms: **no rung retains 99% of full-cache NIAH
 budget below 100%**. The best any policy manages is
 {{ ladder.summary.best_retention_excluding_full.max | pct }} at a
 {{ ladder.summary.best_retention_budget_excluding_full | budget }} budget. The brief asked for this
-number because it is not gameable, and the honest answer on this task, at this context, with this
+number because it is not gameable, and the answer on this task, at this context, with this
 model, is *none*.
 
 ## 6. Provenance

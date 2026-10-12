@@ -7,7 +7,7 @@ the first when every token of a user's turn goes through sparse selection. A pos
 showed that reading each turn in one dense forward recovers most of them, but the CPU tier could
 not do that: it was decode-only. This phase gives the tier that ability and measures it. It
 replaces gap table item A5 as planned (a selector that protects recent history), on the evidence
-of Phase 19, with the owner's go-ahead. Questions were fixed in `configs/phase21.yaml` before any
+of Phase 19, as approved. Questions were fixed in `configs/phase21.yaml` before any
 run.
 
 ## What was built

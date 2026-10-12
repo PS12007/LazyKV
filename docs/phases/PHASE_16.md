@@ -122,7 +122,7 @@ the lost groups at the loosest budgets are small, and only the first answer toke
 It changes how the upgrade plan can be carried out. The plan says to tune a working-set selector's
 weights (A5) on this simulator by mass captured. On this evidence, mass captured is not a quality
 target, and tuning to it would optimize something NIAH does not reward. A per-head or
-needle-position measure is the next thing to try, and it needs the owner's go-ahead.
+needle-position measure is the next thing to try, and it needs sign-off.
 
 ## 3. Replacement: LRU against Belady
 

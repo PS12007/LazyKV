@@ -21,7 +21,7 @@ The RULER kinds follow RULER's templates and answer prefixes verbatim (NVIDIA/RU
 scripts/data/synthetic/constants.py). Two deviations, both forced: variable tracking uses the book
 as its haystack (RULER's "essay" noise mode, the closest to this harness's other kinds), and common
 words are drawn from the verified corpus's vocabulary instead of RULER's `wonderwords` package,
-which this project cannot add (CLAUDE.md rule 5). `depth` places the needle for the NIAH kinds and
+which this project cannot add (AGENTS.md rule 5). `depth` places the needle for the NIAH kinds and
 the chain's first statement for vt; cwe has no depth and uses it only to seed a sample.
 
 Why token-level assembly: a policy's budget is a fraction of the sequence, so prompt length

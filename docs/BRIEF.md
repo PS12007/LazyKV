@@ -1,6 +1,6 @@
 # LazyKV project brief (v2)
 
-This is the reference brief. `CLAUDE.md` holds the hard rules; this file holds the
+This is the reference brief. `AGENTS.md` holds the hard rules; this file holds the
 reasoning and the plan. Re-read it at the start of every phase.
 
 > **Status of numbers in this file.** Every quantity below (bandwidths, ratios) is a

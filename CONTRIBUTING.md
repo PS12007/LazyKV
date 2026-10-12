@@ -7,7 +7,7 @@ is measured.
 
 ## Ground rules
 
-These are the project's rules (see [`CLAUDE.md`](CLAUDE.md)), and they apply to contributions too.
+These are the project's rules (see [`AGENTS.md`](AGENTS.md)), and they apply to contributions too.
 
 1. **No hand-typed numbers in docs.** Prose lives in `docs/templates/*.md.tmpl`; every number is a
    placeholder resolved from `results/**/metrics.json` by `scripts/render_docs.py`. Edit the

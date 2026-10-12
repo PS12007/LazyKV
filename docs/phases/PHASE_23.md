@@ -6,7 +6,7 @@ Gap table item 5 and note 2. Since [Phase 4](PHASE_4.md) the CPU tier (rung 6) h
 half rung 5's speed, and [Phase 11](PHASE_11.md) traced that to the host: every selecting layer
 brings its top-K block ids back to the CPU, updates a residency table, and launches copies.
 Prefetch (rung 7) hid the copies and gained nothing. The gap table named a residency decision made on
-the GPU as the honest successor and left it unbuilt. This phase builds one form of it. Questions were
+the GPU as the natural successor and left it unbuilt. This phase builds one form of it. Questions were
 fixed in `configs/phase23.yaml` before any run.
 
 ## What was built

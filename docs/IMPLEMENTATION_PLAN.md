@@ -12,7 +12,7 @@ judgments stop matching the numbers, the numbers win and this section must be re
 
 Measure how much context and quality a single 8 GB laptop GPU can retain under a fixed GPU
 KV budget, across a ladder of residency policies (`docs/BRIEF.md` §B8), and publish the
-comparison with honest quality deltas and ablations. The contribution is the study, not a
+comparison with measured quality deltas and ablations. The contribution is the study, not a
 new mechanism (`docs/RELATED_WORK.md`, Delta).
 
 ## 2. What Phase 0 established
@@ -138,8 +138,8 @@ would add a cast that the fp32 benchmark did not include.
 | (c) exact CPU partial attention + merge | **Only as a small-set exactness fallback** | 154.15 ms per token at 65,536 non-resident tokens; competitive with fetching only for some layouts |
 
 The research direction in the brief stands. Its quantitative justification is replaced
-by the arithmetic above. Per CLAUDE.md rule 8, this correction is flagged to the project
-owner rather than silently absorbed.
+by the arithmetic above. Per AGENTS.md rule 8, this correction is flagged
+explicitly rather than silently absorbed.
 
 ## 4. Architecture (Phase 1–4 target)
 
@@ -172,7 +172,7 @@ Transformers integration follows §B4 unchanged:
 
 ## 5. Phases and gates
 
-Every phase ends with the CLAUDE.md gate: tests, one real experiment, `docs/phases/PHASE_N.md`, a commit, then **stop**.
+Every phase ends with the AGENTS.md gate: tests, one real experiment, `docs/phases/PHASE_N.md`, a commit, then **stop**.
 
 | Phase | Scope | Gate experiment |
 |---|---|---|
@@ -191,7 +191,7 @@ Every phase ends with the CLAUDE.md gate: tests, one real experiment, `docs/phas
 | Prefetch window is host overhead | At batch 1 most of the layer span is kernel launching; removing it (CUDA graphs) shrinks the window | Re-measure the window whenever the decode loop changes |
 | Fast attention kernel is not bit-repeatable | cuDNN decode returns different bits for identical inputs; it compounds into top-1 flips | Quality scored on the memory-efficient kernel with fixed chunking (Phase 1) |
 | OS host scheduling | Windows power throttling moved the benchmark onto E-cores | Timing processes opt out; recorded in every `metrics.json` (Phase 1) |
-| Gated Llama 3.2 weights | Phase 1 needs weights, not just configs | Owner provides an HF token, or approves the `unsloth` mirror with a checksum note |
+| Gated Llama 3.2 weights | Phase 1 needs weights, not just configs | Use an HF token, or approve the `unsloth` mirror with a checksum note |
 | Transformers' SDPA integration may use default dispatch | Would silently re-create the kernel-selection trap | Custom attention function in `patch_llama.py`, verified against math at startup |
 | 3B stress model needs NF4 | `bitsandbytes` is a new dependency; Blackwell/Windows support unverified | Ask before Phase 5; the 1B study stands alone without it |
 | Unexplained low PCIe smoke-test result | Might recur mid-experiment | Log link gen/width during every run; independent runs; flag outliers instead of dropping them |
@@ -202,7 +202,7 @@ Every phase ends with the CLAUDE.md gate: tests, one real experiment, `docs/phas
 
 Build only the **trustworthy full-cache baseline** and its measurement instruments:
 
-1. **Weights.** Load Llama-3.2-1B-Instruct in bf16 (source to be confirmed by the owner, see §6).
+1. **Weights.** Load Llama-3.2-1B-Instruct in bf16 (source to be confirmed, see §6).
 2. **Chunked prefill.** Last-position-only logits; the full-logits alternative is a 15.7 GiB tensor at 64K.
 3. **Attention kernel.** Select the best correct kernel explicitly, fall back loudly, and log the choice.
 4. **Decode timing.** Per-token latency distribution, TTFT, and a per-layer attention/MLP/other split from CUDA events. This split replaces the lower bound in §3.2 with the real overlap window.

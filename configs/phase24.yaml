@@ -19,7 +19,7 @@
 #   3. Cost. None expected beyond casting the metadata per step; not timed here (quality kernel).
 # Decision rule: float32 is called better at a budget only if more prompts (turns) improve than get
 # worse AND the sign test gives p < 0.05. Otherwise the result is "no measurable effect", reported as
-# such, with the counts. Changing the default rank dtype is for the owner, either way.
+# such, with the counts. Changing the default rank dtype is a separate decision, either way.
 phase: phase24
 
 model:

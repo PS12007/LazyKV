@@ -6,7 +6,7 @@ For each context length (interleaved, randomized order, repeated):
   profiled decode -> per-layer split: attention kernel / attention rest / MLP / other
   memory: torch peak allocated/reserved, mem_get_info, cache-reported KV bytes
 
-Launch detached (CLAUDE.md rule 4):
+Launch detached (AGENTS.md rule 4):
     .venv\\Scripts\\python.exe scripts\\01_baseline.py --run-id 1 > logs\\baseline_run_1.log 2>&1
 """
 

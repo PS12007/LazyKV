@@ -9,7 +9,7 @@ of the policy ladder, and swept them at 32,768 tokens against the full cache.
 Nothing is offloaded yet: an evicted block is gone. The results set the floor that
 query-aware selection (Phase 3) and the CPU tier (Phase 4) have to beat.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: a 100% pool matches the full cache; after many evictions, each slot's layer-0 keys equal the full cache's keys for the logical block the slot table names; a first decode step over a window+sink pool matches an independently built reference far more closely than a wrong-position one (verified by mutation: breaking position tracking fails both tests); storage is bucket-aligned; LRU victim order. All earlier tests still pass.
 - [x] **Real experiment run.** `scripts/02_policy_quality.py` (NIAH and teacher-forced divergence) and `scripts/02_budget_speed.py` (3 independent runs), launched detached from a clean tree. Provenance below.

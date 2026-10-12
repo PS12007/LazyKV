@@ -10,7 +10,7 @@ where KV is a larger share of VRAM: Llama-3.2-3B stores
 reference is the 3B model's own full cache under the same 4-bit weights, so a retention measures a
 policy's effect on this model, not quantization's.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`, all passing, including `tests/test_phase15_analysis.py` (a prompt is
   paired across models only if both runs recorded the same needle values at the same position; the

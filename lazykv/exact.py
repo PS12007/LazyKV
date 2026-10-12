@@ -24,7 +24,7 @@ Three implementation decisions, each forced by a measurement rather than a prefe
    batch of small matrices, and bf16 has no CPU GEMM on this machine (Raptor Lake: no AVX512, no
    AMX). Measured on this geometry, one layer's pass costs about 7.6 ms from a contiguous float32
    matrix, about 16 ms from a strided float32 batch, and about 140 ms in bf16. The mirror costs
-   host RAM -- about 135 MiB per selecting layer at 32K -- and that cost is the honest price of
+   host RAM -- about 135 MiB per selecting layer at 32K -- and that cost is the real price of
    exactness on this hardware, reported rather than hidden.
 2. **Masking the resident blocks, not skipping them.** The CPU pass computes scores over every
    sealed block and sets the GPU-held ones to -inf before the softmax. Gathering only the cold

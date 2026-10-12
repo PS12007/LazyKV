@@ -12,7 +12,7 @@ Rung 5 evicts nothing: every block stays resident and the budget is what it *att
 the CPU tier arrives in Phase 4, it buys accuracy, not memory. The report keeps those two axes
 separate everywhere.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: the Quest bound dominates every dot product in its block; the gathered set is sink + top-K + current block with the unfilled tail masked, and its attention output matches an explicit reference on both the fast and the quality kernel; a budget that covers every block falls back to dense and is bit-identical; stride-1 prefill scoring equals exact attention column sums across chunks; H2O keeps heavy and recent blocks, never evicts inside its recent window (verified by mutation), and carries the tail's mass into the block it seals. All Phase 0-2 tests still pass.
 - [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase3.yaml` and `scripts/02_budget_speed.py --config configs/phase3.yaml` ({{ phase3.analysis.speed_runs }} independent runs), launched detached from a clean tree. Provenance below.

@@ -8,7 +8,7 @@ Measures, on this machine:
   5. CPU-side attention throughput (option (c) in B1), with explicit thread counts
   6. NVMe unbuffered sequential and random read bandwidth
 
-Runtime is several minutes: launch detached (CLAUDE.md rule 4), e.g.
+Runtime is several minutes: launch detached (AGENTS.md rule 4), e.g.
     .venv\\Scripts\\python.exe scripts\\00_feasibility.py > logs\\feasibility.log 2>&1
 Use --quick for a <90 s smoke test that writes to results/phase0/feasibility_quick/.
 

@@ -9,7 +9,7 @@ later policy is judged with. Two of those instruments failed their own validatio
 first try. Both failures are reported below with the data that exposed them, because each
 would otherwise have become a false finding in Phase 2.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: runtime correctness against transformers' eager attention on a tiny Llama (chunked prefill, decode, every attention strategy with garbage padding), cache round-trip, bit-exact repeatability of the quality kernel, streaming vs full comparison, doc freshness.
 - [x] **Real experiment run.** `scripts/01_baseline.py`, runs [1, 2, 3], launched detached, each from a clean tree (provenance below). Supporting experiments: quality reference, kernel repeatability, latency regimes, core affinity.
@@ -49,7 +49,7 @@ would otherwise have become a false finding in Phase 2.
    takes to launch it. On Llama-3.2-1B at batch size 1, shrinking the attended KV saves memory,
    not time. Every later latency comparison measures how much overhead a policy **adds**. This does
    not change the research question (the GPU budget was already an imposed constraint, per
-   Phase 0), but it rules out a speed-up claim for this model. See the owner decisions below.
+   Phase 0), but it rules out a speed-up claim for this model. See the decisions below.
 4. **Negative result: the reference was not repeatable on the fast kernel.** Running the
    same configuration twice gave top-1 agreement of
    97.3%–99.2%
@@ -277,7 +277,7 @@ ratio, is why the first baseline cannot be used.
 | Validate the quality harness against itself; expect exact | Failed on the fast kernel; quality is now scored on `efficient` | cuDNN decode not repeatable (finding 4) |
 | Per-token latency distribution | Reported only after the throttling opt-out; first baseline kept as a negative result | E-core migration (finding 5) |
 | Attention kernel picked by speed at startup | Speed path pinned to `cudnn_bucketed`, quality path pinned to `efficient` | Speed and repeatability favor different kernels |
-| Weights from `meta-llama` or mirror, owner's choice | Ungated `unsloth` mirror, pinned revision | No HF token available |
+| Weights from `meta-llama` or mirror, either | Ungated `unsloth` mirror, pinned revision | No HF token available |
 
 ## Implications for Phase 2
 
@@ -314,13 +314,13 @@ Supporting experiments:
 | Baseline run 2, before the throttling fix (negative result) | 2026-09-14T16:19:43+00:00 | `c3a91de` | yes |
 | Baseline run 3, before the throttling fix (negative result) | 2026-09-14T16:23:30+00:00 | `c3a91de` | yes |
 
-## Owner decisions (resolved 2026-09-14)
+## Decisions (resolved 2026-09-14)
 
-The owner delegated these calls, asking only to be consulted before any download larger than about 1 GB.
+One constraint applied: no download larger than about 1 GB without checking first.
 
 1. **Measurement changes: accepted.** Quality is scored on the memory-efficient kernel, and benchmark processes opt out of Windows power throttling.
 2. **License: MIT** ([`LICENSE`](../../LICENSE)).
 3. **Weights: the ungated `unsloth` mirror** at the pinned revision stays.
-4. **Latency framing: option (a).** The 1B study continues, and latency is reported as the overhead a policy adds over the full cache. The 3B stress model stays scheduled for Phase 5; its weights and `bitsandbytes` need the owner's go-ahead before download. Decode-loop overhead work (option c) is out of scope, because it would shrink the prefetch window the later rungs rely on.
+4. **Latency framing: option (a).** The 1B study continues, and latency is reported as the overhead a policy adds over the full cache. The 3B stress model stays scheduled for Phase 5; its weights and `bitsandbytes` need sign-off before download. Decode-loop overhead work (option c) is out of scope, because it would shrink the prefetch window the later rungs rely on.
 
 The options considered for (4) were: (a) as above; (b) add a model where KV attention dominates decode now; (c) cut the decode loop's host overhead first, e.g. with CUDA graphs.

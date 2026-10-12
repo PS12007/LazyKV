@@ -14,7 +14,7 @@ CUDA event before a buffer is reused. That made the Phase 6 number suspect in on
 and it has been quoted with a caveat in `FINDINGS.md` and the README since. This phase replaces the
 caveat with a measurement.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`, all passing, including the race test from Phase 9 (it stalls the
   device with `torch.cuda._sleep` so the host always runs ahead; it fails without the fix).

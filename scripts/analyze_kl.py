@@ -4,8 +4,8 @@ Reads   results/phase10/perplexity_ctx*/metrics.json   (KL per condition per win
         results/ladder/metrics.json                    (NIAH retention per condition, 32K)
 Writes  results/kl/metrics.json
 
-Phase 9 showed the brief's 99% NIAH bar is finer than needle retrieval can resolve near it, and the
-owner decided (2026-09-27) to keep that headline and add KL beside it rather than replace it. This
+Phase 9 showed the brief's 99% NIAH bar is finer than needle retrieval can resolve near it, and I
+decided (2026-09-27) to keep that headline and add KL beside it rather than replace it. This
 script asks one question of KL, with no threshold chosen: **where retrieval cannot order two
 conditions, can KL?**
 

@@ -23,7 +23,7 @@ attacks on bytes moved all failed to reduce latency. That diagnosis has a predic
 ranks every block on every step, so its cost should grow with the block count, which is to say with
 context. §3 tests it.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: `collapse()` is tested against both hypotheses injected as ground
   truth, so the metric cannot be one that always favours K; against a singleton group, which has
@@ -129,7 +129,7 @@ only ever have a larger one. The fraction collapse wins while carrying that pena
 **Neither is an invariant, and the residual is structured rather than noise.** The by-fraction
 spread is small at generous budgets and grows as the budget tightens, which is what one would expect
 if the fraction governs *until the absolute count gets small*: at a 6.25% budget, 4K selects two
-blocks. So the honest statement is that the fraction is the better parameterization by a wide margin,
+blocks. So the defensible statement is that the fraction is the better parameterization by a wide margin,
 and that at the tight end of the sweep the absolute block count starts to reassert itself. Both
 effects are visible in the left two panels of the figure, which are the same points against the two
 axes.

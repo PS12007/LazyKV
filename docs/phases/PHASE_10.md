@@ -12,7 +12,7 @@ budget in the sweep and at 4 context lengths.
 It was also chosen for a practical reason: it is a quality measurement, run on the deterministic
 kernel, so unlike a timing run nothing else on the machine can move its numbers.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`, all passing. New: `tests/test_perplexity.py` pins the fixed-target
   windows (the same tokens are scored at every context, and a target without room for its context
@@ -214,7 +214,7 @@ Perplexity ratio to the full cache for every condition, by context:
   fine for 300 prompts. A perplexity threshold would be the wrong substitute: it would pass
   conditions that lose most of their retrieval. If the headline needs a continuous metric, the
   candidate is teacher-forced KL, or a key-token perplexity in the LongPPL sense, and choosing one
-  is an owner decision.
+  is a separate decision.
 
 ## Provenance
 

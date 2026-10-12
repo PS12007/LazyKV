@@ -14,7 +14,7 @@ Because rungs 6 and 7 use rung 5's selection unchanged — same block metadata, 
 top-K, same gather order — their outputs should be *identical*, not merely close. That is the
 first thing measured, and it holds: the tier is a memory mechanism with no quality axis of its own.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: the tier reproduces rung 5 bit for bit on both kernels, with and without prefetch, under both fetch modes and with spare slots; the host pool holds exactly the KV rung 5 writes, for prompt blocks and for blocks sealed during decode; `admit` coalesces pairs that are consecutive in both pools into one transfer, evicts only outside the current selection, fills empty slots before occupied ones, and refuses a budget that covers every block; `close()` removes every prefetch hook. All Phase 0-3 tests still pass.
 - [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase4.yaml` and `scripts/02_budget_speed.py --config configs/phase4.yaml` (3 runs at 2× slots, 3 with VRAM holding exactly the attended set), launched detached from a clean tree. Provenance below.
@@ -317,7 +317,7 @@ accuracy is affordable. On a system where PCIe were the constraint the sweep wou
 The first implementation sent one transfer per fetched pair and gave VRAM exactly the attended set.
 It was slow, and the counters said why, so four configurations were measured at one repeat each
 before the gate sweep. They are reported because they are the evidence for the gate's configuration,
-and because the first two rows are the honest starting point.
+and because the first two rows are the right starting point.
 
 | Probe | Policy | Budget | Fetch | K / slots | Decode / token | Rung 5, same run | Full cache, same run | Pairs fetched / token | H2D transfers / token | Thrash | Fetch launch host time | Prefetch precision |
 | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -345,18 +345,18 @@ and because the first two rows are the honest starting point.
 `probe_per_pair_transfers` and `probe_runs_spare0` are the same configuration measured twice, which
 is the only repeatability estimate these single-repeat probes have.
 
-## 8. What this says about Phase 5, and one question for the owner
+## 8. What this says about Phase 5, and one open question
 
 Rung 8 (int8 warm/cold tiers) attacks **bytes moved**, and §3 says bytes moved are not what costs
 time on this machine: 4.6 MiB per token
 is well inside the link's budget, while the per-layer host round trip that decides *what* to move
 costs 5.0–6.8 ms.
-The honest expectation is therefore that rung 8 will not improve latency here, and the experiment
+The realistic expectation is therefore that rung 8 will not improve latency here, and the experiment
 should be framed as a capacity result.
 
 The lever that would matter is taking the residency decision off the host critical path, which is a
-redesign rather than a rung on the ladder (CLAUDE.md rule 8: that decision belongs to the owner, not
-to this phase).
+redesign rather than a rung on the ladder (AGENTS.md rule 8: that is a direction change, not
+part of this phase).
 
 ## 9. Headline number (brief §B8)
 

@@ -18,7 +18,7 @@
 #      cache answers? Retention against the full cache, paired by (session, turn), with a bootstrap CI
 #      over sessions. Decision rule: the failure counts as observed at a budget only if rung 5's
 #      chat-needle retention has a 95% CI upper bound below 100% AND it is below window_sink's on the
-#      same turns. If it is not observed, A5 is not built without the owner (CLAUDE.md rule 8).
+#      same turns. If it is not observed, A5 is not built without sign-off (AGENTS.md rule 8).
 #   2. The document across turns. Doc-needle accuracy at turn 0 against later doc turns, per policy,
 #      each against the full cache on the same turns.
 #   3. The contrast. window_sink keeps the most recent tokens, so it should hold the conversation and

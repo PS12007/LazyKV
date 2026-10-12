@@ -19,7 +19,7 @@ of it was built: (c) "cannot be the main path for long contexts", because its co
 the only rung that can clear the brief's headline bar below a full budget, and the study's answer
 to §B8 was **none** until it was measured.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: the merge algebra reconstructs attention over a key set split in
   two, an empty partial contributes nothing instead of a nan, the merge is not a plain average,

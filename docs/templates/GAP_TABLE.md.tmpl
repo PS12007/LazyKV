@@ -1,4 +1,4 @@
-# Upgrade plan: gap table, honest comparison, and validity review
+# Upgrade plan: gap table, comparison, and validity review
 
 Step 0 of [the upgrade plan](UPGRADE_PLAN.md). What exists is described in [STATUS.md](STATUS.md).
 Competitor descriptions were checked against their own pages on 2026-09-30 and are recorded in
@@ -26,7 +26,7 @@ Effort is a rough estimate in working sessions, not a measurement.
 | C3 | Tiny learned page scorer | **no** | Locret cited in RELATED_WORK only | 2 | Only if A3 shows a heuristic-to-oracle gap |
 | C4 | Dynamic host store growth | **no** | `allocate_host_pools` preallocates pinned pools for the full capacity, the same limitation TierKV states | 1 | Pinning is slow (on the order of a second per GiB), so chunked growth trades latency spikes for RAM |
 
-## Honest comparison with TierKV
+## Comparison with TierKV
 
 **Where LazyKV is ahead**
 
@@ -63,7 +63,7 @@ Effort is a rough estimate in working sessions, not a measurement.
 ## Validity review of the plan
 
 The plan is sound in its goals, but several of its premises do not match this repository, and two
-conflict with measurements already made. Per CLAUDE.md rule 8, each of these needs an owner decision
+conflict with measurements already made. Per AGENTS.md rule 8, each of these needs a decision
 before it changes the research direction.
 
 1. **The runtime is assumed to be llama.cpp.** A1's GGUF models and stock-llama.cpp baselines, B4's
@@ -104,10 +104,10 @@ before it changes the research direction.
    residency" into "more context on 8 GB". *Done: [Phase 17](phases/PHASE_17.md).*
 3. **A1 entry point** over the existing scripts; llama.cpp baselines only after sign-off. *Done: [Phase 18](phases/PHASE_18.md), `scripts/reproduce.py`, with an audit that regenerates every analysis.*
 4. **A multi-turn evaluation, then A5.** *Evaluation done: [Phase 19](phases/PHASE_19.md). Its data
-   points away from A5 as planned and toward dense turn ingestion, which the owner approved and
+   points away from A5 as planned and toward dense turn ingestion, which was approved and
    [Phase 21](phases/PHASE_21.md) built: the tier now matches rung 5 on every turn and recovers most of
    the conversation. What remains is the document's loss under selection at small budgets.
    [Phase 24](phases/PHASE_24.md) ruled out one cause, bf16 ties in the ranking (no measurable effect).*
-5. **Device-side ranking** as the honest successor to A4, if the owner wants a speed result. *Done
+5. **Device-side ranking** as the natural successor to A4, for a speed result. *Done
    in one form: [Phase 23](phases/PHASE_23.md)'s zero-copy tier ranks on the GPU and reads the
    selection from host memory in place; it reaches rung 5's speed at 6.25% and loses to rung 6 at 50%.*

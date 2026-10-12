@@ -2,7 +2,7 @@
 
 All GPU timing uses CUDA events plus deliberately synchronized wall clocks. Decode
 synchronizes once per token on purpose: a real generator must bring each token to the
-host (to detokenize or check stop conditions), so per-token wall latency is the honest
+host (to detokenize or check stop conditions), so per-token wall latency is the true
 user-facing number.
 """
 

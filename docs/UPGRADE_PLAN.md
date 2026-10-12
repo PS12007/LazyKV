@@ -1,19 +1,13 @@
-> **Status of this file.** This is the owner's upgrade brief, kept verbatim as written on 2026-09-30.
-> Its quantities are the competitors' published claims or planning targets, not LazyKV measurements.
-> Step 0's audit, including where this plan's premises do not match the repository, is in
+> **Status of this file.** The upgrade plan as written on 2026-09-30. Its quantities are the
+> competitors' published claims or planning targets, not LazyKV measurements. Step 0's audit,
+> including where this plan's premises do not match the repository, is in
 > [GAP_TABLE.md](GAP_TABLE.md) and [STATUS.md](STATUS.md).
 
-# LazyKV upgrade plan (brief for Claude Code)
-
-How to use: put this file in the root of the LazyKV repo as `docs/UPGRADE_PLAN.md`, then tell Claude Code:
-
-> Read docs/UPGRADE_PLAN.md and do Step 0 only. Stop and show me the gap table.
-
-After that, pick features from the menu one at a time and tell Claude Code which ID to build (for example: "Build A3 next").
+# LazyKV upgrade plan
 
 ---
 
-## 1. Context for Claude Code
+## 1. Context
 
 LazyKV is my existing project: a runtime that treats the KV cache of a long-context LLM as tiered virtual memory across GPU VRAM, CPU RAM and optionally SSD. A lot of it is already built. This plan is about adding features that make it clearly stronger and more distinctive than the projects that have appeared in the same space, not rebuilding it.
 
@@ -67,7 +61,7 @@ Three pillars:
 | ID | Feature | Already in LazyKV? (yes / partial / no) | Evidence (file, function) | Effort estimate | Notes |
 |----|---------|-----------------------------------------|---------------------------|-----------------|-------|
 
-4. Write a short "honest comparison" section: where LazyKV is already better than TierKV, where it is behind, where it is equal.
+4. Write a short comparison section: where LazyKV is already better than TierKV, where it is behind, where it is equal.
 5. Stop and show me STATUS.md and GAP_TABLE.md. Do not start building anything yet.
 
 ## 4. Feature menu

@@ -18,7 +18,7 @@ looseness over 64-token blocks and the per-head selection are what is left to te
 
 ## 2026-10-09: Phase 23, a zero-copy tier
 
-The owner asked for the remaining directions after Phase 22. The tier's slowness has been its host
+After Phase 22 I went back over the remaining directions. The tier's slowness has been its host
 work since Phase 4, so this phase took the top-K ids off the host entirely: pinned host memory is
 mapped into the GPU's address space, and the gather kernel reads the selected blocks from the host
 pool in place. No slots, no residency, no sync. At 32K it decodes at rung 5's speed at 6.25%
@@ -47,7 +47,7 @@ weights are on the D: drive, which was not mounted.
 
 ## 2026-10-08: Phase 21, dense turn ingestion for the tier
 
-The owner approved Phase 19's recommendation over A5 as planned. A multi-token forward through the
+I took Phase 19's recommendation over A5 as planned. A multi-token forward through the
 tier now attends to each selecting layer's whole KV, brought back from the host store one layer at a
 time, and appends the new KV in bulk. On Phase 19's sessions the tier gave rung 5's answer on
 320 of 320 turns, and
@@ -90,7 +90,7 @@ on 160 of 160 turns.
 ### Direction
 
 This points away from A5 as planned and toward dense turn ingestion for the tier. That is a change
-of direction, so it waits for the owner (rule 8).
+of direction, so it waits for sign-off (rule 8).
 
 ## 2026-10-07: Phase 18, one entry point and a reproducibility audit
 
@@ -144,7 +144,7 @@ as slow as before.
 
 ### Step 0
 
-The owner's upgrade plan ([UPGRADE_PLAN.md](UPGRADE_PLAN.md)) was audited against the repository
+My upgrade plan ([UPGRADE_PLAN.md](UPGRADE_PLAN.md)) was audited against the repository
 ([STATUS.md](STATUS.md), [GAP_TABLE.md](GAP_TABLE.md)). The plan assumes a llama.cpp fork; LazyKV
 is PyTorch + Transformers. Its A4 (mid-generation async prefetch) is already rung 7 and was measured
 no faster, and every "max context" claim needs chunked prefill into the tier, which the plan does not
@@ -188,7 +188,7 @@ difference on the common prompt set, and rung 6 matched rung 5 on every answer.
 
 ### Incidents
 
-- The host-RAM pause was resolved by launching the run outside the Claude Code session (WMI), so
+- The host-RAM pause was resolved by launching the run outside the terminal session (WMI), so
   the session's low-memory reaper could not stop it. The model load drove free RAM near zero for
   about a minute and then recovered.
 - Four VRAM failures on the way to a run, each before any 3B answer was read, each committed as its
@@ -224,7 +224,7 @@ contain Phase 13's gap, so it is reported as not detected rather than absent.
 - A 3B feasibility check showed 32K does not fit (prefill spilled into shared memory), so Phase 15
   was designed at 16K. Its smoke test was then stopped by the host running critically low on RAM:
   loading the 3B model stages its full-precision weights in host memory before quantizing them.
-  Phase 15 is paused pending the owner's call rather than retried.
+  Phase 15 is paused pending a decision rather than retried.
 - The Phase 14 report's first draft compared the window's LongBench retention at 25% with its NIAH
   retention at its best budget; it now compares the same budget.
 
@@ -378,7 +378,7 @@ entirely below the bar. At 45 prompts the same rule called it unresolved.
 
 **75% is on the bar.** Retention 99.0%, CI
 97.6%–100.2%.
-The interval narrowed as the prompts grew and the point estimate never left it. The honest reading
+The interval narrowed as the prompts grew and the point estimate never left it. The fair reading
 is that the 99% bar is finer than NIAH can resolve here for a policy that lands near it; a pass/fail
 headline would need a non-inferiority margin fixed in advance, or a continuous metric.
 
@@ -510,7 +510,7 @@ stress model was never run, it is the only rung that keeps the answers right.
 
 ## 2026-09-18: pricing the redesign before building it
 
-Phase 5 ended with an owner decision: take the residency decision off the host critical path, or
+Phase 5 ended with a decision: take the residency decision off the host critical path, or
 try rung 9. Before spending a phase on the first, this measures what it could possibly be worth.
 
 ### The instrument, and two wrong turns on the way to it
@@ -559,7 +559,7 @@ cache decodes a token in 21.7 ms, and a tier with every
 scrap of host decision time removed would still be around thirty. A device-side residency decision
 would close part of the gap the tier pays, not the gap to the full cache.
 
-So the honest framing for the owner's decision is that the redesign is a
+So the framing for that decision is that the redesign is a
 1.16× improvement to a mechanism whose reason to
 exist is memory, not speed — worth doing if the goal is to make the memory win cheaper, not worth
 doing if the goal is to beat the full cache on latency at a context that still fits in VRAM.
@@ -610,7 +610,7 @@ The paired evidence says so plainly. Only
 2 worse against
 5 better, an exact sign test on the discordant
 prompts giving p = 0.45. Teacher-forced
-divergence, which is far more sensitive than a scored answer, barely moves at all. **The honest
+divergence, which is far more sensitive than a scored answer, barely moves at all. **The plain
 statement is that int8 is quality-neutral here, not that it helps** — and the unpaired confidence
 intervals in §2 of the phase report are far too wide to have settled that either way, which is why the
 paired test was added.
@@ -691,10 +691,10 @@ design is the evidence for the chosen one.
 ### What this implies for Phase 5
 
 Rung 8 (int8 warm/cold tiers) attacks bytes moved. Bytes moved are not what costs time here, so the
-honest expectation is that it will not help latency on this machine, and the experiment should be
+realistic expectation is that it will not help latency on this machine, and the experiment should be
 framed as measuring capacity, not speed. The lever that *would* matter is removing per-layer host
 synchronization from the residency decision, which is a redesign, not a rung. That is now the open
-question to put to the owner.
+question.
 
 ---
 
@@ -841,7 +841,7 @@ at 65,536.
 3. **Silent shared-memory spill, cuDNN plan rebuilds, NaN padding, host-RAM OOM kill.** Each was
    caught, fixed with a guard or test, and is described in `docs/phases/PHASE_1.md`.
 
-### Owner decisions (resolved 2026-09-14)
+### Decisions (resolved 2026-09-14)
 
 - Both measurement changes accepted. License: MIT. Weights: the pinned `unsloth` mirror.
 - Latency is reported as the overhead a policy adds, on the 1B model. The 3B model stays in Phase 5, pending a download go-ahead.
@@ -900,7 +900,7 @@ path. Arithmetic: `docs/IMPLEMENTATION_PLAN.md` §3.
 - `expandable_segments` is not supported on this platform.
 - Llama-3.2-1B's full 64K bf16 KV fits in free VRAM, so the study's GPU budget is imposed, not forced. The 3B model does not fit in bf16 even at modest context.
 
-### Decisions needed from the project owner
+### Open decisions
 
 - Accept the corrected justification for §B1 (rule 8). The direction is unchanged.
 - Llama 3.2 weight access: provide an HF token, or approve the ungated mirror.

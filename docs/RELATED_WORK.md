@@ -495,7 +495,7 @@ on one constrained consumer GPU**:
 
 1. **One harness, one hardware point.** Every policy, from sliding window plus sinks up to query-aware selection with CPU tier, prefetch, and mixed precision, runs on the same 8 GB laptop GPU. They share the model, the budget sweep, and the prompts.
 2. **Hardware-grounded costs.** Tier crossings are costed with bandwidths and a copy-engine count measured on that machine (`SYSTEM_INFO.md`), not with data-center interconnect figures.
-3. **Honest quality measurement.** Every policy gets teacher-forced KL, top-1 agreement, and depth-swept NIAH, with confidence intervals.
+3. **Rigorous quality measurement.** Every policy gets teacher-forced KL, top-1 agreement, and depth-swept NIAH, with confidence intervals.
 4. **Strong baselines included.** The sliding-window-plus-sink baseline and full ablations are in, and negative results are reported.
 
 That is a narrower claim than a new system, and a defensible one. The abstracts above

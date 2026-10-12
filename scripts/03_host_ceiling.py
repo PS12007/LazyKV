@@ -5,7 +5,7 @@ copies, and an int8 tier that halves the traffic -- and none of them made decode
 measurements point at one remaining lever: every selecting layer brings its top-K block indices to
 the CPU before it can decide what to fetch, and the GPU has nothing queued while that happens.
 
-Turning that into a device-side design is a redesign rather than a rung (CLAUDE.md rule 8), so this
+Turning that into a device-side design is a redesign rather than a rung (AGENTS.md rule 8), so this
 script does not build it. It prices it. If the ceiling is small, the redesign is not worth a phase.
 
 **What is measured: a replay ablation.** Pass one decodes normally and records the selection each
@@ -26,7 +26,7 @@ The full cache is profiled alongside as the hook-overhead control: it does no re
 gap is the floor that the hooks alone produce.
 
 Profiled and unprofiled decode are timed separately and both are reported: the gap comes from the
-profiled pass, the honest latency from the unprofiled one.
+profiled pass, the true latency from the unprofiled one.
 
 Launch detached, once per run id:
     .venv\\Scripts\\python.exe scripts\\03_host_ceiling.py --run-id 1 > logs\\host_ceiling_run_1.log 2>&1
@@ -154,7 +154,7 @@ def main() -> None:
                 built = build_cache(full, cond, total, bs, None, lm.model, host, tier=tier_opts)
                 if isinstance(built.cache, TieredCache):
                     built.cache._record = {}  # noqa: SLF001  -- record this pass to replay it below
-                # Unprofiled first: the honest latency, with no hooks on the model.
+                # Unprofiled first: the true latency, with no hooks on the model.
                 dec = forced_decode(lm.model, built.cache, forced)
                 wall = dec.wall_s[sp["warmup_steps"] :]
                 selection = built.cache.recorded_selection() if isinstance(built.cache, TieredCache) else None

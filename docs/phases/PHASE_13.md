@@ -9,7 +9,7 @@ on the single needle at its two tightest budgets, but at 30 prompts per task its
 (disjoint paired 95% CIs) could not separate the gap at 32K at either budget. This phase is Phase
 9's remedy applied to Phase 12: more paired prompts, the rule unchanged and fixed before the run.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`, all passing. New: the pooling guard (`analyze_phase13.py` refuses to
   pool two runs that answered any shared prompt differently).
@@ -42,7 +42,7 @@ overlap, which Phase 12's 30 prompts at this context could not show.
 
 **At 12.5% it is not, by the pre-committed rule.** The two intervals still overlap. The difference CI
 excludes zero, but that test was introduced after Phase 12's data was read, and this phase does not
-promote it to the rule after the fact. The honest statement is that a shortfall at 12.5% is likely
+promote it to the rule after the fact. The defensible statement is that a shortfall at 12.5% is likely
 and not established.
 
 **The effect is smaller than Phase 12 estimated.** At 30 prompts, Phase 12 put the 32K gap at

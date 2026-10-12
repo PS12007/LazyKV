@@ -23,7 +23,7 @@ with latency:
 The prediction on the record before the run, from Phase 4 §8: rung 8 will not improve latency here.
 §6 below is where that prediction meets the measurement.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`: int8 records round-trip within one quantization level of each group's range, a key-channel outlier does not degrade its neighbours, a constant group is exact, and packing on the GPU agrees with packing on the host to within a level (it is *not* bit-identical, and the test says so); the tier's resident slots hold exactly what a fetch would produce, the sink stays exact because it never leaves VRAM, the Quest bound covers the dequantized keys rather than the exact ones, decode differs from the exact tier but stays bounded, and both a `runs` fetch and a bf16 host pool are refused. All Phase 0-4 tests still pass.
 - [x] **Real experiment run.** `scripts/02_policy_quality.py --config configs/phase5.yaml` and `scripts/02_budget_speed.py --config configs/phase5.yaml` ({{ phase5.analysis.speed_runs }} runs), launched detached from a worktree pinned at the commit under test. Provenance below.
@@ -173,7 +173,7 @@ correct and the conclusion drawn from it — that dense refetch is impossible �
 did not predict is that once selection makes the transfers small enough to be affordable, the
 decision cost dominates whatever is saved.
 
-Two directions follow, and choosing between them is the owner's call under CLAUDE.md rule 8:
+Two directions follow, and choosing between them is a direction call under AGENTS.md rule 8:
 
 - **Take the residency decision off the host critical path.** Keep the top-K on the device and drive
   the gather from device memory, so no layer has to synchronize to decide what it needs. This is the

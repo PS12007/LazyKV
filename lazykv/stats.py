@@ -183,7 +183,7 @@ def prompts_to_resolve(num: Sequence[float], den: Sequence[float], bar: float, z
 
     Delta method: the ratio's standard error is sd(num_i - R * den_i) / (mean(den) * sqrt(n)), and
     the CI excludes the bar once z of those fit between R and the bar. Solved for n, this is the
-    honest answer to "would more prompts settle it": it is the observed effect's size, not the bar,
+    direct answer to "would more prompts settle it": it is the observed effect's size, not the bar,
     that decides, and an effect sitting on the bar needs arbitrarily many (None). It assumes the
     observed discordance rate and effect hold as n grows, which is exactly what is unknown, so it
     is an order of magnitude and is reported as one.

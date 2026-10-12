@@ -13,7 +13,7 @@ policy is more paired prompts, so this phase ran
 32,768 tokens, against Phase 8's
 45.
 
-## Gate checklist (CLAUDE.md rule 3)
+## Gate checklist (AGENTS.md rule 3)
 
 - [x] **Tests run.** `pytest`, all passing. New: `tests/test_bar_resolution.py` pins the paired
   bootstrap (concordant prompts must add no width), the three-way rule at its boundaries, the

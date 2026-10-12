@@ -10,7 +10,7 @@
 
 Driver commands come from the argv each metrics.json recorded (harness/suite.py), so `plan` prints
 what produced the published numbers, not what a README says did. Drivers are never run in the
-foreground here: the GPU ones take minutes to hours and must be detached (CLAUDE.md rule 4), so
+foreground here: the GPU ones take minutes to hours and must be detached (AGENTS.md rule 4), so
 `plan` and `chain` print them and `chain` writes them as a .cmd to launch detached.
 
 The audit is the suite's self-check and Phase 18's experiment. It needs a clean tree, rewrites

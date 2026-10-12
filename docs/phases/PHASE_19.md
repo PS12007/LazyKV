@@ -110,7 +110,7 @@ sparsely, which is what every single-turn test did.
   chat needles but not the document, while processing a new turn with exact attention fixes most of
   both. The tier is decode-only, so it cannot do this today. A dense way for the tier to ingest a
   turn (for each layer, attend the turn's tokens over the whole layer, as tiered prefill does) is
-  the candidate next item. That changes the planned direction, so it needs the owner (rule 8).
+  the candidate next item. That changes the planned direction, so it needs sign-off (rule 8).
 - Caveats: one model (1B), one context, one schedule, 20 sessions; the dense-turn full cache is a
   different (but also exact) feeding of the same conversation, and answers follow each policy's own
   trajectory.
